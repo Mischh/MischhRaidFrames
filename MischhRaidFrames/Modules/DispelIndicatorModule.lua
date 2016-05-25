@@ -100,7 +100,7 @@ function DispelMod:miscUpdate(frame, unit)
 			end
 		end
 	end
-	frames[frame.frame]:Show(true)
+	frames[frame.frame]:Show(false)
 end
 
 function DispelMod:InitMiscSettings(parent)
