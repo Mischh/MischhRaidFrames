@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Addon Author="Mischh" APIVersion="12" Name="MischhRaidFrames" Description="">
+    <ReplaceAddon Name="GroupDisplay"/>
+	<ReplaceAddon Name="RaidFrameBase"/>
+	
+	<Script Name="MischhRaidFrames.lua"/>
+    <Form Name="MischhRaidFrames.xml"/>
+	<Script Name="Options.lua" />
+	<Script Name="Settings\UIComponents.lua"/>
+	
+	<Script Name="Modules\IconFramework.lua" />
+	
+	<Script Name="Manager.lua" />
+	<Script Name="Modules\HealthModule.lua" />
+	<Script Name="Modules\ShieldModule.lua" />
+	<Script Name="Modules\AbsorbModule.lua" />
+	<Script Name="Modules\NameModule.lua" />
+	<Script Name="Modules\DistanceFaderModule.lua" />
+	<Script Name="Modules\MouseInteractionModule.lua" />
+	<Script Name="Modules\ClassColorModule.lua" />
+	<Script Name="Modules\ConstantColorModule.lua" />
+	<Script Name="Modules\GradientColorModule.lua" />
+	<Script Name="Modules\DefaultColorModule.lua" />
+	<Script Name="Modules\RaidMarkerModule.lua" />
+	<Script Name="Modules\ClassIconsModule.lua" />
+	<Script Name="Modules\LeadMarkerModule.lua" />
+	
+	<Script Name="FrameHandler.lua" />
+	<Script Name="UnitHandler.lua" />
+	
+	<Script Name="Defaults.lua" />
+	<Script Name="SaveHandler.lua" />
+	
+	
+	<Script Name="Compatability\GroupDisplay.lua"/>
+	<Form Name="Compatability\GroupDisplay.xml"/>
+</Addon>
