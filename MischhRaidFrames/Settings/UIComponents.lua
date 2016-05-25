@@ -567,6 +567,10 @@ do
 		optProf:ForceUpdate()
 	end
 	
+	function tabHandler:AddPlayer(...)
+		MRF:MakePlayerAUnit()
+	end
+	
 	function MRF:InitSettings()
 		if settingsForm then --already Initialized
 			settingsForm:Show(true, false)
