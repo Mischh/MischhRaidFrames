@@ -76,7 +76,6 @@ do
 	local lastUpdate = 0
 	function UnitHandler:OnUpdate_Distant()
 		local max = #units
-		
 		if max < 1 then return end
 		
 		local now = Apollo.GetTickCount()
@@ -116,9 +115,17 @@ do
 	UnitHandler.OnUpdate = UnitHandler.OnUpdate_Distant--default
 end
 
+local GroupLib_GetUnitForGroupMember = function(...)
+	if ... == 1 then --the first Unit is always the player.
+		return GameLib.GetPlayerUnit()
+	else
+		return GroupLib.GetUnitForGroupMember(...)
+	end
+end
+
 function UnitHandler:UpdateUnit(i)
-	local unit = GroupLib.GetUnitForGroupMember(i);
-	local mem = GroupLib.GetGroupMember(i);
+	local unit = GroupLib_GetUnitForGroupMember(i); 
+	local mem = GroupLib.GetGroupMember(i) or {}; --{} only happens, if we are actually not in a group
 
 	if not units[i] then
 		units[i] = self:newUnit(mem, unit)
@@ -129,6 +136,14 @@ function UnitHandler:UpdateUnit(i)
 	MRF:PushUnitUpdate(frames[i], units[i])
 end
 
+function MRF:MakePlayerAUnit()
+	frames[1]:Show(true, true)
+	UnitHandler:UpdateUnit(1)
+	UnitHandler:Regroup()
+	UnitHandler:Reposition()
+	UnitHandler:HideAdditionalFrames()
+end
+
 function MRF:PushUnitUpdateForFrameIndex(i)
 	if units[i] then
 		MRF:PushUnitUpdate(frames[i], units[i])
@@ -137,7 +152,6 @@ end
 
 function UnitHandler:FullUnitUpdate()
 	units = {}
-	search = {}
 	local num = GroupLib.GetMemberCount()
 	for i = 1, num, 1 do
 		frames[i]:Show(true, true)
@@ -152,7 +166,7 @@ end
 function UnitHandler:GroupUpdate()
 	self:FullUnitUpdate()
 	self:Regroup()
-	self:Reposition() -- see FrameHandler:Reposition() for this, we actually apply it here.
+	self:Reposition() -- see FrameHandler:Reposition() for this, we actually apply it there.
 	self:HideAdditionalFrames()
 end
 
@@ -266,28 +280,6 @@ function UnitHandler:InitSettings(parent, name)
 	EVERY unit recieves a update (about) each second.
 	
 	Tick the Checkbox to replace this functionality and make all units get a update each frame. This results in having all units being updated about 60 times each second at 60fps]])
-	
-	--local tbl = Apollo.GetDisplaySize()
-	
-	--MRF:LoadForm("HalvedRow", parent):SetText("Anchor Left Offset:")
-	--MRF:applySlider(MRF:LoadForm("HalvedRow", parent), xOption, 0, tbl.nRawWidth, 1)
-	
-	--MRF:LoadForm("HalvedRow", parent):SetText("Anchor Top Offset:")
-	--MRF:applySlider(MRF:LoadForm("HalvedRow", parent), yOption, 0, tbl.nRawHeight, 1)
-	
-	--MRF:LoadForm("HalvedRow", parent)
-	
-	--local dirRow = MRF:LoadForm("HalvedRow", parent)
-	--dirRow:FindChild("Left"):SetText("Fill-Direction:")
-	--MRF:applyDropdown(dirRow:FindChild("Right"), {"row", "col"}, dirOption, function(x) 
-	--	if x == "row" then return "First right"
-	--	elseif x == "col" then return "First down"
-	--	else return "" end
-	--end)
-	
-	--local lenRow = MRF:LoadForm("HalvedRow", parent)
-	--lenRow:FindChild("Left"):SetText("Fill-Until:")
-	--MRF:applySlider(lenRow:FindChild("Right"), lenOption, 1, 40, 1)
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
