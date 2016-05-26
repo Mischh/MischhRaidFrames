@@ -356,6 +356,10 @@ do --FastMenu
 		end
 	end
 	
+	function RClickHandler:OpenSettings(...)
+		MRF:InitSettings()
+	end
+	
 	function RClickHandler:SelectRoleTank( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		GroupLib.SetRoleTank(1, true) 
