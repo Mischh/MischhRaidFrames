@@ -72,7 +72,7 @@ end})
 
 yUpdates = setmetatable(yUpdates, {__index = function(self, modKey)
 	local f = function(_, newY)
-		if type(newX) == "number" then
+		if type(newY) == "number" then
 			yPos[modKey] = newY
 			updateAllOf(modKey)
 		end
