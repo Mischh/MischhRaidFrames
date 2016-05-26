@@ -386,6 +386,8 @@ do --FastMenu
 		if wndHandler ~= wndControl then return end
 		local unit = GroupLib.GetGroupMember(1) or {} --the first member is always you.
 		local noInst = not GroupLib.InInstance()
+		local isRaid = GroupLib.InRaid()
+		local isLead = GroupLib.AmILeader() or false
 		
 		--Roles
 		self.btnTank:SetCheck(unit.bTank == true)
@@ -395,10 +397,10 @@ do --FastMenu
 		self.btnHeal:Enable(noInst)
 		self.btnDps:Enable(noInst)
 		
-		--Additional Buttons
-		self.btnReady:Enable((GroupLib.GetGroupMember(1) or {}).bCanMark and noInst or false )
-		self.btnRaid:Enable(GroupLib.AmILeader() and not GroupLib.InRaid() and noInst or false )
-		self.btnDisband:Enable(GroupLib.AmILeader() and noInst or false)
+		--Additional Buttons		
+		self.btnReady:Enable(isRaid and (GroupLib.GetGroupMember(1) or {}).bCanMark or noInst and isLead or false)
+		self.btnRaid:Enable(isLead and not isRaid and noInst or false )
+		self.btnDisband:Enable(isLead and noInst or false)
 		
 		--Dropdowns / Loot-Stuff
 		local tbl = GroupLib.GetLootRules()			
@@ -407,7 +409,7 @@ do --FastMenu
 		oThreshold:Set(tbl.eThresholdQuality)
 		oHarvest:Set(tbl.eHarvestRule)
 		
-		if GroupLib.AmILeader() and noInst  then
+		if isLead and noInst then
 			self.dropAbove:Enable(true); self.dropThres:Enable(true); self.dropBelow:Enable(true); self.dropHarvest:Enable(true);
 		else
 			self.dropAbove:Enable(false); self.dropThres:Enable(false); self.dropBelow:Enable(false); self.dropHarvest:Enable(false);
