@@ -7,12 +7,20 @@ local dirOption = MRF:GetOption(Options, "direction")
 local lenOption = MRF:GetOption(Options, "length")
 local xOption = MRF:GetOption(Options, "xOffset")
 local yOption = MRF:GetOption(Options, "yOffset")
+local hSpFrOpt = MRF:GetOption(Options, "horizonalFrameSpace")
+local vSpFrOpt = MRF:GetOption(Options, "verticalFrameSpace")
+local tSpHeOpt = MRF:GetOption(Options, "topHeaderSpace")
+local bSpHeOpt = MRF:GetOption(Options, "bottomHeaderSpace")
 MRF:AddMainTab("Frame Handler", FrameHandler, "InitSettings")
 
 local ceil = math.ceil
 
 local extendDir = "row" --or "col"
 local extendLen = 10
+local hFrameSpace = 0
+local vFrameSpace = 0
+local tHeaderSpace = 0
+local bHeaderSpace = 0
 
 --stuff for :Reposition()
 local groups = nil; --gotten before first :Reposition (guaranteed)
@@ -59,6 +67,46 @@ yOption:OnUpdate(function(newVal)
 	end
 end)
 
+hSpFrOpt:OnUpdate(FrameHandler, "FrameHSpacing")
+function FrameHandler:FrameHSpacing(newVal)
+	if type(newVal) ~= "number" then
+		hSpFrOpt:Set(0)
+	elseif newVal ~= hFrameSpace then
+		hFrameSpace = newVal
+		self:Reposition()
+	end
+end
+
+vSpFrOpt:OnUpdate(FrameHandler, "FrameVSpacing")
+function FrameHandler:FrameVSpacing(newVal) 
+	if type(newVal) ~= "number" then
+		vSpFrOpt:Set(0)
+	elseif newVal ~= vFrameSpace then
+		vFrameSpace = newVal
+		self:Reposition()
+	end
+end
+
+tSpHeOpt:OnUpdate(FrameHandler, "HeaderTopSpacing")
+function FrameHandler:HeaderTopSpacing(newVal) 
+	if type(newVal) ~= "number" then
+		tSpHeOpt:Set(0)
+	elseif newVal ~= tHeaderSpace then
+		tHeaderSpace = newVal
+		self:Reposition()
+	end
+end
+
+bSpHeOpt:OnUpdate(FrameHandler, "HeaderBotSpacing")
+function FrameHandler:HeaderBotSpacing(newVal) 
+	if type(newVal) ~= "number" then
+		bSpHeOpt:Set(0)
+	elseif newVal ~= bHeaderSpace then
+		bHeaderSpace = newVal
+		self:Reposition()
+	end
+end
+
 local function max(a, b, ...)
 	if not b then
 		return a
@@ -89,17 +137,25 @@ local function calcCol_RowExtended()
 end
 
 local function addFrames(uTbl, col, top, height, width)
+	top = top + bHeaderSpace --space all Frames from the Header above
+
 	local bot = top+height
 	local i = 1
 	while true do
 		local left = 0
 		for c = 1, col, 1 do
-			if not uTbl[i] then return c==1 and top or bot end
+			if not uTbl[i] then
+				if c==1 then
+					return top + tHeaderSpace --space all Frames from the Header below
+				else
+					return bot + tHeaderSpace
+				end
+			end
 			frames[uTbl[i]].frame:SetAnchorOffsets(left, top, left+width, bot)
-			left = left + width
+			left = left + width + hFrameSpace
 			i =  i+1
 		end
-		top = bot
+		top = bot + vFrameSpace
 		bot = top+height
 	end
 end
@@ -115,22 +171,24 @@ function FrameHandler:Reposition()
 		local fHeight = frames[1].frame:GetHeight()
 		local fWidth = frames[1].frame:GetWidth()
 		local hHeight = groupFrames.healHeader:GetHeight()
+		
+		local totalWidth = col*fWidth + (col-1)*hFrameSpace
 
 		if groups.tanks[1] then
 			--add the header
-			groupFrames.tankHeader:SetAnchorOffsets(0, top, col*fWidth, top+hHeight)
+			groupFrames.tankHeader:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
 			groupFrames.tankHeader:Show(true, false)
 			groupFrames.tankText:SetText("("..#groups.tanks..") Tanks:")
 			--top = top+hHeight <- done within the addFrames call - see 3rd Parameter
 			
-			top = addFrames(groups.tanks, col, top+hHeight, fHeight, fWidth)
+			top = addFrames(groups.tanks, col, top+hHeight, fHeight, fWidth) --all Spacing happens in these.
 		else
 			--hide header.
 			groupFrames.tankHeader:Show(false, false)
 		end
 		if groups.heals[1] then
 			--add the header
-			groupFrames.healHeader:SetAnchorOffsets(0, top, col*fWidth, top+hHeight)
+			groupFrames.healHeader:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
 			groupFrames.healHeader:Show(true, false)
 			groupFrames.healText:SetText("("..#groups.heals..") Heals:")
 			--top = top+hHeight <- done within the addFrames call - see 3rd Parameter
@@ -142,7 +200,7 @@ function FrameHandler:Reposition()
 		end
 		if groups.dps[1] then
 			--add the header
-			groupFrames.dpsHeader:SetAnchorOffsets(0, top, col*fWidth, top+hHeight)
+			groupFrames.dpsHeader:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
 			groupFrames.dpsHeader:Show(true, false)
 			groupFrames.dpsText:SetText("("..#groups.dps..") DPS:")
 			--top = top+hHeight <- done within the addFrames call - see 3rd Parameter
@@ -442,16 +500,6 @@ function FrameHandler:InitSettings(parent, name)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
 	
-	local xRow = MRF:LoadForm("HalvedRow", parent)
-	xRow:FindChild("Left"):SetText("Anchor Left Offset:")
-	self:BuildLimitlessSlider(MRF:applySlider(xRow:FindChild("Right"), xOption, 0, 100, 1))
-	
-	local yRow = MRF:LoadForm("HalvedRow", parent)
-	yRow:FindChild("Left"):SetText("Anchor Top Offset:")
-	self:BuildLimitlessSlider(MRF:applySlider(yRow:FindChild("Right"), yOption, 0, 100, 1))
-	
-	MRF:LoadForm("HalvedRow", parent)
-	
 	local wOpt = MRF:GetOption(frameOpt, "size", 3)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
 	wRow:FindChild("Left"):SetText("Frame Width:")
@@ -462,7 +510,29 @@ function FrameHandler:InitSettings(parent, name)
 	hRow:FindChild("Left"):SetText("Frame Height:")
 	self:BuildLimitlessSlider(MRF:applySlider(hRow:FindChild("Right"), hOpt, 0, 100, 1))
 	
+	local whQuest = MRF:LoadForm("QuestionMark", wRow:FindChild("Left"))
+	whQuest:SetTooltip([[These Sliders set the size of each unit-frame inside your group.]])
+	
+	local iOpt = MRF:GetOption(frameOpt, "inset")
+	local iRow = MRF:LoadForm("HalvedRow", parent)
+	iRow:FindChild("Left"):SetText("Frame Inset:")
+	MRF:applySlider(iRow:FindChild("Right"), iOpt, 0, 20, 1)
+	
+	local iQuest = MRF:LoadForm("QuestionMark", iRow:FindChild("Left"))
+	iQuest:SetTooltip([[This Option lets you select how far the actual bars are inset from each of the frames edges.]])
+	
 	MRF:LoadForm("HalvedRow", parent)
+	
+	local xRow = MRF:LoadForm("HalvedRow", parent)
+	xRow:FindChild("Left"):SetText("Anchor Left Offset:")
+	self:BuildLimitlessSlider(MRF:applySlider(xRow:FindChild("Right"), xOption, 0, 100, 1))
+	
+	local yRow = MRF:LoadForm("HalvedRow", parent)
+	yRow:FindChild("Left"):SetText("Anchor Top Offset:")
+	self:BuildLimitlessSlider(MRF:applySlider(yRow:FindChild("Right"), yOption, 0, 100, 1))
+	
+	local aQuest = MRF:LoadForm("QuestionMark", xRow:FindChild("Left"))
+	aQuest:SetTooltip([[These two sliders define where the top-left corner of the raid will be.]])
 	
 	local dirRow = MRF:LoadForm("HalvedRow", parent)
 	dirRow:FindChild("Left"):SetText("Fill-Direction:")
@@ -476,6 +546,32 @@ function FrameHandler:InitSettings(parent, name)
 	lenRow:FindChild("Left"):SetText("Fill-Until:")
 	MRF:applySlider(lenRow:FindChild("Right"), lenOption, 1, 40, 1)
 	
+	local fQuest = MRF:LoadForm("QuestionMark", dirRow:FindChild("Left"))
+	fQuest:SetTooltip([[These Options define which direction the addon should fill your raid first and how many its maximally allowed to display in that direction.
+	Note that if the addon is allowed to display less downside than there are groups(tanks, heals, dps), he will still display a row for each group.]])
+	
+	local hRow = MRF:LoadForm("HalvedRow", parent)
+	hRow:FindChild("Left"):SetText("Frame Spaces - Horizontal:")
+	MRF:applySlider(hRow:FindChild("Right"), hSpFrOpt, -20, 80, 1)
+	
+	local vRow = MRF:LoadForm("HalvedRow", parent)
+	vRow:FindChild("Left"):SetText("Frame Spaces - Vertical:")
+	MRF:applySlider(vRow:FindChild("Right"), vSpFrOpt, -20, 80, 1)
+	
+	local sfQuest = MRF:LoadForm("QuestionMark", hRow:FindChild("Left"))
+	sfQuest:SetTooltip([[With these sliders you can apply additional spaces between the Frames. No space will be added left of the left-most frame, top of the top-most frame, ...]])
+	
+	local tRow = MRF:LoadForm("HalvedRow", parent)
+	tRow:FindChild("Left"):SetText("Header Spaces - Top:")
+	MRF:applySlider(tRow:FindChild("Right"), tSpHeOpt, -20, 80, 1)
+	
+	local bRow = MRF:LoadForm("HalvedRow", parent)
+	bRow:FindChild("Left"):SetText("Header Spaces - Bottom:")
+	MRF:applySlider(bRow:FindChild("Right"), bSpHeOpt, -20, 80, 1)
+	
+	local shQuest = MRF:LoadForm("QuestionMark", tRow:FindChild("Left"))
+	shQuest:SetTooltip([[These allow you to make space above and below the group-headers (tank, heal, dps). No space will be added top of the first header]])	
+	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + #children*30 --we want to display six 30-high rows.
@@ -484,6 +580,6 @@ function FrameHandler:InitSettings(parent, name)
 	parent:GetParent():RecalculateContentExtents()
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
 	Options:ForceUpdate()
-	wOpt:ForceUpdate(); hOpt:ForceUpdate()
+	frameOpt:ForceUpdate()
 end
 

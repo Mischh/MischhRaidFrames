@@ -57,7 +57,7 @@ function NameMod:InitTextSettings(parent)
 	%l* = lastName limited to * letters
 	%n* = name limited to * letters
 	
-	* can only use a maximum of 2 numeric letters.
+	* can maximally use a two-digit number.
 	To get unlimited legths, leave the * empty.]])
 	MRF:applyTextbox(row:FindChild("Right"), patternOpt)
 
