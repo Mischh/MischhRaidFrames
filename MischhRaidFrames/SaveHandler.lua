@@ -141,9 +141,15 @@ end
 
 local oldLevel = nil
 function MRF:SelectedProfile(eLevel)
+	local succ, err = pcall(function()
 	if self.blockSwitch or oldLevel == eLevel then return end
 	oldLevel = eLevel
 	self:SwitchToProfile(eLevel)
+	end)
+	if succ then return end
+	print("Error while switching Profiles:")
+	print(err)
+	print(debug.traceback())
 end
 
 
