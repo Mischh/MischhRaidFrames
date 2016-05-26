@@ -4,7 +4,15 @@ local modKey = "Lead Marker"
 local MRF = Apollo.GetAddon("MischhRaidFrames")
 local LeadMod, ModOptions = MRF:newModule(modKey , "icon", false)
 
+local icon_lead = "Crafting_CircuitSprites:sprCircuit_Laser_Vertical_Red"
+local icon_inv = "Crafting_CircuitSprites:sprCircuit_Laser_Vertical_Blue"
+local color_white = ApolloColor.new("FFFFFFFF")
+local color_lead = ApolloColor.new("FFFFFFFF")
+local color_inv = ApolloColor.new("FFFFFFFF")
+local fillInstead = false
+
 local icons = MRF:GetModIcons(modKey)
+local state = {} --[frame] = true/false/nil for Lead/canMark/none
 
 local activeOption = MRF:GetOption(ModOptions, "activated")
 
@@ -12,6 +20,9 @@ local width = 3
 local height = 15
 local widthOpt = MRF:GetOption(ModOptions, "width")
 local heightOpt = MRF:GetOption(ModOptions, "height")
+local colLeadOpt = MRF:GetOption(ModOptions, "leadColor")
+local colInvOpt = MRF:GetOption(ModOptions, "invColor")
+local fillOpt = MRF:GetOption(ModOptions, "fill")
 
 function LeadMod:UpdateActivated(active)
 	if active == nil then
@@ -48,6 +59,49 @@ function LeadMod:UpdateAllSize()
 	end
 end
 
+function LeadMod:UpdateColLead(newVal)
+	if not newVal then
+		colLeadOpt:Set("FFEA0000");
+	else
+		color_lead = ApolloColor.new(newVal)
+		self:UpdateAllIcon()
+	end
+end
+colLeadOpt:OnUpdate(LeadMod, "UpdateColLead")
+
+function LeadMod:UpdateColInv(newVal)
+	if not newVal then
+		colInvOpt:Set("FF41B8FF");
+	else
+		color_inv = ApolloColor.new(newVal)
+		self:UpdateAllIcon()
+	end
+end
+colInvOpt:OnUpdate(LeadMod, "UpdateColInv")
+
+function LeadMod:UpdateFill(newVal)
+	if type(newVal) ~= "boolean" then
+		fillOpt:Set(false)
+	else
+		fillInstead = newVal
+		LeadMod.iconUpdate = newVal and LeadMod.iconUpdate_fill or LeadMod.iconUpdate_icon
+		self:UpdateAllIcon()
+	end
+end
+fillOpt:OnUpdate(LeadMod, "UpdateFill")
+
+function LeadMod:UpdateAllIcon()
+	for frame, icon in pairs(icons) do
+		if state[frame] == true then
+			icon:SetSprite(fillInstead and "WhiteFill" or icon_lead)
+			icon:SetBGColor(fillInstead and color_lead or color_white)
+		elseif state[frame] == false then
+			icon:SetSprite(fillInstead and "WhiteFill" or icon_inv)
+			icon:SetBGColor(fillInstead and color_inv or color_white)
+		end
+	end
+end
+
 do
 	--apply size on creation of icons.
 	local meta = getmetatable(icons)
@@ -64,21 +118,38 @@ end
 
 --############ ICON ############
 
-local icon_lead = "Crafting_CircuitSprites:sprCircuit_Laser_Vertical_Red"
-local icon_inv = "Crafting_CircuitSprites:sprCircuit_Laser_Vertical_Blue"
-
-
 --[[]]
 
-function LeadMod:iconUpdate(frame, unit)
+function LeadMod:iconUpdate_icon(frame, unit)
 	if unit:IsLeader() then
 		icons[frame.frame]:SetSprite(icon_lead)
+		state[frame.frame] = true
 	elseif unit:CanInvite() then
 		icons[frame.frame]:SetSprite(icon_inv)
+		state[frame.frame] = false
 	else
 		icons[frame.frame]:SetSprite("")
+		state[frame.frame] = nil
 	end
 end
+
+function LeadMod:iconUpdate_fill(frame, unit)
+	if unit:IsLeader() then
+		icons[frame.frame]:SetSprite("WhiteFill")
+		icons[frame.frame]:SetBGColor(color_lead)
+		state[frame.frame] = true
+	elseif unit:CanInvite() then
+		icons[frame.frame]:SetSprite("WhiteFill")
+		icons[frame.frame]:SetBGColor(color_mark)
+		state[frame.frame] = false
+	else
+		icons[frame.frame]:SetSprite("")
+		icons[frame.frame]:SetBGColor(color_white)
+		state[frame.frame] = nil
+	end
+end
+
+LeadMod.iconUpdate = LeadMod.iconUpdate_icon
 
 
 function LeadMod:InitIconSettings(parent)
@@ -90,8 +161,18 @@ function LeadMod:InitIconSettings(parent)
 	MRF:applySlider(wRow:FindChild("Right"), widthOpt, 1, 50, 1)
 	MRF:applySlider(hRow:FindChild("Right"), heightOpt, 1, 50, 1)
 
+	local fillRow = MRF:LoadForm("HalvedRow", parent)
+	local leadRow = MRF:LoadForm("HalvedRow", parent)
+	local invRow = MRF:LoadForm("HalvedRow", parent)
+	
+	MRF:applyCheckbox(fillRow:FindChild("Left"),fillOpt, "Fill the Icon instead with a Color")
+	leadRow:FindChild("Left"):SetText("Color for the Lead:")
+	invRow:FindChild("Left"):SetText("Color for Inviters:")
+	MRF:applyColorbutton(leadRow:FindChild("Right"), colLeadOpt)
+	MRF:applyColorbutton(invRow:FindChild("Right"), colInvOpt)
+	
 	local anchor = {parent:GetAnchorOffsets()}
-	anchor[4] = anchor[2] + 60 --we want to display two 30-high rows.
+	anchor[4] = anchor[2] + 5*30 --we want to display two 30-high rows.
 	parent:SetAnchorOffsets(unpack(anchor))
 	parent:ArrangeChildrenVert()
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
