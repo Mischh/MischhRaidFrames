@@ -127,6 +127,33 @@ function MRF:LoadProfile(prof)
 	options:Set(profiles[prof])
 	profile:Set(prof)
 	self.blockSwitch = false
+	
+	local frame = MRF:GetOption(nil, "frame"):Get()
+	local default = self:GetDefaultColor()
+	for pos, bar in pairs(frame) do
+		if type(pos) ~= "string" then
+			--check all colors in all bars and look, if it has a color without a :Get() function
+			if not bar.lColor then
+				bar.lColor = default
+			elseif type(bar.lColor.Get) ~= "function" then
+				Print("Broken filled color on bar '"..tostring(bar.modKey).."' ("..bar.lColor.name..") - replaced with default.")
+				bar.lColor = default
+			end
+			
+			if not bar.rColor then
+				bar.rColor = default
+			elseif type(bar.rColor.Get) ~= "function" then
+				Print("Broken missing color on bar '"..tostring(bar.modKey).."' ("..bar.rColor.name..") - replaced with default.")
+				bar.rColor = default
+			end
+			
+			if bar.textColor and type(bar.textColor.Get) ~= "function" then
+				Print("Broken text color on bar '"..tostring(bar.modKey).."' ("..bar.textColor.name..") - replaced with default.")
+				bar.textColor = default
+			end
+		end
+	end
+	
 end
 
 function MRF:SwitchToProfile(eLevel) 
@@ -142,9 +169,9 @@ end
 local oldLevel = nil
 function MRF:SelectedProfile(eLevel)
 	local succ, err = pcall(function()
-	if self.blockSwitch or oldLevel == eLevel then return end
-	oldLevel = eLevel
-	self:SwitchToProfile(eLevel)
+		if self.blockSwitch or oldLevel == eLevel then return end
+		oldLevel = eLevel
+		self:SwitchToProfile(eLevel)
 	end)
 	if succ then return end
 	print("Error while switching Profiles:")
