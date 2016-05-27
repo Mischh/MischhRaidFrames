@@ -128,7 +128,8 @@ function MRF:LoadProfile(prof)
 	profile:Set(prof)
 	self.blockSwitch = false
 	
-	local frame = MRF:GetOption(nil, "frame"):Get()
+	local frameOpt = MRF:GetOption(nil, "frame")
+	local frame = frameOpt:Get()
 	local default = self:GetDefaultColor()
 	for pos, bar in pairs(frame) do
 		if type(pos) ~= "string" then
@@ -154,6 +155,7 @@ function MRF:LoadProfile(prof)
 		end
 	end
 	
+	frameOpt:ForceUpdate()
 end
 
 function MRF:SwitchToProfile(eLevel) 
