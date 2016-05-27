@@ -6,8 +6,8 @@ local MouseMod, ModOptions = MRF:newModule(modKey , "misc", false)
 
 local frames = {}
 local clickAction = {[0]="Target Unit",[1]="Dropdown Menu",[2]="Focus Unit",[3]=false,[4]=false,over=false}
-local supportedActions = {["Target Unit"] = true, ["Dropdown Menu"] = true, ["Focus Unit"] = true, [false] = true}
-local actions = {false, "Dropdown Menu", "Target Unit", "Focus Unit"}
+local supportedActions = {["Target Unit"] = true, ["Dropdown Menu"] = true, ["Focus Unit"] = true, ["Show Hint Arrow"] = true, [false] = true}
+local actions = {false, "Dropdown Menu", "Target Unit", "Focus Unit", "Show Hint Arrow"}
 
 --Options
 local activeOption = MRF:GetOption(ModOptions, "activated")
@@ -116,6 +116,14 @@ MouseMod["Display Tooltip"] = function(self, handler,wndHandler) --not supported
 	local unit = frames[handler]:GetRealUnit()
 	if unit then
 		Event_FireGenericEvent("MouseOverUnitChanged", unit)
+	end
+end
+
+MouseMod["Show Hint Arrow"] = function(self, handler, ...)
+	local fakeUnit = frames[handler]
+	local unit = fakeUnit:GetRealUnit()
+	if unit then
+		unit:ShowHintArrow()
 	end
 end
 
