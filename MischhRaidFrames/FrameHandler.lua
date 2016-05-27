@@ -114,26 +114,70 @@ local function max(a, b, ...)
 	return a>b and max(a,...) or max(b,...)
 end
 
+local function max_tbl(t, i, m)
+	i = i or 1
+	m = m or #t
+	if i>m then
+		return 0
+	else
+		local x = max_tbl(t, i+1, m)
+		return x>t[i] and x or t[i]
+	end
+end
+
+local function divideCeilSum(tbl, divisor)
+	local sum = 0
+	for _, a in ipairs(tbl) do
+		sum = sum + ceil(a/divisor)
+	end
+	return sum
+end
+
+local function numGreater0(tbl)
+	local x = 0
+	for i,v in ipairs(tbl) do
+		if v>0 then x = x+1 end
+	end
+	return x
+end
+
 local function calcCol_ColExtended()
-	local nH, nT, nD, total = #groups.heals, #groups.tanks, #groups.dps, #groups.heals+#groups.tanks+#groups.dps
+	--local nH, nT, nD, total = #groups.heals, #groups.tanks, #groups.dps, #groups.heals+#groups.tanks+#groups.dps
+	
+	local nums, total = {}, 0;
+	for i, t in ipairs(groups) do
+		nums[i] = #t
+		total = total+#t
+	end
+	
 	local approx = ceil(total/extendLen)
 	
 	--if we support not enought rows to at least do a row of each to-be-displayed group, the for-loop would not be correct. Instead:
-	if extendLen <= (nH>0 and 1 or 0) + (nT>0 and 1 or 0) + (nD>0 and 1 or 0) then
-		return max(nH, nT, nD)
+	if extendLen <= numGreater0(nums) then
+		return max_tbl(nums)
 	end
 	
 	for col = approx, total, 1 do --the number of columns cant overgrow the total frames. very rarely this should do more than 2 iterations. Only for very low extendLen its possible
-		if ceil(nH/col)+ceil(nT/col)+ceil(nD/col) <= extendLen then --the number of actually needed rows, with this amount of columns
+		if divideCeilSum(nums, col) <= extendLen then --the number of actually needed rows, with this amount of columns
 			return col
 		end
 	end
 end
 
 local function calcCol_RowExtended()
-	--get the bigges of #healers, #tanks, #dps
-	local m = max(#groups.heals, #groups.tanks, #groups.dps)
-	return extendLen<m and extendLen or m
+	--return the size of the biggest group, or extendLen if its smaller.
+	local m = 0
+	for _, t in ipairs(groups) do
+		m = m<#t and #t or m
+		if m >= extendLen then 	--okay, this looks very bad in here - why not after the loop? 
+								-- because of the nature of Raidframes we assume, that there are many groups,
+								-- which are larger than the maximum of columns being set. Possibly the 
+								-- first out of 10 groups. Think about it.
+			return extendLen
+		end
+	end
+	
+	return m
 end
 
 local function addFrames(uTbl, col, top, height, width)
@@ -168,47 +212,31 @@ function FrameHandler:Reposition()
 		local col = (extendDir == "row" and calcCol_RowExtended or extendDir == "col" and calcCol_ColExtended)()
 		local top = 0
 		
-		local fHeight = frames[1].frame:GetHeight()
+		local fHeight = frames[1].frame:GetHeight() --even if neither of both are created yet - they will be hidden on load.
 		local fWidth = frames[1].frame:GetWidth()
-		local hHeight = groupFrames.healHeader:GetHeight()
+		local hHeight = groupFrames.headers[1]:GetHeight()
 		
 		local totalWidth = col*fWidth + (col-1)*hFrameSpace
 
-		if groups.tanks[1] then
-			--add the header
-			groupFrames.tankHeader:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
-			groupFrames.tankHeader:Show(true, false)
-			groupFrames.tankText:SetText("("..#groups.tanks..") Tanks:")
-			--top = top+hHeight <- done within the addFrames call - see 3rd Parameter
-			
-			top = addFrames(groups.tanks, col, top+hHeight, fHeight, fWidth) --all Spacing happens in these.
-		else
-			--hide header.
-			groupFrames.tankHeader:Show(false, false)
+		for i, tbl in ipairs(groups) do
+			if tbl[1] then
+				--add header (i)
+				groupFrames.headers[i]:Show(true, false)
+				--configure header
+				groupFrames.headers[i]:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
+				groupFrames.headers[i]:FindChild("text"):SetText("("..#tbl..") "..tbl.name..":")
+				
+				--add all units
+				top = addFrames(tbl, col, top+hHeight, fHeight, fWidth)
+			else
+				--hide Header
+				groupFrames.headers[i]:Show(false, false)
+			end
 		end
-		if groups.heals[1] then
-			--add the header
-			groupFrames.healHeader:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
-			groupFrames.healHeader:Show(true, false)
-			groupFrames.healText:SetText("("..#groups.heals..") Heals:")
-			--top = top+hHeight <- done within the addFrames call - see 3rd Parameter
-			
-			top = addFrames(groups.heals, col, top+hHeight, fHeight, fWidth)
-		else
-			--hide header.
-			groupFrames.healHeader:Show(false, false)
-		end
-		if groups.dps[1] then
-			--add the header
-			groupFrames.dpsHeader:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
-			groupFrames.dpsHeader:Show(true, false)
-			groupFrames.dpsText:SetText("("..#groups.dps..") DPS:")
-			--top = top+hHeight <- done within the addFrames call - see 3rd Parameter
-			
-			top = addFrames(groups.dps, col, top+hHeight, fHeight, fWidth)
-		else
-			--hide header.
-			groupFrames.dpsHeader:Show(false, false)
+		
+		--hide all headers above #groups
+		for i = #groups+1, #groupFrames.headers, 1 do
+			groupFrames.headers[i]:Show(false, false)
 		end
 	end
 	return self:Reposition()
@@ -240,17 +268,17 @@ end)
 
 function FrameHandler:InitGroupFrames()
 	if parentFrame then return end --already done.
-	parentFrame =  MRF:LoadForm("Raid-Container", nil, self)
-	groupFrames.healHeader = MRF:LoadForm("GroupHeader", parentFrame, self)
-	groupFrames.tankHeader = MRF:LoadForm("GroupHeader", parentFrame, self)
-	groupFrames.dpsHeader  = MRF:LoadForm("GroupHeader", parentFrame, self)
-	groupFrames.healText = groupFrames.healHeader:FindChild("text")
-	groupFrames.tankText = groupFrames.tankHeader:FindChild("text")
-	groupFrames.dpsText  = groupFrames.dpsHeader:FindChild("text")
+	parentFrame =  MRF:LoadForm("Raid-Container", nil, self)	
 	
 	local l = xOption:Get() or 0
 	local t = yOption:Get() or 0
 	parentFrame:SetAnchorOffsets(l,t,0,0)
+	
+	groupFrames.headers = setmetatable({}, {__index = function(t,k) 
+		local h = MRF:LoadForm("GroupHeader", parentFrame, self)
+		rawset(t,k,h)
+		return h
+	end})
 end
 
 function FrameHandler:CreateNewFrame()

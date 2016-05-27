@@ -222,18 +222,26 @@ function UnitHandler:newUnit(groupMemberTbl, unit)
 	return newUnit;
 end
 
-local groups = {heals = {}, tanks = {}, dps = {}} --these groups are accessible within the FrameHandler - we pass it to it.
+local function iwipe(tbl)
+	for i in ipairs(tbl) do
+		tbl[i] = nil
+	end
+end
+
+local groups = {} --these groups are accessible within the FrameHandler - we pass it to it.
 function UnitHandler:Regroup()
-	groups.tanks = {}
-	groups.heals = {}
-	groups.dps = {}
+	iwipe(groups)
+	groups[1] = {name = "Tanks"}
+	groups[2] = {name = "Heals"}
+	groups[3] = {name = "DPS"}
+	
 	for i,unit in ipairs(units) do
 		if unit:IsTank() then
-			groups.tanks[#groups.tanks+1] = i;
+			groups[1][#groups[1]+1] = i;
 		elseif unit:IsHeal() then
-			groups.heals[#groups.heals+1] = i;
+			groups[2][#groups[2]+1] = i;
 		else
-			groups.dps[#groups.dps+1] = i;
+			groups[3][#groups[3]+1] = i;
 		end
 	end
 end
