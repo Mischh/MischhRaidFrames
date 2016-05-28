@@ -127,13 +127,9 @@ function handler:Update(onlyUI)
 		GroupHandler:Reposition()
 	end
 	
-	--redraw the groups
-	
-	
 	self:ReselectGroup() --this will end up in redrawing the selected Group & the Groups List.
 	
-	ungrHandler:Redraw() --redraw the Ungrouped ppl.
-	--[[XXX]] --redraw Groups, Group and Ungrouped - maybe select a new Group?
+	ungrHandler:Redraw() --redraw the Ungrouped ppl aswell.
 end
 
 function GroupHandler:DistantUpdate()
@@ -148,7 +144,7 @@ function GroupHandler:DistantUpdate()
 		name2text[n] = pre..n
 	end
 	
-	handler:Update(onlyUI)
+	handler:Update(true)
 end
 
 function handler:ReselectGroup()
@@ -192,7 +188,7 @@ end
 
 function handler:AddGroup()
 	userdef[#userdef+1] = findUniqueName()
-	self:Update()
+	optGrIdx:Set(#userdef)
 end
 
 function handler:RemoveGroup()
