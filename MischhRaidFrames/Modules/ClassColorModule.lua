@@ -67,7 +67,7 @@ for _, cId in ipairs(classIds) do
 end
 
 function ClassCMod:GetColorTable()
-	return {ref};
+	return {ref or {Get = getColor, frequent = false, name = "Class Color"}};
 end
 
 function ClassCMod:InitColorSettings(parent)	

@@ -388,6 +388,10 @@ do --FastMenu
 		MRF:InitSettings()
 	end
 	
+	function RClickHandler:OpenGroups()
+		MRF:InitGroupForm()
+	end
+	
 	function RClickHandler:SelectRoleTank( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		GroupLib.SetRoleTank(1, true) 
