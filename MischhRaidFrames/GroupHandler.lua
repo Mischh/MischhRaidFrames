@@ -201,6 +201,11 @@ function handler:RemoveGroup()
 		handler:MoveFromGroup()
 		table.remove(userdef, idx)
 	end
+	for i,v in pairs(userdef) do
+		if type(v) == "number" and v>idx then
+			userdef[i] = v-1
+		end
+	end
 	self:Update()
 end
 
