@@ -150,8 +150,14 @@ function MRF:PushUnitUpdateForFrameIndex(i)
 	end
 end
 
+local function iwipe(tbl)
+	for i in ipairs(tbl) do
+		tbl[i] = nil
+	end
+end
+
 function UnitHandler:FullUnitUpdate()
-	units = {}
+	iwipe(units)
 	local num = GroupLib.GetMemberCount()
 	for i = 1, num, 1 do
 		frames[i]:Show(true, true)
@@ -222,34 +228,17 @@ function UnitHandler:newUnit(groupMemberTbl, unit)
 	return newUnit;
 end
 
-local function iwipe(tbl)
-	for i in ipairs(tbl) do
-		tbl[i] = nil
-	end
-end
-
-local groups = {} --these groups are accessible within the FrameHandler - we pass it to it.
-function UnitHandler:Regroup()
-	iwipe(groups)
-	groups[1] = {name = "Tanks"}
-	groups[2] = {name = "Heals"}
-	groups[3] = {name = "DPS"}
-	
-	for i,unit in ipairs(units) do
-		if unit:IsTank() then
-			groups[1][#groups[1]+1] = i;
-		elseif unit:IsHeal() then
-			groups[2][#groups[2]+1] = i;
-		else
-			groups[3][#groups[3]+1] = i;
-		end
-	end
-end
-
+local groups = {} --these groups are accessible within the FrameHandler&GroupHandler - we pass it into them.
 function UnitHandler:Reposition()
 	--the first time we pass all informative stuff to the FrameHandler and Apply the real Funtion.
 	self.Reposition = MRF:GetFrameHandlersReposition(groups) --defined in FrameHandler
 	return self:Reposition()
+end
+
+function UnitHandler:Regroup()
+	--with the first call we pass cross-file references into the GroupHandler to recieve the Regroup Method.
+	self.Regroup = MRF:GetGroupHandlersRegroup(groups, units, self)
+	return self:Regroup()
 end
 
 function UnitHandler:HideAdditionalFrames()
