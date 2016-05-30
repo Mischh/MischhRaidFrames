@@ -7,7 +7,7 @@ local NameMod, ModOptions = MRF:newModule(modKey , "text", false)
 --%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -- TEXT -- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% --
 local patternOpt = MRF:GetOption(ModOptions, "text")
 local nicknameOpt = MRF:GetOption(ModOptions, "nicknames")
-local nametext;
+local nametext = "%f";
 local nicks = {} --[1] = original; [original] = nick
 
 function NameMod:UpdateTextPattern(newPattern)
