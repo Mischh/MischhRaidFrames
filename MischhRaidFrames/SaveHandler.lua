@@ -129,33 +129,10 @@ function MRF:LoadProfile(prof)
 	self.blockSwitch = false
 	
 	local frameOpt = MRF:GetOption(nil, "frame")
-	local frame = frameOpt:Get()
-	local default = self:GetDefaultColor()
-	for pos, bar in pairs(frame) do
-		if type(pos) ~= "string" then
-			--check all colors in all bars and look, if it has a color without a :Get() function
-			if not bar.lColor then
-				bar.lColor = default
-			elseif type(bar.lColor.Get) ~= "function" then
-				Print("Broken filled color on bar '"..tostring(bar.modKey).."' ("..bar.lColor.name..") - replaced with default.")
-				bar.lColor = default
-			end
-			
-			if not bar.rColor then
-				bar.rColor = default
-			elseif type(bar.rColor.Get) ~= "function" then
-				Print("Broken missing color on bar '"..tostring(bar.modKey).."' ("..bar.rColor.name..") - replaced with default.")
-				bar.rColor = default
-			end
-			
-			if bar.textColor and type(bar.textColor.Get) ~= "function" then
-				Print("Broken text color on bar '"..tostring(bar.modKey).."' ("..bar.textColor.name..") - replaced with default.")
-				bar.textColor = default
-			end
-		end
+	if self:CheckFrameTemplate(frameOpt:Get()) then
+		frameOpt:ForceUpdate()
+		Print("MRF: Finished checking frame-template with Errors. See Changes above.")
 	end
-	
-	frameOpt:ForceUpdate()
 end
 
 function MRF:SwitchToProfile(eLevel) 
@@ -198,6 +175,76 @@ function MRF:CopyProfile(from, to) --both are of GameLib.CodeEnumAddonSaveLevel
 	profiles[to] = self:FromSaveData(save)
 	
 	self:LoadProfile(to)	
+end
+
+function MRF:CheckFrameTemplate(frame)
+	local default = self:GetDefaultColor()
+	local dupBar = {}
+	local dupTxt = {}
+	local changed = false
+	for pos, bar in pairs(frame) do
+		if type(pos) ~= "string" then
+			--check all colors in all bars and look, if it has a color without a :Get() function
+			if not bar.lColor then
+				Print("Found a bar("..tostring(bar.modKey)..") without a filled color - set to default.")
+				bar.lColor = default
+				changed = true
+			elseif type(bar.lColor.Get) ~= "function" then
+				Print("Broken filled color on bar '"..tostring(bar.modKey).."' ("..bar.lColor.name..") - replaced with default.")
+				bar.lColor = default
+				changed = true
+			end
+			
+			if not bar.rColor then
+				Print("Found a bar("..tostring(bar.modKey)..") without a missing color - set to default.")
+				bar.rColor = default
+				changed = true
+			elseif type(bar.rColor.Get) ~= "function" then
+				Print("Broken missing color on bar '"..tostring(bar.modKey).."' ("..bar.rColor.name..") - replaced with default.")
+				bar.rColor = default
+				changed = true
+			end
+			
+			if bar.textColor and type(bar.textColor.Get) ~= "function" then
+				Print("Broken text color on bar '"..tostring(bar.modKey).."' ("..bar.textColor.name..") - replaced with default.")
+				bar.textColor = default
+				changed = true
+			end
+			
+			--check, if the modKeys for the bar & text exist and have no duplicates.
+			if not bar.modKey or not self:HasModule(bar.modKey) then
+				Print("Found a bar which had no existing Module assigned to it ("..tostring(bar.modKey)..") - removed from template.")
+				frame[pos] = nil
+				changed = true
+			elseif dupBar[bar.modKey] then
+				Print("The frame-template had multiple instaces of the bar '"..tostring(bar.modKey).." - removed the last found instance.")
+				frame[pos] = nil
+				changed = true
+			else
+				dupBar[bar.modKey] = true
+			end
+			
+			if bar.textSource then
+				if not self:HasModule(bar.textSource) then
+					Print("Found a bar("..tostring(bar.modKey)..") with a text("..tostring(bar.textSource).."), which is not part of a Module. - removed the text")
+					bar.textSource = nil
+					changed = true
+				elseif dupTxt[bar.textSource] then
+					Print("The frame-template had multiple instaces of the text '"..tostring(bar.textSource).." - removed the last found instance.")
+					bar.textSource = nil
+					changed = true
+				else
+					dupTxt[bar.textSource] = true
+				end
+				if bar.textSource and not bar.textColor then--check, if the bar has a text, but no textColor.
+					Print("The bar "..tostring(bar.modKey).." had a text("..tostring(bar.textSource)..") without a color - set to default.")
+					bar.textColor = default
+					changed = true
+				end
+			end
+		end
+	end
+	return changed
 end
 
 do
