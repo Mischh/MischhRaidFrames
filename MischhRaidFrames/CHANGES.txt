@@ -1,0 +1,21 @@
+<p><strong>Release v1.2:</strong></p>
+<p>Fixes:</p>
+<ul>
+<li>Icons - You werent able to move Icons up/down</li>
+<li>FastMenu - From now on, within a Group, only the Leader can Readycheck</li>
+<li>SaveHandler -&nbsp;after loading profiles the Addon will check for broken&nbsp;stuff within the frame template and report them.</li>
+</ul>
+<p>Added:</p>
+<ul>
+<li>LeadMarker - Possibility to use&nbsp;a filled color rather than the default icon.</li>
+<li>MouseInteraction - Added 'Show Hint Arrow'-Option to the Buttons.</li>
+<li>NameModule - Added Nicknames.</li>
+<li>GroupHandler - Instead of using the Default tank-heal-dps Groups you can now use the Grouping-Frame to create your own groups and share them with your party. This sharing is compatible with VinceRaidFrames.</li>
+</ul>
+<p><strong>Release v1.1:</strong></p>
+<ul>
+<li>Added Module: Dispel Indicator&nbsp;<img src="http://i.imgur.com/dpj1oKe.png" alt="Dispel Indicator" width="250" height="23" /></li>
+<li>Added Button into&nbsp;FastMenu to open Settings</li>
+<li>Added Button into Settings (top-left) to add yourself to your (possible non-existant group) - for testing your Settings.</li>
+<li>Recolored FastMenu to match new Button Colors.</li>
+</ul>
