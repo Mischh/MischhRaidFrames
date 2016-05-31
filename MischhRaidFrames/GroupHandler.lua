@@ -138,9 +138,8 @@ function GroupHandler:VRFSerialize(t) --use VinceRaidFrames Serializing and Dese
 		tinsert(tbl, type(v) == "number" and tostring(v) or '"'..v..'"' )
 		tinsert(tbl, ",")
 	end
-	if hasValues then
-		tbl[#tbl] = nil
-	end
+	tbl[#tbl] = nil
+	
 	tinsert(tbl, "}")
 	return table.concat(tbl)
 end
@@ -153,7 +152,7 @@ function GroupHandler:VRFDeserialize(str)
 	if not func then
 		return nil
 	end
-	setfenv(func, {})
+	setfenv(func, {}) --not sure about this one... might not be needed.
 	local success, value = pcall(func)
 	return value
 end
@@ -356,11 +355,11 @@ function handler:ReselectGroup()
 	end
 end
 
-function handler:OnCancel()
+function handler:OnCancel() --Pressed the X button
 	form:Show(false, false)
 end
 
-function handler:ResetGroups()
+function handler:ResetGroups() --Pressed 'Reset All'
 	wipe(userdef)
 	self:Update()
 end
@@ -376,12 +375,12 @@ local function findUniqueName(i)
 	return n;
 end
 
-function handler:AddGroup()
+function handler:AddGroup() --Pressed 'Add'
 	userdef[#userdef+1] = findUniqueName()
 	optGrIdx:Set(#userdef)
 end
 
-function handler:RemoveGroup()
+function handler:RemoveGroup() --Pressed 'Remove'
 	local idx = optGrIdx:Get()
 	if idx then 
 		handler:MoveFromGroup()
@@ -395,7 +394,7 @@ function handler:RemoveGroup()
 	self:Update()
 end
 
-function handler:MoveToGroup()
+function handler:MoveToGroup() --Pressed '-->'
 	local idx = optGrIdx:Get()
 	if idx then
 		for i, unit in ipairs(units) do
@@ -406,7 +405,7 @@ function handler:MoveToGroup()
 	self:Update()
 end
 
-function handler:MoveFromGroup()
+function handler:MoveFromGroup() --Pressed '<--'
 	local idx = optGrIdx:Get()
 	if idx then
 		for k, i in pairs(userdef) do
@@ -418,7 +417,7 @@ function handler:MoveFromGroup()
 	self:Update()
 end
 
-function handler:ToggleSaveMenu(btn)
+function handler:ToggleSaveMenu(btn) --Pressed 'Load/Save'
 	self.saveMenu:Show(btn:IsChecked())
 end
 
@@ -426,7 +425,7 @@ function handler:PublishGroup()
 	GroupHandler:PublishGroup()
 end
 
-function handler:UpdateUse(use)
+function handler:UpdateUse(use) -- called by optUse:ForceUpdate()
 	if use == nil then
 		optUse:Set(false)
 	else
@@ -435,7 +434,7 @@ function handler:UpdateUse(use)
 	end
 end
 
-function handler:UpdateAccept(acc)
+function handler:UpdateAccept(acc) -- called by optAcc:ForceUpdate()
 	if acc == nil then
 		optAcc:Set(true)
 	else
@@ -444,7 +443,7 @@ function handler:UpdateAccept(acc)
 end
 
 local oldName = nil
-function handler:UpdateGrName(name)
+function handler:UpdateGrName(name) -- called by optGrName:ForceUpdate()
 	local idx = optGrIdx:Get()
 	if idx and not switching and oldName ~= name then
 		oldName = name
@@ -459,7 +458,7 @@ function handler:UpdateGrName(name)
 	end
 end
 
-function handler:UpdateGroupIndex(idx)
+function handler:UpdateGroupIndex(idx) -- called by optGrIdx:ForceUpdate()
 	switching = true 
 	if idx then --set the groupName
 		optGrName:Set(userdef[idx])
