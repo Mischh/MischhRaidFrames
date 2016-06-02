@@ -13,6 +13,74 @@ local tSpHeOpt = MRF:GetOption(Options, "topHeaderSpace")
 local bSpHeOpt = MRF:GetOption(Options, "bottomHeaderSpace")
 MRF:AddMainTab("Frame Handler", FrameHandler, "InitSettings")
 
+local L = MRF:Localize({--[[English]]
+	["sFirtTagger"] = "First",
+	["sRoundRobin"] = "Round Robin",
+	["sFreeForAll"] = "FFA",
+	["sNeedBeforeGreed"] = "Need & Greed",
+	["sMaster"] = "Master",
+	["sInferior"] = "Inferior",
+	["sAverage"] = "Average",
+	["sGood"] = "Good",
+	["sExcellent"] = "Excellent",
+	["sSuperb"] = "Superb",
+	["sLegend"] = "Legend",
+	["sArtifact"] = "Artifact",
+	["lFirstTagger"] = "First Tagger",
+	["lRoundRobin"] = "Round Robin",
+	["lFreeForAll"] = "Free For All",
+	["lNeedBeforeGreed"] = "Need Before Greed",
+	["lMaster"] = "Master Looter",
+	["lAverage"] = "Average",
+	["lGood"] = "Good",
+	["lExcellent"] = "Excellent",
+	["lSuperb"] = "Superb",
+	["lLegendary"] = "Legendary",
+	["lArtifact"] = "Artifact",
+	["lInferior"] = "Inferior",
+	["Above: "] = "Above: ",
+	["Threshold: "] = "Threshold: ",
+	["Below: "] = "Below: ",
+	["Harvests: "] = "Harvests: ",
+	["Readycheck"] = "Readycheck",
+	["To Raid"] = "To Raid",
+	["Disband"] = "Disband",
+	
+}, {--[[German]]
+	["sFirtTagger"] = "Erster",
+	["sRoundRobin"] = "Jeder",
+	["sFreeForAll"] = "FFA",
+	["sNeedBeforeGreed"] = "Bedarf/Gier",
+	["sMaster"] = "Beutemeister",
+	["sInferior"] = "Minderw.",
+	["sAverage"] = "Mittel",
+	["sGood"] = "Gut",
+	["sExcellent"] = "Ausgez.",
+	["sSuperb"] = "Hervorr.",
+	["sLegend"] = "Legendär",
+	["sArtifact"] = "Artefakt",
+	["lFirstTagger"] = "Erster gewinnt",
+	["lRoundRobin"] = "Jeder gegen Jeden",
+	["lFreeForAll"] = "Frei für alle",
+	["lNeedBeforeGreed"] = "Bedarf vor Gier",
+	["lMaster"] = "Beutemeister",
+	["lInferior"] = "Minderwertig",
+	["lAverage"] = "Mittel",
+	["lGood"] = "Gut",
+	["lExcellent"] = "Ausgezeichnet",
+	["lSuperb"] = "Hervorragend",
+	["lLegendary"] = "Legendär",
+	["lArtifact"] = "Artefakt",
+	["Above: "] = "Drüber: ",
+	["Threshold: "] = "Grenzwert: ",
+	["Below: "] = "Drunter: ",
+	["Harvests: "] = "Sammeln: ",
+	["Readycheck"] = "Bereitschaftscheck",
+	["To Raid"] = "Zum Raid",
+	["Disband"] = "Auflösen",
+}, {--[[French]]
+})
+
 local ceil = math.ceil
 
 local extendDir = "row" --or "col"
@@ -316,12 +384,15 @@ do --FastMenu
 		[GroupLib.LootThreshold.Legendary] = "Legendary",
 		[GroupLib.LootThreshold.Artifact] = "Artifact"}
 	
-	local shorts = { FirstTagger = "First", RoundRobin = "Round Robin", FreeForAll = "FFA", NeedBeforeGreed = "Need & Greed", Master = "Master",
-		Average = "Average", Good = "Good", Excellent = "Excellent", Superb = "Superb", Legendary = "Legend", Artifact = "Artifact", Inferior = "Inferior" }
-	local longer = { FirstTagger = "First Tagger", RoundRobin = "Round Robin", FreeForAll = "Free For All", 
-		NeedBeforeGreed = "Need Before Greed ", Master = "Master Looter", Average = "Average", Good = "Good", 
-		Excellent = "Excellent", Superb = "Superb", Legendary = "Legendary", Artifact = "Artifact", Inferior = "Inferior"}
-	
+	local shorts = { FirstTagger = L["sFirtTagger"], RoundRobin = L["sRoundRobin"], FreeForAll = L["sFreeForAll"], 
+		NeedBeforeGreed = L["sNeedBeforeGreed"], Master = L["sMaster"],
+		Average = L["sAverage"], Good = L["sGood"], Excellent = L["sExcellent"], Superb = L["sSuperb"], 
+		Legendary = L["sLegend"], Artifact = L["sArtifact"], Inferior = L["sInferior"] }
+	local longer = { FirstTagger = L["lFirstTagger"], RoundRobin = L["lRoundRobin"], FreeForAll = L["lFreeForAll"], 
+		NeedBeforeGreed = L["lNeedBeforeGreed"], Master = L["lMaster"], Average = L["lAverage"], Good = L["lGood"], 
+		Excellent = L["lExcellent"], Superb = L["lSuperb"], Legendary = L["lLegendary"], Artifact = L["lArtifact"], Inferior = L["lInferior"]}
+		
+		
 	local function trans(str)
 		if not str or not longer[str] then
 			return str or ""
@@ -350,37 +421,37 @@ do --FastMenu
 	
 	function RClickHandler:SetAbove(val)
 		if type(val) == "number" then --only apply String
-			oAbove:Set("Above: "..shorts[Inv_Rule[val]])
+			oAbove:Set(L["Above: "]..shorts[Inv_Rule[val]])
 		elseif val and shorts[val] then --the dropdown had selected something
 			applyLoot(GroupLib.LootRule[val], nil, nil, nil)
-			oAbove:Set("Above: "..shorts[val])
+			oAbove:Set(L["Above: "]..shorts[val])
 		end
 	end
 	
 	function RClickHandler:SetBelow(val)
 		if type(val) == "number" then --only apply String
-			oBelow:Set("Below: "..shorts[Inv_Rule[val]])
+			oBelow:Set(L["Below: "]..shorts[Inv_Rule[val]])
 		elseif val and shorts[val] then --the dropdown had selected something
 			applyLoot(nil, nil, GroupLib.LootRule[val], nil)
-			oBelow:Set("Below: "..shorts[val])
+			oBelow:Set(L["Below: "]..shorts[val])
 		end
 	end
 	
 	function RClickHandler:SetThreshold(val)
 		if type(val) == "number" then --only apply String
-			oThreshold:Set("Threshold: "..shorts[Inv_Threshold[val]])
+			oThreshold:Set(L["Threshold: "]..shorts[Inv_Threshold[val]])
 		elseif val and shorts[val] then --the dropdown had selected something
 			applyLoot(nil, GroupLib.LootThreshold[val], nil, nil)
-			oThreshold:Set("Threshold: "..shorts[val])
+			oThreshold:Set(L["Threshold: "]..shorts[val])
 		end
 	end
 	
 	function RClickHandler:SetHarvest(val)
 		if type(val) == "number" then --only apply String
-			oHarvest:Set("Harvests: "..shorts[Inv_Harvest[val]])
+			oHarvest:Set(L["Harvests: "]..shorts[Inv_Harvest[val]])
 		elseif val and shorts[val] then --the dropdown had selected something
 			applyLoot(nil, nil, nil, GroupLib.HarvestLootRule[val])
-			oHarvest:Set("Harvests: "..shorts[val])
+			oHarvest:Set(L["Harvests: "]..shorts[val])
 		end
 	end
 	
@@ -490,7 +561,11 @@ do --FastMenu
 		self.btnReady = self.frame:FindChild("Button_Ready")
 		self.btnRaid = self.frame:FindChild("Button_2Raid")
 		self.btnDisband = self.frame:FindChild("Button_Disband")
-		--parent, choices, selector, translator, ..
+		
+		self.btnReady:SetText(L["Readycheck"])
+		self.btnRaid:SetText(L["To Raid"])
+		self.btnDisband:SetText(L["Disband"])
+		
 		self.dropAbove = MRF:applyDropdown(self.frame:FindChild("Loot_Above"), Loot_Rule, oAbove, trans).drop:FindChild("DropdownButton")
 		self.dropThres = MRF:applyDropdown(self.frame:FindChild("Loot_Threshold"), Loot_Threshold, oThreshold, trans).drop:FindChild("DropdownButton")
 		self.dropBelow = MRF:applyDropdown(self.frame:FindChild("Loot_Below"), Loot_Rule, oBelow, trans).drop:FindChild("DropdownButton")

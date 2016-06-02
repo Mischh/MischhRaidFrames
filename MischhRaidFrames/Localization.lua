@@ -28,3 +28,10 @@ function MRF:Localize(eng, ger, fre)
 	
 	return eng
 end
+
+--[[
+local L = MRF:Localize({--English
+}, {--German
+}, {--French
+})
+--]]
