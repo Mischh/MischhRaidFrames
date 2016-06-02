@@ -147,15 +147,16 @@ end
 
 local oldLevel = nil
 function MRF:SelectedProfile(eLevel)
-	local succ, err = pcall(function()
+	local err, traceback;
+	local succ, err = xpcall(function()
 		if self.blockSwitch or oldLevel == eLevel then return end
 		oldLevel = eLevel
 		self:SwitchToProfile(eLevel)
-	end)
-	if succ then return end
-	print("Error while switching Profiles:")
-	print(err)
-	print(debug.traceback())
+	end, function(err)
+		Print("Error while switching Profiles:")
+		Print(err)
+		Print(debug.traceback())
+	end)	
 end
 
 
@@ -217,7 +218,7 @@ function MRF:CheckFrameTemplate(frame)
 				frame[pos] = nil
 				changed = true
 			elseif dupBar[bar.modKey] then
-				Print("The frame-template had multiple instaces of the bar '"..tostring(bar.modKey).." - removed the last found instance.")
+				Print("The frame-template had multiple instaces of the bar '"..tostring(bar.modKey).."' - removed the last found instance.")
 				frame[pos] = nil
 				changed = true
 			else
@@ -230,7 +231,7 @@ function MRF:CheckFrameTemplate(frame)
 					bar.textSource = nil
 					changed = true
 				elseif dupTxt[bar.textSource] then
-					Print("The frame-template had multiple instaces of the text '"..tostring(bar.textSource).." - removed the last found instance.")
+					Print("The frame-template had multiple instaces of the text '"..tostring(bar.textSource).."' - removed the last found instance.")
 					bar.textSource = nil
 					changed = true
 				else
