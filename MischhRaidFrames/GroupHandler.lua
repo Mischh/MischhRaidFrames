@@ -2,17 +2,18 @@
 
 local GroupHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
-local groups = nil --applied in GetGroupHandlersRegroup
-local units = nil --applied in GetGroupHandlersRegroup
+local groups = {} --applied in GetGroupHandlersRegroup
+local units = {} --applied in GetGroupHandlersRegroup
 local tinsert = table.insert
 
 local Options = MRF:GetOption(nil, "Group Handler")
+local optResort = MRF:GetOption(Options, "resort")
 local optSavedDef = MRF:GetOption(Options, "cache")
 local optPermSave = MRF:GetOption(Options, "saved")
 local optUse = MRF:GetOption(Options, "use")
 local optAcc = MRF:GetOption(Options, "accept")
 local optLead = MRF:GetOption(Options, "lead")
---MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
+MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
 
 local accept = true --do we accept the leaders groupings?
 local onlyLead = true
@@ -61,6 +62,7 @@ function GroupHandler:Regroup()
 	else
 		GroupHandler:Regroup_Default() --dont change to self!
 	end
+	GroupHandler:Resort()
 	if self ~= GroupHandler then
 		GroupHandler:DistantUpdate() --far below within the Grouping Settings.
 	end
@@ -276,8 +278,102 @@ function MRF:GetGroupHandlersRegroup(unithandler_groups, unithandler_units, Unit
 	return GroupHandler.Regroup
 end
 
+local function append(tar, src, ...)
+	if not src then return tar end
+	for _, v in ipairs(src) do
+		tinsert(tar, v)
+	end
+	return append(tar, ...)
+end
+
+optResort:OnUpdate(GroupHandler, "UpdateResort")
+function GroupHandler:UpdateResort(new)
+	if not new then
+		GroupHandler.Resort = GroupHandler.Resort_None
+	else
+		GroupHandler.Resort = GroupHandler["Resort_"..new]
+	end
+	GroupHandler:Resort()
+	GroupHandler:Reposition()
+end
+
+function GroupHandler:Resort() --== Resort_None
+end
+
+function GroupHandler:Resort_Role()
+	for gidx, group in ipairs(groups) do
+		local t, h, d = {}, {}, {}
+		for _, idx in ipairs(group) do
+			if units[idx]:IsTank() then
+				tinsert(t,idx)
+			elseif units[idx]:IsHeal() then
+				tinsert(h,idx)
+			else
+				tinsert(d,idx)
+			end
+		end
+		groups[gidx] = append(t, h, d)
+		groups[gidx].name = group.name
+	end
+end
+
+function GroupHandler:Resort_Class()
+	for gidx, group in ipairs(groups) do
+		local t = {[GameLib.CodeEnumClass.Warrior] = {}, [GameLib.CodeEnumClass.Engineer] = {}, [GameLib.CodeEnumClass.Esper] = {}, [GameLib.CodeEnumClass.Medic] = {}, [GameLib.CodeEnumClass.Stalker] = {}, [GameLib.CodeEnumClass.Spellslinger] = {}}
+		for _, idx in ipairs(group) do
+			local id = units[idx]:GetClassId()
+			tinsert(t[id], idx)
+		end
+		groups[gidx] = append(t[GameLib.CodeEnumClass.Warrior], t[GameLib.CodeEnumClass.Engineer], 
+							t[GameLib.CodeEnumClass.Esper], t[GameLib.CodeEnumClass.Medic], 
+							t[GameLib.CodeEnumClass.Stalker], t[GameLib.CodeEnumClass.Spellslinger])
+		groups[gidx].name = group.name
+	end
+end
+
+function GroupHandler:Resort_Name()
+	for gidx, group in ipairs(groups) do
+		local name2id = {}
+		for i, idx in ipairs(group) do
+			group[i] = units[idx]:GetName()
+			name2id[group[i]] = idx
+		end
+		table.sort(group) -- sort alphabetically
+		for i, n in ipairs(group) do
+			group[i] = name2id[n]
+		end
+	end
+end
+
+function GroupHandler:Resort_None()
+end
+
 function GroupHandler:InitSettings(parent, name)
+	local form = MRF:LoadForm("SimpleTab", parent)
+	form:FindChild("Title"):SetText(name)
+	parent = form:FindChild("Space")
 	
+	local function trans(x)
+		if not x then 
+			return "None"
+		else
+			return x
+		end
+	end
+	
+	local sortRow = MRF:LoadForm("HalvedRow", parent)
+	sortRow:FindChild("Left"):SetText("Sort-method for groups:")
+	MRF:applyDropdown(sortRow:FindChild("Right"), {false, "Role", "Class", "Name"}, optResort, trans)
+	
+	
+	local children = parent:GetChildren()
+	local anchor = {parent:GetAnchorOffsets()}
+	anchor[4] = anchor[2] + #children*30
+	parent:SetAnchorOffsets(unpack(anchor))
+	parent:ArrangeChildrenVert()
+	parent:GetParent():RecalculateContentExtents()
+	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+	Options:ForceUpdate()
 end
 
 --%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MRF: Grouping %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
