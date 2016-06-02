@@ -5,6 +5,8 @@
 	
 	<Script Name="MischhRaidFrames.lua"/>
     <Form Name="MischhRaidFrames.xml"/>
+	<Script Name="Localization.lua"/>
+	
 	<Script Name="Options.lua" />
 	<Script Name="Settings\UIComponents.lua"/>
 	
