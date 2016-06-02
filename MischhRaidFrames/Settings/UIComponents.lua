@@ -10,6 +10,20 @@ local FORM_COLORBUTTON_TEMPLATE = "ColorButton"
 
 local settingsForm = nil;
 
+local L = MRF:Localize({--[[English]]
+	["Color Picker"] = "Color Picker",
+	["New Color:"] = "New Color:",
+	["Old Color:"] = "Old Color:",
+	["Copy"] = "Copy",
+	["Paste"] = "Paste",
+}, {--[[German]]
+	["Color Picker"] = "Farbauswahl",
+	["New Color:"] = "Neue Farbe:",
+	["Old Color:"] = "Alte Farbe:",
+	["Copy"] = "Kopieren",
+	["Paste"] = "Einfügen",
+}, {--[[French]]})
+
  --[[#####  Dropdown  ######]]
 local function toggleDropdown(self, wndHandler, wndControl)
 	if wndHandler ~= wndControl then
@@ -463,6 +477,12 @@ function MRF:InitColorPicker()
 	colorHandler.oldColor = colorPicker:FindChild("Color_old")
 	colorHandler.newColor = colorPicker:FindChild("Color_new")
 
+	colorHandler.header:SetText(L["Color Picker"])
+	colorPicker:FindChild("Title_NewColor"):SetText(L["New Color:"])
+	colorPicker:FindChild("Title_OldColor"):SetText(L["Old Color:"])
+	colorPicker:FindChild("Button_Copy"):SetText(L["Copy"])
+	colorPicker:FindChild("Button_Paste"):SetText(L["Paste"])	
+	
 	function MRF:InitColorPicker() --replace the function, we do not want this to be done multiple times.
 		return colorHandler
 	end
