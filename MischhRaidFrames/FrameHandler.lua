@@ -609,81 +609,126 @@ function FrameHandler:BuildLimitlessSlider(slider)
 end
 
 function FrameHandler:InitSettings(parent, name)
+	local L = MRF:Localize({--English
+		["Frame Width:"] = "Frame Width:",
+		["Frame Height:"] = "Frame Height:",
+		["qSize"] = [[These Sliders set the size of each unit-frame inside your group.]],
+		["Frame Inset:"] = "Frame Inset:",
+		["qInset"] = [[This Option lets you select how far the actual bars are inset from each of the frames edges.]],
+		["Anchor Left Offset:"] = "Anchor Left Offset:",
+		["Anchor Top Offset:"] = "Anchor Top Offset:",
+		["qOffset"] = [[These two sliders define where the top-left corner of the raid will be.]],
+		["Fill-Direction:"] = "Fill-Direction:",
+		["First right"] = "First right",
+		["First down"] = "First down",
+		["Fill-Until:"] = "Fill-Until:",
+		["qFill"] = [[These Options define which direction the addon should fill your raid first and how many its maximally allowed to display in that direction.
+				Note that if the addon is allowed to display less downside than there are groups(tanks, heals, dps), he will still display a row for each group.]],
+		["Frame Spaces - Horizontal:"] = "Frame Spaces - Horizontal:",
+		["Frame Spaces - Vertical:"] = "Frame Spaces - Vertical:",
+		["qFSpace"] = [[With these sliders you can apply additional spaces between the Frames. No space will be added left of the left-most frame, top of the top-most frame, ...]],
+		["Header Spaces - Top:"] = "Header Spaces - Top:",
+		["Header Spaces - Bottom:"] = "Header Spaces - Bottom:",
+		["qHSpace"] = [[These allow you to make space above and below the group-headers (tank, heal, dps). No space will be added top of the first header]],
+	}, {--German
+		["Frame Width:"] = "Frame Breite:",
+		["Frame Height:"] = "Frame Höhe:",
+		["qSize"] = [[Diese Schieberegler bestimmen die Größe eines jeden Frames in dem Raid.]],
+		["Frame Inset:"] = "Innenseitiger Abstand:",
+		["qInset"] = [[Diese Option erlaubt es die Bars weiter vom Rand des Frames zu entfernen.]],
+		["Anchor Left Offset:"] = "Ankerpunkt Links:",
+		["Anchor Top Offset:"] = "Ankerpunkt Oben:",
+		["qOffset"] = [[Diese Schieberegler ermöglichen es die obere linke Ecke des Raids zu verschieben.]],
+		["Fill-Direction:"] = "Füll-Richtung:",
+		["First right"] = "Rechts zuerst",
+		["First down"] = "Runter zuerst",
+		["Fill-Until:"] = "Füllen, bis:",
+		["qFill"] = [[Diese Optionen definieren, in welche Richtung das Addon zunächst den Raid füllen soll und wieviele Frames es maximal in diese Richtung platzieren darf.
+						Achtung: Falls es dem Addon nicht erlaubt wird mindestens genausoviele Frames nach unten zu Zeichnen, wie es Gruppen(Tank/Heal/DD) gibt, so wird das Addon dennoch genau diese Anzahl an Reihen erstellen.]],
+		["Frame Spaces - Horizontal:"] = "Frame Abstände - Horizontal:",
+		["Frame Spaces - Vertical:"] = "Frame Abstände - Vertikal:",
+		["qFSpace"] = [[Mit diesen Schiebereglern kann mehr Platz zwischen den einzelnen Frames geschaffen werden. Oberhalb des obersten, unterhalb des untersten(, ...) wird kein zusätzlicher Abstand eingefügt.]],
+		["Header Spaces - Top:"] = "Überschriften-Abstand - Oberhalb:",
+		["Header Spaces - Bottom:"] = "Überschriften-Abstand - Unterhalb:",
+		["qHSpace"] = [[Hier kann mehr Platz über/unter den Gruppen-Überschriften geschaffen werden.]],
+	}, {--French
+	})
+	
+
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
 	
 	local wOpt = MRF:GetOption(frameOpt, "size", 3)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
-	wRow:FindChild("Left"):SetText("Frame Width:")
+	wRow:FindChild("Left"):SetText(L["Frame Width:"])
 	self:BuildLimitlessSlider(MRF:applySlider(wRow:FindChild("Right"), wOpt, 0, 100, 1))
 		
 	local hOpt = MRF:GetOption(frameOpt, "size", 4)
 	local hRow = MRF:LoadForm("HalvedRow", parent)
-	hRow:FindChild("Left"):SetText("Frame Height:")
+	hRow:FindChild("Left"):SetText(L["Frame Height:"])
 	self:BuildLimitlessSlider(MRF:applySlider(hRow:FindChild("Right"), hOpt, 0, 100, 1))
 	
 	local whQuest = MRF:LoadForm("QuestionMark", wRow:FindChild("Left"))
-	whQuest:SetTooltip([[These Sliders set the size of each unit-frame inside your group.]])
+	whQuest:SetTooltip(L["qSize"])
 	
 	local iOpt = MRF:GetOption(frameOpt, "inset")
 	local iRow = MRF:LoadForm("HalvedRow", parent)
-	iRow:FindChild("Left"):SetText("Frame Inset:")
+	iRow:FindChild("Left"):SetText(L["Frame Inset:"])
 	MRF:applySlider(iRow:FindChild("Right"), iOpt, 0, 20, 1)
 	
 	local iQuest = MRF:LoadForm("QuestionMark", iRow:FindChild("Left"))
-	iQuest:SetTooltip([[This Option lets you select how far the actual bars are inset from each of the frames edges.]])
+	iQuest:SetTooltip(L["qInset"])
 	
 	MRF:LoadForm("HalvedRow", parent)
 	
 	local xRow = MRF:LoadForm("HalvedRow", parent)
-	xRow:FindChild("Left"):SetText("Anchor Left Offset:")
+	xRow:FindChild("Left"):SetText(L["Anchor Left Offset:"])
 	self:BuildLimitlessSlider(MRF:applySlider(xRow:FindChild("Right"), xOption, 0, 100, 1))
 	
 	local yRow = MRF:LoadForm("HalvedRow", parent)
-	yRow:FindChild("Left"):SetText("Anchor Top Offset:")
+	yRow:FindChild("Left"):SetText(L["Anchor Top Offset:"])
 	self:BuildLimitlessSlider(MRF:applySlider(yRow:FindChild("Right"), yOption, 0, 100, 1))
 	
 	local aQuest = MRF:LoadForm("QuestionMark", xRow:FindChild("Left"))
-	aQuest:SetTooltip([[These two sliders define where the top-left corner of the raid will be.]])
+	aQuest:SetTooltip(L["qOffset"])
 	
 	local dirRow = MRF:LoadForm("HalvedRow", parent)
-	dirRow:FindChild("Left"):SetText("Fill-Direction:")
+	dirRow:FindChild("Left"):SetText(L["Fill-Direction:"])
 	MRF:applyDropdown(dirRow:FindChild("Right"), {"row", "col"}, dirOption, function(x) 
-		if x == "row" then return "First right"
-		elseif x == "col" then return "First down"
+		if x == "row" then return L["First right"]
+		elseif x == "col" then return L["First down"]
 		else return "" end
 	end)
 	
 	local lenRow = MRF:LoadForm("HalvedRow", parent)
-	lenRow:FindChild("Left"):SetText("Fill-Until:")
+	lenRow:FindChild("Left"):SetText(L["Fill-Until:"])
 	MRF:applySlider(lenRow:FindChild("Right"), lenOption, 1, 40, 1)
 	
 	local fQuest = MRF:LoadForm("QuestionMark", dirRow:FindChild("Left"))
-	fQuest:SetTooltip([[These Options define which direction the addon should fill your raid first and how many its maximally allowed to display in that direction.
-	Note that if the addon is allowed to display less downside than there are groups(tanks, heals, dps), he will still display a row for each group.]])
+	fQuest:SetTooltip(L["qFill"])
 	
 	local hRow = MRF:LoadForm("HalvedRow", parent)
-	hRow:FindChild("Left"):SetText("Frame Spaces - Horizontal:")
+	hRow:FindChild("Left"):SetText(L["Frame Spaces - Horizontal:"])
 	MRF:applySlider(hRow:FindChild("Right"), hSpFrOpt, -20, 80, 1)
 	
 	local vRow = MRF:LoadForm("HalvedRow", parent)
-	vRow:FindChild("Left"):SetText("Frame Spaces - Vertical:")
+	vRow:FindChild("Left"):SetText(L["Frame Spaces - Vertical:"])
 	MRF:applySlider(vRow:FindChild("Right"), vSpFrOpt, -20, 80, 1)
 	
 	local sfQuest = MRF:LoadForm("QuestionMark", hRow:FindChild("Left"))
-	sfQuest:SetTooltip([[With these sliders you can apply additional spaces between the Frames. No space will be added left of the left-most frame, top of the top-most frame, ...]])
+	sfQuest:SetTooltip(L["qFSpace"])
 	
 	local tRow = MRF:LoadForm("HalvedRow", parent)
-	tRow:FindChild("Left"):SetText("Header Spaces - Top:")
+	tRow:FindChild("Left"):SetText(L["Header Spaces - Top:"])
 	MRF:applySlider(tRow:FindChild("Right"), tSpHeOpt, -20, 80, 1)
 	
 	local bRow = MRF:LoadForm("HalvedRow", parent)
-	bRow:FindChild("Left"):SetText("Header Spaces - Bottom:")
+	bRow:FindChild("Left"):SetText(L["Header Spaces - Bottom:"])
 	MRF:applySlider(bRow:FindChild("Right"), bSpHeOpt, -20, 80, 1)
 	
 	local shQuest = MRF:LoadForm("QuestionMark", tRow:FindChild("Left"))
-	shQuest:SetTooltip([[These allow you to make space above and below the group-headers (tank, heal, dps). No space will be added top of the first header]])	
+	shQuest:SetTooltip(L["qHSpace"])	
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
