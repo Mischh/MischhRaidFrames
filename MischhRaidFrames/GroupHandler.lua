@@ -15,6 +15,31 @@ local optAcc = MRF:GetOption(Options, "accept")
 local optLead = MRF:GetOption(Options, "lead")
 MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
 
+local L = MRF:Localize({--English
+	["Ungrouped"] = "Ungrouped",
+	["Tanks"] = "Tanks",
+	["Heals"] = "Heals",
+	["DPS"] = "DPS",
+	["None"] = "None",
+	["Role"] = "Role",
+	["Class"] = "Class",
+	["Name"] = "Name",
+	["Sort-method for groups:"] = "Sort-method for groups:",
+	["New Group"] = "New Group"
+}, {--German
+	["Ungrouped"] = "Ungruppiert",
+	["Tanks"] = "Tanks",
+	["Heals"] = "Heiler",
+	["DPS"] = "DDs",
+	["None"] = "Keine",
+	["Role"] = "Rolle",
+	["Class"] = "Klasse",
+	["Name"] = "Name",
+	["Sort-method for groups:"] = "Gruppen-Sortierungsmethode:",
+	["New Group"] = "Neue Gruppe"
+}, {--French
+})
+
 local accept = true --do we accept the leaders groupings?
 local onlyLead = true
 local useUserDef = false
@@ -74,7 +99,7 @@ function GroupHandler:Regroup_User()
 		groups[i] = {["name"] = name}
 	end
 	local unI = #userdef+1 --ungrouped Index
-	groups[unI] = {name = "Ungrouped"}
+	groups[unI] = {name = L["Ungrouped"]}
 	
 	for i, unit in ipairs(units) do
 		local n = unit:GetName()
@@ -86,9 +111,9 @@ end
 
 function GroupHandler:Regroup_Default()
 	iwipe(groups)
-	groups[1] = {name = "Tanks"}
-	groups[2] = {name = "Heals"}
-	groups[3] = {name = "DPS"}
+	groups[1] = {name = L["Tanks"]}
+	groups[2] = {name = L["Heals"]}
+	groups[3] = {name = L["DPS"]}
 	
 	for i,unit in ipairs(units) do
 		if unit:IsTank() then
@@ -355,14 +380,14 @@ function GroupHandler:InitSettings(parent, name)
 	
 	local function trans(x)
 		if not x then 
-			return "None"
+			return L["None"]
 		else
-			return x
+			return L[x]
 		end
 	end
 	
 	local sortRow = MRF:LoadForm("HalvedRow", parent)
-	sortRow:FindChild("Left"):SetText("Sort-method for groups:")
+	sortRow:FindChild("Left"):SetText(L["Sort-method for groups:"])
 	MRF:applyDropdown(sortRow:FindChild("Right"), {false, "Role", "Class", "Name"}, optResort, trans)
 	
 	
@@ -462,7 +487,7 @@ end
 
 local function findUniqueName(i)
 	i = i or 0
-	local n = "New Group"..(i>0 and " "..i or "")
+	local n = L["New Group"]..(i>0 and " "..i or "")
 	for _, name in ipairs(userdef) do
 		if name == n then
 			return findUniqueName(i+1)
@@ -713,21 +738,99 @@ end
 function MRF:InitGroupForm()
 	if form then return form:Show(true, false) end
 	
+	local L = MRF:Localize({--English
+		["Title"] = "MRF: Grouping",
+		["SaveTitle"] = "Save and Load",
+		["Activate"] = "Activate",
+		["Accept"] = "Accept",
+		["Lead only"] = "Lead only",
+		["ttActivated"] = "Use these Settings instead of the Default tank-heal-dps groups.",
+		["ttAccept"] = "Accept published Settings from Chat.",
+		["ttAll"] = "Published settings are only imported from the group-leader.",
+		["ttGroupName"] = [[Note: Every groups name needs to be unique.]],
+		["ttPublish"] = [[Publishes your current settings to the group.
+			This and other addons may only accept the settings, if you are the leader of the group.
+			The addon can only publish settings for units, which are currently in your group. Make sure they are.]],
+		["select one"] = "select one",
+		["Publish"] = "Publish",
+		["Ungrouped:"] = "Ungrouped:",
+		["Add"] = "Add",
+		["Groups:"] = "Groups:",
+		["Rem."] = "Rem.",
+		["Reset All"] = "Reset All",
+		["Save/Load"] = "Save/Load",
+		["Save As:"] = "Save As:",
+		["Load this:"] = "Load this:",
+		["Remove this:"] = "Remove this:",
+		["ttToGroup"] = "Move all from ungrouped to the selected group.",
+		["ttFromGroup"] = "Remove all from the selected group.",
+		["ttAdd"] = "Add a new group.",
+		["ttRemove"] = "Remove the selected group.",
+		["ttReset"] = "Remove all groups.",
+	}, {--German
+		["Title"] = "MRF: Gruppierung",
+		["SaveTitle"] = "Speichern und Laden",
+		["Activate"] = "Aktiviert",
+		["Accept"] = "Akzeptiere",
+		["Lead only"] = "Nur Leiter",
+		["ttActivated"] = "Nutze diese Einstellungen, anstelle der normalen tank-heiler-DD gruppen.",
+		["ttAccept"] = "Akzeptiere publizierte Einstellungen aus dem Chat.",
+		["ttAll"] = "Akzeptiere nur die Einstellungen des Gruppenleiters.",
+		["ttGroupName"] = [[Achtung: Jede Gruppe muss einen einzigartigen Namen haben!]],
+		["ttPublish"] = [[Publiziert deine momentanen Gruppen im Chat.
+			Dieses, sowie andere AddOns könnten möglicherweise diese Publikation nur akzeptieren, falls du der Gruppenleiter bist.
+			Dem Addon ist es nur möglich die Einstellungen für momentane Mitglieder der Gruppe zu Teilen.]],
+		["select one"] = "wähle eine",
+		["Publish"] = "Publiz.",--
+		["Ungrouped:"] = "Ungruppiert:",--
+		["Add"] = "+",--
+		["Groups:"] = "Gruppen:",--
+		["Rem."] = "-",--
+		["Reset All"] = "Zurücksetzen",--
+		["Save/Load"] = "Speichern",--
+		["Save As:"] = "Speichern als:",--
+		["Load this:"] = "Lade diese:",--
+		["Remove this:"] = "Lösche diese:",--
+		["ttToGroup"] = "Füge alle Ungruppierten der momentan ausgewählten Gruppe hinzu.",
+		["ttFromGroup"] = "Entferne alle aus der ausgewählten Gruppe.",
+		["ttAdd"] = "Füge eine neue Gruppe hinzu.",
+		["ttRemove"] = "Entferne die ausgewählte Gruppe.",
+		["ttReset"] = "Entferne alle Gruppen.",
+	}, {--French
+	})
+	
 	form = self:LoadForm("GroupingForm", nil, handler)
 	handler.saveMenu = form:FindChild("SavesFrame")
 	ungrHandler.parent = form:FindChild("Ungrouped:Items")
 	grpdHandler.parent = form:FindChild("Grouped:Items")
 	grouHandler.parent = form:FindChild("Groups:Items")
 	
-	MRF:applyCheckbox(form:FindChild("Checkbox_Activated"), optUse, "Activate").form:SetTooltip("Use these Settings instead of the Default tank-heal-dps groups.")
-	MRF:applyCheckbox(form:FindChild("Checkbox_Accept"), optAcc, "Accept").form:SetTooltip("Accept published Settings from Chat.")
-	MRF:applyCheckbox(form:FindChild("Checkbox_All"), optLead, "Lead only").form:SetTooltip("Published settings are only imported from the group-leader.")
+	MRF:applyCheckbox(form:FindChild("Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
+	MRF:applyCheckbox(form:FindChild("Checkbox_Accept"), optAcc, L["Accept"]).form:SetTooltip(L["ttAccept"])
+	MRF:applyCheckbox(form:FindChild("Checkbox_All"), optLead, L["Lead only"]).form:SetTooltip(L["ttAll"])
 	MRF:applyTextbox(form:FindChild("Textbox_GroupName"), optGrName)
-	MRF:LoadForm("QuestionMark", form:FindChild("Textbox_GroupName")):SetTooltip([[Note: Every groups name needs to be unique.]])
+	MRF:LoadForm("QuestionMark", form:FindChild("Textbox_GroupName")):SetTooltip(L["ttGroupName"])
 	
-	form:FindChild("Group_Publish"):SetTooltip([[Publishes your current settings to the group.
-	This and other addons may only accept the settings, if you are the leader of the group.
-	The addon can only publish settings for units, which are currently in your group. Make sure they are.]])
+	form:FindChild("Title"):SetText(L["Title"])
+	form:FindChild("lblUngrouped"):SetText(L["Ungrouped:"])
+	form:FindChild("lblGroups"):SetText(L["Groups:"])
+	form:FindChild("Group_Add"):SetText(L["Add"])
+	form:FindChild("Group_Remove"):SetText(L["Rem."])
+	form:FindChild("Group_Publish"):SetText(L["Publish"])
+	form:FindChild("Group_Reset"):SetText(L["Reset All"])
+	form:FindChild("Button_OpenSave"):SetText(L["Save/Load"])
+	form:FindChild("SavesFrame:Title"):SetText(L["SaveTitle"])
+	form:FindChild("SavesFrame:Button_SaveTo"):SetText(L["Save As:"])
+	form:FindChild("SavesFrame:lblLoad"):SetText(L["Load this:"])
+	form:FindChild("SavesFrame:lblRemove"):SetText(L["Remove this:"])
+	
+	form:FindChild("All_ToGroup"):SetTooltip(L["ttToGroup"])
+	form:FindChild("All_FromGroup"):SetTooltip(L["ttFromGroup"])
+	form:FindChild("Group_Add"):SetTooltip(L["ttAdd"])
+	form:FindChild("Group_Remove"):SetTooltip(L["ttRemove"])
+	form:FindChild("Group_Reset"):SetTooltip(L["ttReset"])
+	
+	form:FindChild("Group_Publish"):SetTooltip(L["ttPublish"])
 	
 	ungrHandler = setmetatable(ungrHandler, {__index = function(t,k) 
 		if type(k) == "number" then
@@ -766,7 +869,7 @@ function MRF:InitGroupForm()
 		end
 	}
 	local function trans(i)
-		return i and permData[i].name or "select one"
+		return i and permData[i].name or L["select one"]
 	end
 	MRF:applyDropdown(form:FindChild("SavesFrame:Dropdown_Load"), permRef, optLoad, trans)
 	MRF:applyDropdown(form:FindChild("SavesFrame:Dropdown_Remove"), permRef, optRemove, trans)
