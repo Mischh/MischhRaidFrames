@@ -249,34 +249,55 @@ end
 
 
 function UnitHandler:InitSettings(parent, name)
+	local L = MRF:Localize({--English
+		["Time between two unit updates:"] = "Time between two unit updates:",
+		["ttUnit"] = [[Example for a value of one Second: 
+			Between the update of unit1 and unit2 will be (about) one second.
+			
+			Unit updates are far less useful. These just try to make the unit in the frame the correct one. Frequent updates instead retrieve information from this unit and apply them to the frame.]],
+		["Time for each frequent update:"] = "Time for each frequent update:",
+		["ttFreq"] = [[Example for a value of one Second:
+			EVERY unit recieves a update (about) each second.
+			
+			Tick the Checkbox to replace this functionality and make all units get a update each frame. This results in having all units being updated about 60 times each second at 60fps]],
+		["Instead update all on each frame"] = "Instead update all on each frame",
+	}, {--German
+		["Time between two unit updates:"] = "Zeit zwischen zwei Spieler-Aktualisierungen",
+		["ttUnit"] = [[Beispiel für einen Wert von einer Sekunde: 
+			Zwischen den Aktualisierungen von Spieler1 und Spieler2 liegt (etwa) eine Sekunde.
+			
+			Spieler-Aktualisierungen sind weit uninteressanter, als die regelmäßigen Aktualisierungen, denn Spieler-Aktualisierungen versuchen nur immer den korrekten Spieler seinem Frame zugewiesen zu haben. Regelmäßige Aktualisierungen lesen Informationen aus diesen Spielern aus und weisen diese dem Frame zu.]],
+		["Time for each frequent update:"] = "Zeit für jede regelmäßige Aktualisierung:",
+		["ttFreq"] = [[Beispiel für einen Wert von einer Sekunde:
+			JEDES Frame wird einmal die Sekunde mit Informationen aus dem Spieler aktualisiert.
+			
+			Platziere den Haken um diese Funktionalität zu entfernen und einfach alle immer zu aktualisieren. Bsp: Bei 60fps würde jedes Frame 60 mal die Sekunde aktualisiert.]],
+		["Instead update all on each frame"] = "Stattdessen permanent aktualisieren.",
+	}, {--French
+	})
+
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
 	
 	local unitRow = MRF:LoadForm("HalvedRow", parent)
-	unitRow:FindChild("Left"):SetText("Time between two unit updates:")
+	unitRow:FindChild("Left"):SetText(L["Time between two unit updates:"])
 	MRF:applySlider(unitRow:FindChild("Right"), unitOpt, 0.1, 2, 0.1)
 	
 	local unitQuest = MRF:LoadForm("QuestionMark", unitRow:FindChild("Left"))
-	unitQuest:SetTooltip([[Example for a value of one Second: 
-	Between the update of unit1 and unit2 will be (about) one second.
-	
-	Unit updates are far less useful. These just try to make the unit in the frame the correct one. Frequent updates instead retrieve information from this unit and apply them to the frame.]])
+	unitQuest:SetTooltip(L["ttUnit"])
 	
 	MRF:LoadForm("HalvedRow", parent)
 	
 	local freqRow = MRF:LoadForm("HalvedRow", parent)
-	freqRow:FindChild("Left"):SetText("Time for each frequent update:")
+	freqRow:FindChild("Left"):SetText(L["Time for each frequent update:"])
 	MRF:applySlider(freqRow:FindChild("Right"), freqOpt, 0.1, 2, 0.1)
 	
 	local eachRow = MRF:LoadForm("HalvedRow", parent)
-	MRF:applyCheckbox(eachRow:FindChild("Right"), eachOpt, "Instead update all on each frame")
+	MRF:applyCheckbox(eachRow:FindChild("Right"), eachOpt, L["Instead update all on each frame"])
 	
 	local freqQuest = MRF:LoadForm("QuestionMark", freqRow:FindChild("Left"))
-	freqQuest:SetTooltip([[Example for a value of one Second:
-	EVERY unit recieves a update (about) each second.
-	
-	Tick the Checkbox to replace this functionality and make all units get a update each frame. This results in having all units being updated about 60 times each second at 60fps]])
+	freqQuest:SetTooltip(L["ttFreq"])
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
