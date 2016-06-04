@@ -496,9 +496,9 @@ do --FastMenu
 		self.btnTank:SetCheck(unit.bTank == true)
 		self.btnHeal:SetCheck(unit.bHealer == true)
 		self.btnDps:SetCheck(unit.bDPS == true)
-		self.btnTank:Enable(noInst)
-		self.btnHeal:Enable(noInst)
-		self.btnDps:Enable(noInst)
+		self.btnTank:Enable(noInst or isRaid)
+		self.btnHeal:Enable(noInst or isRaid)
+		self.btnDps:Enable(noInst or isRaid)
 		
 		--Additional Buttons		
 		self.btnReady:Enable(isRaid and (GroupLib.GetGroupMember(1) or {}).bCanMark or noInst and isLead or false)
