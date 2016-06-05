@@ -1,3 +1,13 @@
+<p><strong>Release v1.2a:</strong></p>
+<p>Fixes:</p>
+<ul>
+<li>Within Raided Instances (aka Battlegrounds) you have not been able to change Role (untested)</li>
+</ul>
+<p>Added:</p>
+<ul>
+<li>GroupHandler: Allow to set a sort method to be used&nbsp;on each group individually</li>
+<li>Localization: started to Localize the Addon to German.</li>
+</ul>
 <p><strong>Release v1.2:</strong></p>
 <p>Fixes:</p>
 <ul>
