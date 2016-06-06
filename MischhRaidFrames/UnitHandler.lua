@@ -179,6 +179,7 @@ end
 local FakePrototype = {}
 function FakePrototype:ApplyUnit(groupMember, unit) self.tbl = groupMember; self.unit = unit end
 function FakePrototype:GetRealUnit() return rawget(self,"unit") end
+function FakePrototype:GetMemberIdx() return self.tbl.nMemberIdx end
 function FakePrototype:GetTargetMarker() return self.tbl.nMarkerId end
 function FakePrototype:GetClassId() return self.tbl.eClassId end
 function FakePrototype:GetName() return self.tbl.strCharacterName end
