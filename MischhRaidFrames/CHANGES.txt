@@ -1,4 +1,4 @@
-<p><strong>Release v1.2a_2:</strong></p>
+<p><strong>Release v1.2b:</strong></p>
 <p>Fixes:</p>
 <ul>
 <li>The Grouping-Frame should now work again, after being broken in v1.2a, sorry.</li>
