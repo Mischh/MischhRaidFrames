@@ -43,6 +43,7 @@ local L = MRF:Localize({--[[English]]
 	["Below: "] = "Below: ",
 	["Harvests: "] = "Harvests: ",
 	["Readycheck"] = "Readycheck",
+	["Switch Instance"] = "Switch Instance",
 	["To Raid"] = "To Raid",
 	["Disband"] = "Disband",
 	
@@ -76,6 +77,7 @@ local L = MRF:Localize({--[[English]]
 	["Below: "] = "Drunter: ",
 	["Harvests: "] = "Sammeln: ",
 	["Readycheck"] = "Bereitschaftscheck",
+	["Switch Instance"] = "Instanz wechseln",
 	["To Raid"] = "Zum Raid",
 	["Disband"] = "Auflösen",
 }, {--[[French]]
@@ -502,6 +504,7 @@ do --FastMenu
 		
 		--Additional Buttons		
 		self.btnReady:Enable(isRaid and (GroupLib.GetGroupMember(1) or {}).bCanMark or noInst and isLead or false)
+		self.btnInstance:Enable(GroupLib.CanGotoGroupInstance())
 		self.btnRaid:Enable(isLead and not isRaid and noInst or false )
 		self.btnDisband:Enable(isLead and noInst or false)
 		
@@ -518,6 +521,13 @@ do --FastMenu
 			self.dropAbove:Enable(false); self.dropThres:Enable(false); self.dropBelow:Enable(false); self.dropHarvest:Enable(false);
 		end
 		
+	end
+	
+	function RClickHandler:SwitchInstance( wndHandler, wndControl, eMouseButton )
+		if wndHandler ~= wndControl then return end
+		if GroupLib.CanGotoGroupInstance() then
+			GroupLib.GotoGroupInstance()
+		end
 	end
 	
 	function RClickHandler:Readycheck( wndHandler, wndControl, eMouseButton )
@@ -559,9 +569,11 @@ do --FastMenu
 		self.btnHeal = self.frame:FindChild("Button_Healer")
 		self.btnDps = self.frame:FindChild("Button_Dps")
 		self.btnReady = self.frame:FindChild("Button_Ready")
+		self.btnInstance = self.frame:FindChild("Button_Instance")
 		self.btnRaid = self.frame:FindChild("Button_2Raid")
 		self.btnDisband = self.frame:FindChild("Button_Disband")
 		
+		self.btnInstance:SetText(L["Switch Instance"])
 		self.btnReady:SetText(L["Readycheck"])
 		self.btnRaid:SetText(L["To Raid"])
 		self.btnDisband:SetText(L["Disband"])
