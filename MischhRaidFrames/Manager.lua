@@ -43,32 +43,6 @@ function MRF:HasModule(key)
 	return modules[key]
 end
 
-function MRF:InitManager(options)
-	if options then
-		self:InitModules(options.modules)
-	end
-	
-end
-
-function MRF:InitModules(options)
-	for modKey, opt in pairs(options or {}) do
-		if not modules[modKey] then
-			Print("Found options for Module '"..modKey.."', but there is no Module with this name. Options will be ignored.")
-		else
-			notInitialized[modKey] = nil
-			modules[modKey]:InitModule(opt)
-		end
-	end
-	
-	for modKey, mod in pairs(notInitialized) do
-		Print("Module '"..modKey.."' had no Options... loading with Defaults.")
-		modules[modKey]:InitModule()
-	end
-end
-
-function MRF:GetOptions()
-end
-
 function MRF:GetDefaultColor()
 	local cTbl = modules["Default Color"]:GetColorTable()
 	
