@@ -13,6 +13,8 @@ local optPermSave = MRF:GetOption(Options, "saved")
 local optUse = MRF:GetOption(Options, "use")
 local optAcc = MRF:GetOption(Options, "accept")
 local optLead = MRF:GetOption(Options, "lead")
+local optActAcc = MRF:GetOption(Options, "activationAccept")
+local optDeactGrp = MRF:GetOption(Options, "decativationGroup")
 MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
 
 local L = MRF:Localize({--English
@@ -25,7 +27,12 @@ local L = MRF:Localize({--English
 	["Class"] = "Class",
 	["Name"] = "Name",
 	["Sort-method for groups:"] = "Sort-method for groups:",
-	["New Group"] = "New Group"
+	["New Group"] = "New Group",
+	["Activate grouping on accept from chat"] = "Activate grouping on accept from chat",
+	["Deactivate grouping on new group"] = "Deactivate grouping on new group",
+	["ttActAccept"] = [[Tick this to make the Addon activate the custom grouping whenever it has recieved a grouping from chat. 
+		This respects the options 'Accept' and 'Only Leader' options from within the groupings options!]],
+	["ttDeactGrp"] = "Choose this to make the addon decativate custom grouping automatically whenever you join (or create) a group.",
 }, {--German
 	["Ungrouped"] = "Ungruppiert",
 	["Tanks"] = "Tanks",
@@ -36,11 +43,17 @@ local L = MRF:Localize({--English
 	["Class"] = "Klasse",
 	["Name"] = "Name",
 	["Sort-method for groups:"] = "Gruppen-Sortierungsmethode:",
-	["New Group"] = "Neue Gruppe"
+	["New Group"] = "Neue Gruppe",
+	["Activate grouping on accept from chat"] = "Aktiviere bei akzeptierter Publikation",
+	["Deactivate grouping on new group"] = "Deaktiviere bei Gruppenbeitritt",
+	["ttActAccept"] = [[Setze dies um dem Addon zu erlauben die Gruppierungen zu aktivieren, sobalt es eine Gruppierung aus dem Chat erhalten hat.
+		Dies respektiert die Optionen 'Akzeptiere' und 'Nur Leiter' aus den Gruppierungsoptionen!]],
+	["ttDeactGrp"] = "Wählen, um jedes mal, wie der Spieler einer neuen Gruppe beitritt (oder eine eröffnet), die Gruppierung zu deaktivieren.",
 }, {--French
 })
 
 local accept = true --do we accept the leaders groupings?
+local activateAccept = false --true is default
 local onlyLead = true
 local useUserDef = false
 local permData = {}
@@ -156,6 +169,42 @@ function GroupHandler:UpdateRecieveLead(new)
 	end
 end
 
+optActAcc:OnUpdate(GroupHandler, "UpdateActivateAccept")
+function GroupHandler:UpdateActivateAccept(val)
+	if type(val) ~= "boolean" then
+		optActAcc:Set(true)
+	else
+		activateAccept = val
+	end
+end
+
+do
+	local register = false
+	optDeactGrp:OnUpdate(GroupHandler, "UpdateDeactivateGroup")
+	function GroupHandler:UpdateDeactivateGroup(val)
+		if type(val) ~= "boolean" then
+			optDeactGrp:Set(true)
+		elseif val then --val == true
+			Apollo.RegisterEventHandler("Group_Join", "GroupJoinDeactivate", GroupHandler)
+		else --val == false
+			Apollo.RemoveEventHandler("Group_Join", GroupHandler)
+		end
+		register = val
+	end
+	
+	function GroupHandler:GroupJoinDeactivate()
+		optUse:Set(false)
+	end
+	
+	local f = MRF.OnDocLoaded
+	function MRF:OnDocLoaded(...)
+		f(self,...)
+		if register then
+			Apollo.RegisterEventHandler("Group_Join", "GroupJoinDeactivate", GroupHandler)
+		end
+	end
+end
+
 function GroupHandler:VRFSerialize(t) --use VinceRaidFrames Serializing and Deserializing to be compatible.
 	local tbl = {"{"}
 	local indexed = #t > 0
@@ -165,8 +214,9 @@ function GroupHandler:VRFSerialize(t) --use VinceRaidFrames Serializing and Dese
 		tinsert(tbl, type(v) == "number" and tostring(v) or '"'..v..'"' )
 		tinsert(tbl, ",")
 	end
-	tbl[#tbl] = nil
-	
+	if hasValues then
+		tbl[#tbl] = nil
+	end
 	tinsert(tbl, "}")
 	return table.concat(tbl)
 end
@@ -246,10 +296,6 @@ function GroupHandler:ImportGroup(tbl)
 			end
 		end
 	end
-	
-	self:Regroup()
-	self:Reposition()
-	self:DistantUpdate()
 end
 
 local matchString = "^"..shareKey.."(.+)$"
@@ -275,6 +321,22 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	
 	local layout = self:VRFDeserialize(strMsg)
 	self:ImportGroup(layout)
+	
+	if useUserDef then
+		self:Regroup()
+		self:Reposition()
+		self:DistantUpdate()
+	elseif activateAccept then
+		optUse:Set(true) 
+		--[[contains:
+			useUserDef = true
+			self:DistantUpdate()
+			self:Regroup()
+			self:Reposition()
+		--]]
+	else
+		self:DistantUpdate() --at least update GroupDisplay
+	end
 end
 
 function GroupHandler:IsLead(name)
@@ -390,7 +452,16 @@ function GroupHandler:InitSettings(parent, name)
 	sortRow:FindChild("Left"):SetText(L["Sort-method for groups:"])
 	MRF:applyDropdown(sortRow:FindChild("Right"), {false, "Role", "Class", "Name"}, optResort, trans)
 	
+	MRF:LoadForm("HalvedRow", parent) --spacing
 	
+	local actRow = MRF:LoadForm("HalvedRow", parent)
+	MRF:applyCheckbox(actRow:FindChild("Right"), optActAcc, L["Activate grouping on accept from chat"])
+	local deaRow = MRF:LoadForm("HalvedRow", parent)
+	MRF:applyCheckbox(deaRow:FindChild("Right"), optDeactGrp, L["Deactivate grouping on new group"])
+	
+	MRF:LoadForm("QuestionMark", actRow:FindChild("Left")):SetTooltip(L["ttActAccept"])
+	MRF:LoadForm("QuestionMark", deaRow:FindChild("Left")):SetTooltip(L["ttDeactGrp"])
+
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + #children*30
