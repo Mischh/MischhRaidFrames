@@ -1,3 +1,14 @@
+<p><strong>Release v1.2c:</strong></p>
+<p>Added:</p>
+<ul>
+<li>FastMenu: New Button to change to your groups Instance (not Dungeons, Instanced Regions like being in different Instances of Thayd)</li>
+<li>Grouping: Options to imitate VinceRaidFrames in custom-group activation: (both are optional)
+<ul>
+<li>Activate grouping, once accepted a grouping from chat.</li>
+<li>Deactivate grouping, whenever joining a group.</li>
+</ul>
+</li>
+</ul>
 <p><strong>Release v1.2b:</strong></p>
 <p>Fixes:</p>
 <ul>
