@@ -10,7 +10,6 @@ require "GameLib"
 require "Tooltip"
 require "PlayerPathLib"
 require "ChatSystemLib"
-require "MatchingGame"
 
 local GroupDisplay = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
