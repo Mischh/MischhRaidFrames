@@ -1,3 +1,8 @@
+<p><strong>Release v1.2d:</strong></p>
+<p>Fixes:</p>
+<ul>
+<li>Newly introduced Error (A Update removed 'MachtingGame'. Removed requirement.)</li>
+</ul>
 <p><strong>Release v1.2c:</strong></p>
 <p>Added:</p>
 <ul>
