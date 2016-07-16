@@ -53,7 +53,7 @@ eachOpt:OnUpdate(function(newVal)
 	if type(newVal) ~= "boolean" then 
 		eachOpt:Set(false)
 	else
-		--UnitHandler.OnUpdate = newVal and UnitHandler.OnUpdate_Every or UnitHandler.OnUpdate_Distant
+		UnitHandler.OnUpdate = newVal and UnitHandler.OnUpdate_Every or UnitHandler.OnUpdate_Distant
 	end
 end)
 
