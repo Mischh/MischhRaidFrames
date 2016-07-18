@@ -88,11 +88,20 @@ end
 
 
 function MarkerMod:InitIconSettings(parent)
+	local L = MRF:Localize({--English
+		["Width:"] = "Width:",
+		["Height:"] = "Height:",
+	}, {--German
+		["Width:"] = "Breite:",
+		["Height:"] = "Höhe:",
+	}, {--French
+	})
+	
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
 	
-	wRow:FindChild("Left"):SetText("Width:")
-	hRow:FindChild("Left"):SetText("Height:")
+	wRow:FindChild("Left"):SetText(L["Width:"])
+	hRow:FindChild("Left"):SetText(L["Height:"])
 	MRF:applySlider(wRow:FindChild("Right"), widthOpt, 1, 50, 1)
 	MRF:applySlider(hRow:FindChild("Right"), heightOpt, 1, 50, 1)
 

@@ -153,11 +153,23 @@ LeadMod.iconUpdate = LeadMod.iconUpdate_icon
 
 
 function LeadMod:InitIconSettings(parent)
+	local L = MRF:Localize({--English
+		["Width:"] = "Width:",
+		["Height:"] = "Height:",
+	}, {--German
+		["Width:"] = "Breite:",
+		["Height:"] = "Höhe:",
+		["Fill the Icon instead with a Color"] = "Stattdessen mit Farbe füllen",
+		["Color for the Lead:"] = "Farbe für Gruppenleiter:",
+		["Color for Inviters:"] = "Farbe für Einladeberechtigte:",
+	}, {--French
+	})
+
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
 	
-	wRow:FindChild("Left"):SetText("Width:")
-	hRow:FindChild("Left"):SetText("Height:")
+	wRow:FindChild("Left"):SetText(L["Width:"])
+	hRow:FindChild("Left"):SetText(L["Height:"])
 	MRF:applySlider(wRow:FindChild("Right"), widthOpt, 1, 50, 1)
 	MRF:applySlider(hRow:FindChild("Right"), heightOpt, 1, 50, 1)
 
@@ -165,9 +177,9 @@ function LeadMod:InitIconSettings(parent)
 	local leadRow = MRF:LoadForm("HalvedRow", parent)
 	local invRow = MRF:LoadForm("HalvedRow", parent)
 	
-	MRF:applyCheckbox(fillRow:FindChild("Left"),fillOpt, "Fill the Icon instead with a Color")
-	leadRow:FindChild("Left"):SetText("Color for the Lead:")
-	invRow:FindChild("Left"):SetText("Color for Inviters:")
+	MRF:applyCheckbox(fillRow:FindChild("Left"),fillOpt, L["Fill the Icon instead with a Color"])
+	leadRow:FindChild("Left"):SetText(L["Color for the Lead:"])
+	invRow:FindChild("Left"):SetText(L["Color for Inviters:"])
 	MRF:applyColorbutton(leadRow:FindChild("Right"), colLeadOpt)
 	MRF:applyColorbutton(invRow:FindChild("Right"), colInvOpt)
 	

@@ -775,6 +775,15 @@ do
 	end
 
 	function ManagerSettings:InitIcon(pnl, modKey)
+		local L = MRF:Localize({--English
+		}, {--German
+			["These values set the Position of the Icon."] = "Diese Werte definieren die Position des Icons.",
+			["Activated"] = "Aktiviert",
+			["Horizontal Position:"] = "Horizontale Position:",
+			["Vertical Position:"] = "Vertikale Position:",
+		}, {--French
+		})
+	
 		local modOpt = MRF:GetOption(nil, "modules", modKey)
 		local activeOpt = MRF:GetOption(modOpt, "activated")
 		local posX = MRF:GetOption(modOpt, "xOffset")
@@ -782,9 +791,13 @@ do
 		
 		local parent = MRF:LoadForm("IconTab", pnl)
 		local form = parent:FindChild("DefaultTab")
+		
 		form:FindChild("Title"):SetText("Icon - "..modKey)
-
-		MRF:applyCheckbox(form:FindChild("CheckboxActivated"), activeOpt, "Activated")
+		form:FindChild("DefaultTab:QuestionMark_Offset"):SetTooltip(L["These values set the Position of the Icon."])
+		form:FindChild("DefaultTab:LabelX"):SetText(L["Horizontal Position:"])
+		form:FindChild("DefaultTab:LabelY"):SetText(L["Vertical Position:"])
+		
+		MRF:applyCheckbox(form:FindChild("CheckboxActivated"), activeOpt, L["Activated"])
 		MRF:applySlider(form:FindChild("SliderX"), posX, -0.5, 1.5, 0.01)
 		MRF:applySlider(form:FindChild("SliderY"), posY, -0.5, 1.5, 0.01)
 		
