@@ -1,3 +1,15 @@
+<p><strong>Release v1.3:</strong></p>
+<p>Fixes:</p>
+<ul>
+<li>Checkbox in Update-Tab didn't do anything.</li>
+<li>Icons now have a&nbsp;Position in any Situation.</li>
+</ul>
+<p>Added:</p>
+<ul>
+<li>German Localization: Icons</li>
+<li>German Localization: Bars</li>
+<li>Readycheck-Icon: Show for a specified period of time, who has accepted/declined a Readycheck.</li>
+</ul>
 <p><strong>Release v1.2d:</strong></p>
 <p>Fixes:</p>
 <ul>
