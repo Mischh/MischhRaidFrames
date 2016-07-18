@@ -81,13 +81,9 @@ local function iwipe(tbl)
 	end
 end
 
-do
-	local f = MRF.OnDocLoaded
-	function MRF:OnDocLoaded(...)
-		f(self,...)
-		Apollo.RegisterEventHandler("ChatMessage", "OnChatMessage", GroupHandler)
-	end
-end
+MRF:OnceDocLoaded(function()
+	Apollo.RegisterEventHandler("ChatMessage", "OnChatMessage", GroupHandler)
+end)
 
 
 function GroupHandler:Reposition() --overwritten in GetGroupHandlersRegroup
