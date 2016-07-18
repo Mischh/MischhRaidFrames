@@ -14,21 +14,17 @@ local unitTimer = nil;
 local unittime = 1
 local freqtime = 1000 --in milliseconds
 
-do
-	local f = MRF.OnDocLoaded
-	function MRF:OnDocLoaded(...)
-		f(self,...)
-		Apollo.RegisterEventHandler("Group_Left", "GroupUpdate", UnitHandler)
-		Apollo.RegisterEventHandler("Group_Join", "GroupUpdate", UnitHandler)
-		Apollo.RegisterEventHandler("Group_Add", "GroupUpdate", UnitHandler)
-		Apollo.RegisterEventHandler("Group_Remove", "GroupUpdate", UnitHandler)
-		Apollo.RegisterEventHandler("Group_MemberFlagsChanged", "GroupUpdate", UnitHandler)
-		Apollo.RegisterEventHandler("Group_SetMark", "GroupUpdate", UnitHandler)
-		Apollo.RegisterEventHandler("NextFrame", "OnUpdate", UnitHandler)
-		unitTimer = ApolloTimer.Create(unittime, true, "CheckNextUnit", UnitHandler)
-		self:ForceGroupUpdate()
-	end
-end
+MRF:OnceDocLoaded(function()
+	Apollo.RegisterEventHandler("Group_Left", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("Group_Join", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("Group_Add", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("Group_Remove", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("Group_MemberFlagsChanged", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("Group_SetMark", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("NextFrame", "OnUpdate", UnitHandler)
+	unitTimer = ApolloTimer.Create(unittime, true, "CheckNextUnit", UnitHandler)
+	UnitHandler:GroupUpdate()
+end)
 
 unitOpt:OnUpdate(function(newVal) 
 	if type(newVal) ~= "number" then
