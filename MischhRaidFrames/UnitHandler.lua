@@ -204,6 +204,8 @@ function FakePrototype:CanKick() return self.tbl.bCanKick end
 function FakePrototype:IsRaidAssistant() return self.tbl.bRaidAssistant end
 function FakePrototype:IsMainAssist() return self.tbl.bMainAssist end
 function FakePrototype:IsMainTank() return self.tbl.bMainTank end
+function FakePrototype:IsReady() return self.tbl.bReady end
+function FakePrototype:HasSetReady() return self.tbl.bHasSetReady end
 
 local meta_unit = {__index = function(t, fName)
 	local f = function(self, ...)

@@ -73,6 +73,13 @@ function MRF:GetDefaults()
 				width = 11,
 				height = 11,
 			},
+			["Readycheck"] = {
+				activated = true,
+				xOffset = 0.15,
+				yOffset = 0.5,
+				width = 13,
+				height = 13,
+			},
 			["Distance Fader"] = {
 				activated = true,
 				distance = 40,
