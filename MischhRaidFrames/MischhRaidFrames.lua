@@ -47,35 +47,54 @@ function MischhRaidFrames:OnLoad()
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
 end
 
------------------------------------------------------------------------------------------------
--- MischhRaidFrames OnDocLoaded
------------------------------------------------------------------------------------------------
-function MischhRaidFrames:OnDocLoaded()
-	Apollo.RegisterSlashCommand("mrf", "InitSettings", self)
-	if self.xmlDoc ~= nil and self.xmlDoc:IsLoaded() then
-	    --self.wndMain = Apollo.LoadForm(self.xmlDoc, "MischhRaidFramesForm", nil, self)
-		--if self.wndMain == nil then
-		--	Apollo.AddAddonErrorText(self, "Could not load the main window for some reason.")
-		--	return
-		--end
-		
-	    --self.wndMain:Show(false, true)
-
-		-- if the xmlDoc is no longer needed, you should set it to nil
-		-- self.xmlDoc = nil
-		
-		-- Register handlers for events, slash commands and timer, etc.
-		-- e.g. Apollo.RegisterEventHandler("KeyDown", "OnKeyDown", self)
-
-
-		-- Do additional Addon initialization here
-	end
-end
-
 function MischhRaidFrames:LoadForm(name, parent, handler)
 	return Apollo.LoadForm(self.xmlDoc, name, parent, handler)
 end
 
+-----------------------------------------------------------------------------------------------
+-- MischhRaidFrames OnDocLoaded
+-----------------------------------------------------------------------------------------------
+do
+	local load = {}
+	local loaded = false
+	
+	local function exec(f, t)
+		if not t then
+			f()
+		elseif type(t[f]) == "function" then
+			t[f](t)
+		end
+	end
+	
+	function MischhRaidFrames:OnDocLoaded()
+		loaded = true
+		Apollo.RegisterSlashCommand("mrf", "InitSettings", self)
+		
+		for f,t in pairs(load) do
+			exec(f,t)
+		end 
+	end
+	
+	function MischhRaidFrames:OnceDocLoaded(func, tbl)
+		if not func then return end
+			
+		if not loaded then
+			if type(tbl) == "table" then
+				load[func] = tbl --if tbl is actually a table, we assume func is a correct key for it.
+			elseif type(func) == "function" then
+				load[func] = false
+			end --all other situations are useless.
+		else
+			if type(tbl) == "table" then
+				if type(tbl[func]) == "function" then
+					tbl[func](tbl)
+				end
+			elseif type(func) == "function" then
+				func()
+			end
+		end
+	end
+end
 -----------------------------------------------------------------------------------------------
 -- MischhRaidFrames Functions
 -----------------------------------------------------------------------------------------------
