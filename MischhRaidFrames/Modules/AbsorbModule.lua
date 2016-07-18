@@ -136,16 +136,42 @@ function AbsorbMod:textUpdate(frame, unit)
 end
 
 function AbsorbMod:InitBarSettings(parent)
+	local L = MRF:Localize({--English
+		["ttSrc"] = [[To get a better idea on how much Absorb is on a unit, select the bars maximum.]],
+		["ttMax"] = [[The value to the 'Custom Maximum' setting. Only insert numeric values.]],
+		
+		["GetAbsorbtionMax"] = "Current Absorb Max",
+		["GetMaxHealth"] = "Maximal Health",
+		["GetShieldCapacityMax"] = "Maximal Shield",
+		["Custom Maximum"] = "Custom Maximum",
+	}, {--German
+		["Source for Maximum:"] = "Zu verwendendes Maximum:",
+		["Custom Maximum:"] = "Benutzerdefiniertes Maximum:",
+		
+		["ttSrc"] = "Für eine repräsentativere Darstellung kann die Absorbtion relativ zu einem anderen Maximum gezeichnet werden.",
+		["ttMax"] = "Wert zur Einstellung 'Benutzerdefiniertes Maximum' falls nicht gewählt, ändert dieser Wert nichts. Nur Ganzzahlige Werte einfügen.",
+		
+		["GetAbsorbtionMax"] = "Jetziger maximaler Absorb",
+		["GetMaxHealth"] = "Maximale Lebenspunkte",
+		["GetShieldCapacityMax"] = "Maximales Schild",
+		["Custom Maximum"] = "Benutzerdefiniertes Maximum",
+	}, {--French
+	})
+	
+	local transRef = function(mode)
+		return L[mode or ""]
+	end
+
 	local selRow = MRF:LoadForm("HalvedRow", parent)
 	local selQuest = MRF:LoadForm("QuestionMark", selRow:FindChild("Left"))
-	selRow:FindChild("Left"):SetText("Source for Maximum:")
-	selQuest:SetTooltip([[To get a better idea on how much Absorb is on a unit, select the bars maximum.]])
-	MRF:applyDropdown(selRow:FindChild("Right"), references, referenceOption)
+	selRow:FindChild("Left"):SetText(L["Source for Maximum:"])
+	selQuest:SetTooltip(L["ttSrc"])
+	MRF:applyDropdown(selRow:FindChild("Right"), references, referenceOption, transRef)
 	
 	local maxRow = MRF:LoadForm("HalvedRow", parent)
 	local maxQuest = MRF:LoadForm("QuestionMark", maxRow:FindChild("Left"))
-	maxRow:FindChild("Left"):SetText("Custom Maximum:")
-	maxQuest:SetTooltip([[The value to the 'Custom Maximum' setting. Only insert numeric values.]])
+	maxRow:FindChild("Left"):SetText(L["Custom Maximum:"])
+	maxQuest:SetTooltip(L["ttMax"])
 	MRF:applyTextbox(maxRow:FindChild("Right"), customOption)
 	
 	local anchor = {parent:GetAnchorOffsets()}

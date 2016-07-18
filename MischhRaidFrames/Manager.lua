@@ -396,6 +396,37 @@ end
 do
 	local shownTab = MRF:GetOption("UI_TabShown")
 	do --Bars
+		local L = MRF:Localize({--English
+			["ttBarPos"] = "Changes the way the position below is interpreted. Only shown Bars have a position.",
+			["ttRelPos"] = "These values are only used when the Mode is 'Stacking' or 'Offset'. The lowest position is the top-most. A bar in 'Offset'-Mode grows to the bottom.",
+			["ttFixPos"] = "These values are only used when the Mode is 'Fixed'.",
+			["ttBarCol"] = "These colors are displayed on the filled/missing part of the Bar. A half filled bar would be colored 50:50. The 'Filled Barcolor' always defines the left part of the Bar.",
+			["ttTxtSrc"] = "These Options define which text should be applied to the bar. Be sure to never use one text-source for two bars.",
+		}, {--German
+			["Bar-Position Mode:"] = "Bar-Positionierungs-Modus:",
+			["Relative Position:"] = "Relative Position:",
+			["Relative Size:"] = "Relative Größe:",
+			["Fixed Offset - Left:"] = "Fixer Abstand - Links:",
+			["Fixed Offset - Right:"] = "Fixer Abstand - Rechts:",
+			["Fixed Offset - Top:"] = "Fixer Abstand - Oben:",
+			["Fixed Offset - Bottom:"] = "Fixer Abstand - Unten:",
+			["Filled Barcolor:"] = "Bar-Farbe, füllend:",
+			["Missing Barcolor:"] = "Bar-Farbe, leerend:",
+			["Text Source:"] = "Text Ursprung:",
+			["Text Color:"] = "Text Farbe:",
+			["ttBarPos"] = "Bestimmt, welcher Modus zur Positionierung der Bar genutzt wird. Nur Sichtbare Bars haben eine Position.",
+			["ttRelPos"] = "Diese Werte werden nur verwendet, wenn die Modi 'Stapelnd' oder 'Verschoben' gewählt sind. Die geringste Position liegt am oberen Rand. Eine Bar im Modus 'Verschoben' wächst immer nach unten.",
+			["ttFixPos"] = "Diese Werte werden nur verwendet, wenn der Modus 'Fixiert' gewählt wurde.",
+			["ttBarCol"] = "Die gewählten Farben werden auf dem vorhandenen/fehldenen Teil der Bar genutzt. Eine halb gefüllte Bar wird auf der linken Seite immer die füllende Farbe zeigen, auf der rechten hingegen die leerende.",
+			["ttTxtSrc"] = "Diese Optionen definieren, welcher Text auf der Bar wiedergegeben werden soll. Stelle sicher, dass kein Text mehr als einer Bar zugewiesen wird.",
+			
+			["Stacking"] = "Stapelnd",
+			["Offset"] = "Verschoben",
+			["Fixed"] = "Fixiert",
+			["Not Shown"] = "Versteckt",
+			["Offset: "] = "Abstand: "
+		}, {--French
+		})
 		local cBarChoices, cTrans = MRF:GetBarColors()
 		local cTxtChoices = MRF:GetNoBarColors()
 		local txtChoices, txtTrans = MRF:GetTextChoices()
@@ -451,11 +482,15 @@ do
 				if pos > 0 then
 					return "Bar "..pos.. ": ".. frameTmp[pos].modKey
 				else
-					return "Offset: "..tostring(math.abs(pos))
+					return L["Offset: "]..tostring(math.abs(pos))
 				end
 			else
 				return " - "
 			end
+		end
+		
+		local function transPosMode(mode)
+			return L[mode or ""]
 		end
 		
 		local barHandler = {windows = {}}
@@ -743,8 +778,25 @@ do
 			local form = parent:FindChild("DefaultTab")
 			form:FindChild("Window_Top:Title"):SetText("Bar - "..modKey)
 			
+			form:FindChild("Window_Top:lblBarPosition"):SetText(L["Bar-Position Mode:"])
+			form:FindChild("Window_Relative:lblRelPos"):SetText(L["Relative Position:"])
+			form:FindChild("Window_Relative:lblRelSize"):SetText(L["Relative Size:"])
+			form:FindChild("Window_Fixed:lblFixOffLeft"):SetText(L["Fixed Offset - Left:"])
+			form:FindChild("Window_Fixed:lblFixOffRight"):SetText(L["Fixed Offset - Right:"])
+			form:FindChild("Window_Fixed:lblFixOffTop"):SetText(L["Fixed Offset - Top:"])
+			form:FindChild("Window_Fixed:lblFixOffBottom"):SetText(L["Fixed Offset - Bottom:"])
+			form:FindChild("Window_Barcolor:lblBarColorL"):SetText(L["Filled Barcolor:"])
+			form:FindChild("Window_Barcolor:lblBarColorR"):SetText(L["Missing Barcolor:"])
+			form:FindChild("Window_Text:lblTextSource"):SetText(L["Text Source:"])
+			form:FindChild("Window_Text:lblTextColor"):SetText(L["Text Color:"])
 			
-			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode)
+			form:FindChild("Window_Top:QuestionMark_PosMode"):SetTooltip(L["ttBarPos"])
+			form:FindChild("Window_Relative:QuestionMark_Relative"):SetTooltip(L["ttRelPos"])
+			form:FindChild("Window_Fixed:QuestionMark_Fixed"):SetTooltip(L["ttFixPos"])
+			form:FindChild("Window_Barcolor:QuestionMark_Barcolor"):SetTooltip(L["ttBarCol"])
+			form:FindChild("Window_Text:QuestionMark_Text"):SetTooltip(L["ttTxtSrc"])
+			
+			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode, transPosMode)
 			MRF:applyDropdown(form:FindChild("Window_Relative:RelativePosition"), relPosChoices, relPos, transRelPosChoices)
 			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1)
 			MRF:applySlider(form:FindChild("Window_Fixed:FixPosLeft"), fixedL, -0.5, 1.5, 0.01)
