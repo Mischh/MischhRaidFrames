@@ -19,7 +19,7 @@ local function updateAllOf(modKey)
 end
 
 local handler = {}--need to pass a Handler into :LoadForm - we dont use it.
-local function getIconCreatorMeta(modKey) 
+local function getIconCreatorMeta(modKey)
 	return {__index = function(t, parent)
 		local icon = MRF:LoadForm("IconTemplate", parent, handler)
 		local x, y = xPos[modKey], yPos[modKey]
@@ -30,17 +30,21 @@ local function getIconCreatorMeta(modKey)
 	end}
 end
 
-icons = setmetatable(icons,{__index = function(t, modKey) 
+icons = setmetatable(icons,{__index = function(t, modKey)
+	xOptions[modKey]:ForceUpdate() --initialize these values.
+	yOptions[modKey]:ForceUpdate() 
 	rawset(t, modKey, setmetatable({}, getIconCreatorMeta(modKey)))
 	return t[modKey]
 end})
 
 xPos = setmetatable(xPos,{__index = function(self, modKey)
+	xOptions[modKey]:ForceUpdate()
 	rawset(self, modKey, xOptions[modKey]:Get() or 0)
 	return self[modKey]
 end})
 
 yPos = setmetatable(yPos,{__index = function(self, modKey)
+	yOptions[modKey]:ForceUpdate()
 	rawset(self, modKey, yOptions[modKey]:Get() or 0)
 	return self[modKey]
 end})
@@ -64,6 +68,8 @@ xUpdates = setmetatable(xUpdates, {__index = function(self, modKey)
 		if type(newX) == "number" then
 			xPos[modKey] = newX
 			updateAllOf(modKey)
+		else
+			xOptions[modKey]:Set(0)
 		end
 	end
 	rawset(self, modKey, f)
@@ -75,6 +81,8 @@ yUpdates = setmetatable(yUpdates, {__index = function(self, modKey)
 		if type(newY) == "number" then
 			yPos[modKey] = newY
 			updateAllOf(modKey)
+		else
+			yOptions[modKey]:Set(0.5)
 		end
 	end
 	rawset(self, modKey, f)
