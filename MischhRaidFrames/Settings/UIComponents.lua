@@ -270,51 +270,49 @@ function MRF:applyTextbox(parent, selector)
 	return handler
 end
 
-do
-	local white = ApolloColor.new(1,1,1,1)
-	local picker = nil
+local white = ApolloColor.new(1,1,1,1)
+local picker = nil
+
+local function chooseNew(self, wndHandler, wndControl)
+	--if not wndControl:IsMouseTarget() then
+	--	local target = Apollo.GetMouseTargetWindow()
+	--	if target:GetName() == FORM_DROPDOWN_ITEM then
+	--		local handler = select(3, unpack(target:GetData()))
+	--		handler:OnItemSelected(target)
+	--	end
+	--	return
+	--end
+	local init = self.sel:Get() or white
 	
-	local function chooseNew(self, wndHandler, wndControl)
-		--if not wndControl:IsMouseTarget() then
-		--	local target = Apollo.GetMouseTargetWindow()
-		--	if target:GetName() == FORM_DROPDOWN_ITEM then
-		--		local handler = select(3, unpack(target:GetData()))
-		--		handler:OnItemSelected(target)
-		--	end
-		--	return
-		--end
-		local init = self.sel:Get() or white
-		
-		picker:Pick(self, init)
-	end
+	picker:Pick(self, init)
+end
+
+local function tblCallback(handler, t, str)
+	handler.sel:Set(t)
+end
+
+local function strCallback(handler, t, str)
+	handler.sel:Set(str)
+end
+
+local function updateOpt(handler, newVal)
+	handler.colorBG:SetBGColor(ApolloColor.new(newVal or white))
+end
+
+function MRF:applyColorbutton(parent, selector, asTbl)
+	if not picker then picker = MRF:InitColorPicker() end --dont check if already, its built that way.
+
+	local handler = {sel = selector, ChooseColor = chooseNew, OnUpdate = updateOpt}
+	handler.Set = asTbl and tblCallback or strCallback
 	
-	local function tblCallback(handler, t, str)
-		handler.sel:Set(t)
-	end
+	local form = MRF:LoadForm(FORM_COLORBUTTON_TEMPLATE, parent, handler)
+	handler.colorBG = form:FindChild("Button:Color")
 	
-	local function strCallback(handler, t, str)
-		handler.sel:Set(str)
-	end
+	handler.Set = asTbl and tblCallback or strCallback
 	
-	local function updateOpt(handler, newVal)
-		handler.colorBG:SetBGColor(ApolloColor.new(newVal or white))
-	end
+	selector:OnUpdate(handler, "OnUpdate")
 	
-	function MRF:applyColorbutton(parent, selector, asTbl)
-		if not picker then picker = MRF:InitColorPicker() end --dont check if already, its built that way.
-	
-		local handler = {sel = selector, ChooseColor = chooseNew, OnUpdate = updateOpt}
-		handler.Set = asTbl and tblCallback or strCallback
-		
-		local form = MRF:LoadForm(FORM_COLORBUTTON_TEMPLATE, parent, handler)
-		handler.colorBG = form:FindChild("Button:Color")
-		
-		handler.Set = asTbl and tblCallback or strCallback
-		
-		selector:OnUpdate(handler, "OnUpdate")
-		
-		--selector:ForceUpdate()
-	end
+	--selector:ForceUpdate()
 end
 
 function MRF:InitColorPicker()
@@ -487,6 +485,126 @@ function MRF:InitColorPicker()
 		return colorHandler
 	end
 	return colorHandler
+end
+
+function MRF:applyPreview(parent, modKey, type) end --defined in 'do' below, just for Houston reference.
+do
+	local floor, ceil = math.floor, math.ceil
+
+	local bars = {}
+	local icons = {}
+	local nones = {}
+	local suppPrev = {["bar"] = bars, ["icon"] = icons, ["none"] = nones}
+	local template = nil;
+	local templateOpt = MRF:GetOption(nil, "frame")
+	
+	local function reposition(frame)
+		local h, w = frame.frame:GetHeight(), frame.frame:GetWidth()
+		t = -floor(h/2)
+		b = ceil(h/2)
+		l = -floor(w/2)
+		r = ceil(w/2)
+		
+		frame.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
+		frame.frame:SetAnchorOffsets(l,t,r,b)
+	end
+	
+	local cBlue = ApolloColor.new("FF00A0FF")
+	local cRed = ApolloColor.new("A0FF0000")
+	local function recolorBar(frame, modKey)
+		frame:SetVar("backcolor", nil, cBlue)
+		frame:SetVar("barcolor", modKey, cRed, cRed)
+		frame:SetVar("progress", modKey, 1)
+	end
+	
+	local function recolorIcon(frame, modKey)
+		frame:SetVar("backcolor", nil, cBlue)
+		local icon = MRF:GetModIcons(modKey)[frame.frame]
+		icon:SetSprite("WhiteFill")
+		icon:SetBGColor(cRed)
+	end
+	
+	local function recolorNone(frame)
+		frame:SetVar("backcolor", nil, cBlue)
+		for _, modKey in ipairs(frame.oldTemp) do
+			frame:SetVar("progress", modKey, 1)
+			frame:SetVar("barcolor", modKey, cRed, cRed)
+		end
+	end
+	
+	templateOpt:OnUpdate(function(newTemplate) 
+		template = newTemplate;
+		for frame, key in pairs(bars) do
+			frame:UpdateOptions(newTemplate)
+			reposition(frame)
+			recolorBar(frame, key)
+		end
+		for frame, key in pairs(icons) do
+			frame:UpdateOptions(newTemplate)
+			reposition(frame)
+			recolorIcon(frame, key)
+		end
+		for frame in pairs(nones) do
+			frame:UpdateOptions(newTemplate)
+			reposition(frame)
+			recolorNone(frame)
+		end
+	end)
+	
+	local btnBarHandler = {ButtonClick = function(self, btn) 
+		local frame = btn:GetData()
+		local modKey = bars[frame]
+		
+		frame:UpdateOptions(template)
+		reposition(frame)
+		recolorBar(frame, modKey)
+	end}
+	
+	local btnIconHandler = {ButtonClick = function(self, btn) 
+		local frame = btn:GetData()
+		local modKey = icons[frame]
+		
+		frame:UpdateOptions(template)
+		reposition(frame)
+		recolorNone(frame)
+	end}
+	
+	local btnNoneHandler = {ButtonClick = function(self, btn) 
+		local frame = btn:GetData()
+		
+		frame:UpdateOptions(template)
+		reposition(frame)
+		recolorIcon(frame)
+	end}
+	
+	local L = MRF:Localize({--English
+		["ttPreview"] = [[Preview:
+			This picture is supposed to help understand how the settings change the look of a frame.
+			Blue is the outline of the whole frame.
+			Red is the currently selected item.]],
+	}, {--German
+		["Redraw Preview"] = "Neu Laden",
+		["ttPreview"] = [[Vorschau:
+			Dieses Bild soll dabei helfen, vorgenommene Änderungen darzustellen.
+			Blau ist dabei die Fläche eines einzelnen Frames.
+			Rot markiert wird der momentan veränderbare Bereich.]]
+	}, {--French
+	})
+	
+	function MRF:applyPreview(parent, modKey, type)
+		local tar = suppPrev[type]
+		if not tar then return end
+		
+		local frame = self:newFrame(parent, template)
+		tar[frame] = modKey
+		
+		local handler = type == "bar" and btnBarHandler or type == "icon" and btnIconHandler or btnNoneHandler
+		local btn = MRF:LoadForm("SmallButton", parent, handler)
+		btn:SetTooltip(L["Redraw Preview"])
+		btn:SetData(frame)
+		
+		MRF:LoadForm("QuestionMark", parent):SetTooltip(L["ttPreview"])
+	end
 end
 
 do
