@@ -796,6 +796,8 @@ do
 			form:FindChild("Window_Barcolor:QuestionMark_Barcolor"):SetTooltip(L["ttBarCol"])
 			form:FindChild("Window_Text:QuestionMark_Text"):SetTooltip(L["ttTxtSrc"])
 			
+			MRF:applyPreview(form:FindChild("Window_Top:Preview"), modKey, "bar")
+			
 			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode, transPosMode)
 			MRF:applyDropdown(form:FindChild("Window_Relative:RelativePosition"), relPosChoices, relPos, transRelPosChoices)
 			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1)
@@ -848,6 +850,8 @@ do
 		form:FindChild("DefaultTab:QuestionMark_Offset"):SetTooltip(L["These values set the Position of the Icon."])
 		form:FindChild("DefaultTab:LabelX"):SetText(L["Horizontal Position:"])
 		form:FindChild("DefaultTab:LabelY"):SetText(L["Vertical Position:"])
+		
+		MRF:applyPreview(form:FindChild("Window_Top:Preview"), modKey, "icon")
 		
 		MRF:applyCheckbox(form:FindChild("CheckboxActivated"), activeOpt, L["Activated"])
 		MRF:applySlider(form:FindChild("SliderX"), posX, -0.5, 1.5, 0.01)
