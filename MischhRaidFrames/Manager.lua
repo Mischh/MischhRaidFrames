@@ -886,6 +886,12 @@ do
 	end
 	
 	function ManagerSettings:InitMisc(pnl, modKey)
+		local L = MRF:Localize({--English
+		}, {--German
+			["Activated"] = "Aktiviert",
+		}, {--French
+		})
+		
 		local modOpt = MRF:GetOption(nil, "modules", modKey)
 		local activeOpt = MRF:GetOption(modOpt, "activated")
 		
@@ -893,7 +899,7 @@ do
 		local form = parent:FindChild("DefaultTab")
 		form:FindChild("Title"):SetText("Misc - "..modKey)
 
-		MRF:applyCheckbox(form:FindChild("CheckboxActivated"), activeOpt, "Activated")
+		MRF:applyCheckbox(form:FindChild("CheckboxActivated"), activeOpt, L["Activated"])
 		
 		local mod = modules[modKey]
 		if mod.InitMiscSettings then

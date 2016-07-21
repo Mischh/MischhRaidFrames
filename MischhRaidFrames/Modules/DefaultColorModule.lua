@@ -33,12 +33,20 @@ function DefaultMod:GetColorTable()
 end
 
 function DefaultMod:InitColorSettings(parent)	
+	local L = MRF:Localize({--English
+		["ttDefault"] = [[This color is used whenever the AddOn encounters a bar/text without a color.]],
+	}, {--German
+		["ttDefault"] = [[Diese Farbe wird immer dann genutzt, wenn das Addon eine Bar bzw. einen Text ohne Farbe entdeckt.]],
+		["Default:"] = "Standard:",
+	}, {--French
+	})
+	
 	local row = MRF:LoadForm("HalvedRow", parent)
-	row:FindChild("Left"):SetText("Default:")
+	row:FindChild("Left"):SetText(L["Default:"])
 	MRF:applyColorbutton(row:FindChild("Right"), MRF:GetOption(ModuleOptions, "c"))
 	
 	local question = MRF:LoadForm("QuestionMark", row:FindChild("Left"))
-	question:SetTooltip([[This color is used whenever the AddOn encounters a bar/text without a color.]])
+	question:SetTooltip(L["ttDefault"])
 	
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + 30

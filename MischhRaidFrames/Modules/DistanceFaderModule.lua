@@ -88,14 +88,23 @@ function DistMod:UnfadeAll()
 end
 
 function DistMod:InitMiscSettings(parent)
+	local L = MRF:Localize({--English
+		["ttFade"] = [[Set the value, from which on the unit will have a faded frame.]],
+	}, {--German
+		["Faded Distance:"] = "Verblassende Distanz:",
+		["Fade by:"] = "Verblassen auf:",
+		["ttFade"] = [[Setze die Distanz, ab dem ein Spieler Verblassen soll.]],
+	}, {--French
+	})
+
 	local distRow = MRF:LoadForm("HalvedRow", parent)
 	local fraqRow = MRF:LoadForm("HalvedRow", parent)
 	
-	distRow:FindChild("Left"):SetText("Faded Distance:")
-	fraqRow:FindChild("Left"):SetText("Fade by:")
+	distRow:FindChild("Left"):SetText(L["Faded Distance:"])
+	fraqRow:FindChild("Left"):SetText(L["Fade by:"])
 	
 	local question = MRF:LoadForm("QuestionMark", distRow:FindChild("Left")) 
-	question:SetTooltip([[Set the value, from which on the unit will have a faded frame.]])
+	question:SetTooltip(L["ttFade"])
 	
 	MRF:applySlider(distRow:FindChild("Right"), distOption, 1, 100, 1)
 	MRF:applySlider(fraqRow:FindChild("Right"), fraqOption, 0.1, 1, 0.05)

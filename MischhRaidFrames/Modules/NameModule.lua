@@ -89,17 +89,48 @@ function NameMod:textUpdate(frame, unit)
 end
 
 function NameMod:InitTextSettings(parent)
+	local L = MRF:Localize({--English
+		["ttPattern"] = [[Within this pattern specific characters will be replaced:
+			%f* = firstName limited to * letters 
+			%l* = lastName limited to * letters
+			%n* = name limited to * letters
+			
+			* can maximally use a two-digit number.
+			To get unlimited legths, leave the * empty.]],
+		
+		["ttNick"] = [[Nicknames can be used to use fixed Names instead of the pattern for specific units.
+			Doing Add on a already nicknamed unit will replace the old nickname.
+			Empty Nicknames are not allowed (the only restriction)
+			You can only select form your current group.]],
+		
+	}, {--German
+		["Pattern:"] = "Schema:",
+		["ttPattern"] = [[Innerhalb dieses Schemas werden bestimmte Zeichenkombinationen ersetzt:
+			%f* = Vorname limitiert auf * Zeichen 
+			%l* = Nachname limitiert auf * Zeichen
+			%n* = Name limitiert auf * Zeichen
+			
+			* kann maximal aus zwei Ziffern bestehen.
+			Um nicht zu limitieren, * auslassen.]],
+		
+		["ttNick"] = [[Spitznamen können genutzt werden, um feste Namen anstatt des Schemas zu zeigen.
+			Spitznamen werden überschrieben, wenn ein neuer zugewiesen  wird.
+			Leere Spitznamen sind nicht erlaubt. (die einzige Einschränkung)
+			Nur Gruppenmitglieder können gewählt werden.]],
+		["Select a name to be nicknamed:"] = "Wähle jemanden für einen Spitznamen:",
+		["Enter a nickname to be applied:"] = "Neuer Spitzname:",
+		["Add the nickname:"] = "Füge den Spitznamen hinzu:",
+		["Add"] = "Hinzufügen",
+		["Remove this Nickname:"] = "Entferne diesen Spitznamen:",
+		["select to remove"] = "wählen zum entfernen",
+	}, {--French
+	})
+
 	local row = MRF:LoadForm("HalvedRow", parent)
 	local question = MRF:LoadForm("QuestionMark", row:FindChild("Left"))
 	
-	row:FindChild("Left"):SetText("Pattern:")
-	question:SetTooltip([[Within this pattern specific characters will be replaced:
-	%f* = firstName limited to * letters 
-	%l* = lastName limited to * letters
-	%n* = name limited to * letters
-	
-	* can maximally use a two-digit number.
-	To get unlimited legths, leave the * empty.]])
+	row:FindChild("Left"):SetText(L["Pattern:"])
+	question:SetTooltip(L["ttPattern"])
 	MRF:applyTextbox(row:FindChild("Right"), patternOpt)
 
 	MRF:LoadForm("HalvedRow", parent) --space
@@ -128,8 +159,7 @@ function NameMod:InitTextSettings(parent)
 	local optNick = MRF:GetOption("NameModSettings", "nick")
 	local optRem = MRF:GetOption("NameModSettings", "remove")
 	optRem:OnUpdate(function(rem) 
-		if rem then 
-			print(rem)
+		if rem then
 			local n = nicks[rem]
 			table.remove(nicks, rem)
 			nicks[n] = nil
@@ -140,21 +170,18 @@ function NameMod:InitTextSettings(parent)
 	local function trans_add(x) return x or "" end
 	
 	local selRow = MRF:LoadForm("HalvedRow", parent)
-	selRow:FindChild("Left"):SetText("Select a name to be nicknamed:")
+	selRow:FindChild("Left"):SetText(L["Select a name to be nicknamed:"])
 	MRF:applyDropdown(selRow:FindChild("Right"), groupNames, optSel, trans_add)
 	
 	local selQuest = MRF:LoadForm("QuestionMark", selRow:FindChild("Left"))
-	selQuest:SetTooltip([[Nicknames can be used to use fixed Names instead of the pattern for specific units.
-	Doing Add on a already nicknamed unit will replace the old nickname.
-	Empty Nicknames are not allowed (the only restriction)
-	You can only select form your current group.]])
+	selQuest:SetTooltip(L["ttNick"])
 	
 	local nickRow = MRF:LoadForm("HalvedRow", parent)
-	nickRow:FindChild("Left"):SetText("Enter a nickname to be applied:")
+	nickRow:FindChild("Left"):SetText(L["Enter a nickname to be applied:"])
 	MRF:applyTextbox(nickRow:FindChild("Right"), optNick)
 	
 	local addRow = MRF:LoadForm("HalvedRow", parent)
-	addRow:FindChild("Left"):SetText("Add the nickname:")
+	addRow:FindChild("Left"):SetText(L["Add the nickname:"])
 	MRF:LoadForm("Button", addRow:FindChild("Right"), {ButtonClick = function() 
 		local n = optSel:Get()
 		local x = optNick:Get()
@@ -164,7 +191,7 @@ function NameMod:InitTextSettings(parent)
 			end
 			nicks[n] = x
 		end
-	end}):SetText("Add")
+	end}):SetText(L["Add"])
 	
 	MRF:LoadForm("HalvedRow", parent) --space
 	
@@ -184,10 +211,10 @@ function NameMod:InitTextSettings(parent)
 			return unpack(tbl)
 		end
 	}
-	local function trans_rem(idx) return idx and nicks[idx] or "select to remove" end
+	local function trans_rem(idx) return idx and nicks[idx] or L["select to remove"] end
 	
 	local remRow = MRF:LoadForm("HalvedRow", parent)
-	remRow:FindChild("Left"):SetText("Remove this Nickname:")
+	remRow:FindChild("Left"):SetText(L["Remove this Nickname:"])
 	MRF:applyDropdown(remRow:FindChild("Right"), remove, optRem, trans_rem)
 	
 	local anchor = {parent:GetAnchorOffsets()}

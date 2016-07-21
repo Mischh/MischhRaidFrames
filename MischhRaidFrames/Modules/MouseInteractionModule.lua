@@ -176,6 +176,25 @@ function MouseMod:miscUpdate(frame, unit)
 end
 
 function MouseMod:InitMiscSettings(parent)
+	local L = MRF:Localize({--English
+		["ttMouse"] = [[Here you can define which action should occur, when a specific Mouse-Action was done.
+			Note that most actions only work, when the Unit had been updated within your Range.]],
+	}, {--German
+		["Left Click:"] = "Linksklick:",
+		["Right Click:"] = "Rechtsklick:",
+		["Middle Click:"] = "Mittlere Maustaste:",
+		["Mouse 4 Click:"] = "Maustaste 4:",
+		["Mouse 5 Click:"] = "Maustaste 5:",
+		["Mousenter (Mouseover):"] = "Mauseintritt (Mouseover):",
+		["Dropdown Menu"]= "Options-Menü öffnen",
+		["Target Unit"] = "Als Ziel wählen",
+		["Focus Unit"] = "Als Fokus markieren",
+		["Show Hint Arrow"] = "Hinweis-Pfeil zeigen",
+		["ttMouse"] = [[Hier kann definiert werden, welche Aktion geschehen soll, wenn eine bestimmte Maus-Aktion getätigt wurde.
+			Achtung! Die meisten Aktionen fünktionieren nur, wenn der Spieler in Reichweite aktualisiert wurde.]],
+	}, {--French
+	})
+
 	local rowL = MRF:LoadForm("HalvedRow", parent)
 	local rowR = MRF:LoadForm("HalvedRow", parent)
 	local rowM = MRF:LoadForm("HalvedRow", parent)
@@ -183,18 +202,17 @@ function MouseMod:InitMiscSettings(parent)
 	local row5 = MRF:LoadForm("HalvedRow", parent)
 	local rowOver = MRF:LoadForm("HalvedRow", parent)
 	
-	rowL:FindChild("Left"):SetText("Left Click:")
-	rowR:FindChild("Left"):SetText("Right Click:")
-	rowM:FindChild("Left"):SetText("Middle Click:")
-	row4:FindChild("Left"):SetText("Mouse 4 Click:")
-	row5:FindChild("Left"):SetText("Mouse 5 Click:")
-	rowOver:FindChild("Left"):SetText("Mousenter (Mouseover):")
+	rowL:FindChild("Left"):SetText(L["Left Click:"])
+	rowR:FindChild("Left"):SetText(L["Right Click:"])
+	rowM:FindChild("Left"):SetText(L["Middle Click:"])
+	row4:FindChild("Left"):SetText(L["Mouse 4 Click:"])
+	row5:FindChild("Left"):SetText(L["Mouse 5 Click:"])
+	rowOver:FindChild("Left"):SetText(L["Mousenter (Mouseover):"])
 	
 	local question = MRF:LoadForm("QuestionMark", rowL:FindChild("Left"))
-	question:SetTooltip([[Here you can define which action should occur, when a specific Mouse-Action was done.
-	Note that most actions only work, when the Unit had been updated within your Range.]])
+	question:SetTooltip(L["ttMouse"])
 	
-	local function translateAction(action) return action or " - " end
+	local function translateAction(action) return L[action] or " - " end
 	
 	MRF:applyDropdown(rowL:FindChild("Right"), actions, mouse0Option, translateAction)
 	MRF:applyDropdown(rowR:FindChild("Right"), actions, mouse1Option, translateAction)

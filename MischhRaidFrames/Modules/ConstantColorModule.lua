@@ -64,6 +64,17 @@ local removeTrans = function(color)
 end
 
 function CColMod:InitColorSettings(parent)
+	local L = MRF:Localize({--English
+	}, {--German
+		["New Color"] = "Neue Farbe",
+		["Remove this Color:"] = "Entferne diese Farbe:",
+		["Add a new Color:"] = "Füge eine neue Farbe hinzu:",
+		["Add"] = "Hinzufügen",
+		["Color Name"] = "Farbname",
+		["Color"] = "Farbe",
+	}, {--French
+	})
+
 	local handler = {hiddenRows = 0}
 	function handler:UpdateSize()
 		local children = parent:GetChildren()
@@ -76,7 +87,7 @@ function CColMod:InitColorSettings(parent)
 	
 	function handler:ButtonClick( wndHandler, wndControl, eMouseButton )
 		local i = #colors+1
-		local col = {c = "FFFFFFFF", name="New Color"}
+		local col = {c = "FFFFFFFF", name=L["New Color"]}
 		ModuleOptions:Get()[i] = col
 		ModuleOptions:ForceUpdate() --put the new Color into 'colors'
 		if handler.hiddenRows>0 then
@@ -120,18 +131,18 @@ function CColMod:InitColorSettings(parent)
 	end)
 	
 	local rowRemove = MRF:LoadForm("HalvedRow", parent)
-	rowRemove:FindChild("Left"):SetText("Remove this Color:")
+	rowRemove:FindChild("Left"):SetText(L["Remove this Color:"])
 	MRF:applyDropdown(rowRemove:FindChild("Right"), colors, removeOpt, removeTrans)
 	
 	local rowAdd = MRF:LoadForm("HalvedRow", parent)
-	rowAdd:FindChild("Left"):SetText("Add a new Color:")
-	MRF:LoadForm("Button",rowAdd:FindChild("Right"), handler):SetText("Add")
+	rowAdd:FindChild("Left"):SetText(L["Add a new Color:"])
+	MRF:LoadForm("Button",rowAdd:FindChild("Right"), handler):SetText(L["Add"])
 	
 	MRF:LoadForm("HalvedRow", parent) --just to make some Space.
 		
 	local header = MRF:LoadForm("HalvedRow", parent)
-	header:FindChild("Left"):SetText("Color Name")
-	header:FindChild("Right"):SetText("Color")
+	header:FindChild("Left"):SetText(L["Color Name"])
+	header:FindChild("Right"):SetText(L["Color"])
 	
 	for i,v in ipairs(colors) do
 		local nameOpt = MRF:GetOption(ModuleOptions, i, "name")

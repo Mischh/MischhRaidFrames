@@ -91,18 +91,33 @@ function ShieldMod:textUpdate(frame, unit)
 end
 
 function ShieldMod:InitTextSettings(parent)
+	local L = MRF:Localize({--English
+		["ttPattern"] = [[Within this pattern specific characters will be replaced:
+			%c = current value 
+			%C = current maximum
+			%s = shortened value 
+			%S = shortened maximum
+			%m = missing till maximum
+			%n = shortened missing
+			%p = percent (floored 0-100)]],--i know this doesnt look like a string in houston, but it is. Love this Editor...
+	}, {--German
+		["Pattern:"] = "Schema:",
+		["ttPattern"] = [[Innerhalb dieses Schemas werden bestimmte Zeichenkombinationen ersetzt:
+			%c = jetziger Wert 
+			%C = jetziges Maximum
+			%s = gekürzter Wert 
+			%S = gekürztes Maximum
+			%m = fehlend bis Maximum
+			%n = fehlend, gekürzt
+			%p = prozentual (abgerundet 0-100)]],
+	}, {--French
+	})
+	
 	local row = MRF:LoadForm("HalvedRow", parent)
 	local question = MRF:LoadForm("QuestionMark", row:FindChild("Left"))
 	
-	row:FindChild("Left"):SetText("Pattern:")
-	question:SetTooltip([[Within this pattern specific characters will be replaced:
-	%c = current value 
-	%C = current maximum
-	%s = shortened value 
-	%S = shortened maximum
-	%m = missing till maximum
-	%n = shortened missing
-	%p = percent (floored 0-100)]]) --i know this doesnt look like a String in houston, but it is. Love this Editor...	
+	row:FindChild("Left"):SetText(L["Pattern:"])
+	question:SetTooltip(L["ttPattern"])	
 	MRF:applyTextbox(row:FindChild("Right"), textOption)
 
 	local anchor = {parent:GetAnchorOffsets()}

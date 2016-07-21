@@ -70,7 +70,18 @@ function ClassCMod:GetColorTable()
 	return {ref or {Get = getColor, frequent = false, name = "Class Color"}};
 end
 
-function ClassCMod:InitColorSettings(parent)	
+function ClassCMod:InitColorSettings(parent)
+	local L = MRF:Localize({--English
+	}, {--German
+		["Warrior:"] = "Krieger:",
+		["Engineer:"] = "Inguineur:",
+		["Esper:"] = "Esper:",
+		["Medic:"] = "Sanitäter:",
+		["Stalker:"] = "Meuchler:",
+		["Spellslinger:"] = "Arkanschütze:",
+	}, {--French
+	})
+	
 	local rowWarr = MRF:LoadForm("HalvedRow", parent)
 	local rowEngi = MRF:LoadForm("HalvedRow", parent)
 	local rowEspe = MRF:LoadForm("HalvedRow", parent)
@@ -79,12 +90,12 @@ function ClassCMod:InitColorSettings(parent)
 	local rowSpel = MRF:LoadForm("HalvedRow", parent)
 	
 	
-	rowWarr:FindChild("Left"):SetText("Warrior:")
-	rowEngi:FindChild("Left"):SetText("Engineer:")
-	rowEspe:FindChild("Left"):SetText("Esper:")
-	rowMedi:FindChild("Left"):SetText("Medic:")
-	rowStal:FindChild("Left"):SetText("Stalker:")
-	rowSpel:FindChild("Left"):SetText("Spellslinger:")
+	rowWarr:FindChild("Left"):SetText(L["Warrior:"])
+	rowEngi:FindChild("Left"):SetText(L["Engineer:"])
+	rowEspe:FindChild("Left"):SetText(L["Esper:"])
+	rowMedi:FindChild("Left"):SetText(L["Medic:"])
+	rowStal:FindChild("Left"):SetText(L["Stalker:"])
+	rowSpel:FindChild("Left"):SetText(L["Spellslinger:"])
 	
 	MRF:applyColorbutton(rowWarr:FindChild("Right"), classOpt[GameLib.CodeEnumClass.Warrior])
 	MRF:applyColorbutton(rowEngi:FindChild("Right"), classOpt[GameLib.CodeEnumClass.Engineer])

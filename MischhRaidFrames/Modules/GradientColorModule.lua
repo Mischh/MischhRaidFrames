@@ -111,6 +111,22 @@ end
 
 
 function GradientMod:InitColorSettings(parent)
+	local L = MRF:Localize({--English
+	}, {--German
+		["New Color"] = "Neue Farbe",
+		["Remove this Color:"] = "Entferne diese Farbe:",
+		["Add a new Color:"] = "Füge eine neue Farbe hinzu:",
+		["Add"] = "Hinzufügen",
+		["Remove"] = "Entfernen",
+		["Select a color to be reworked:"] = "Wähle eine zu ändernde Farbe:",
+		["Remove the last Color-Point:"] = "Entferne den letzten Anker:",
+		["Add a new Color-Point:"] = "Füge einen neuen Anker hinzu",
+		["Set Name:"] = "Farb-Name:",
+		["Point"] = "Anker",
+		["Color"] = "Farbe",
+	}, {--French
+	})
+	
 	local handler = {}
 	function handler:UpdateSize(offset)
 		local children = parent:GetChildren()
@@ -297,7 +313,7 @@ function GradientMod:InitColorSettings(parent)
 	local addCHandler = {}
 	function addCHandler:ButtonClick(...)
 		local i = #colors+1
-		ModuleOptions:Get()[i] = {name = "New Color", anchors = {[0] = {r=1,g=1,b=1,a=1}}}
+		ModuleOptions:Get()[i] = {name = L["New Color"], anchors = {[0] = {r=1,g=1,b=1,a=1}}}
 		ModuleOptions:ForceUpdate() 
 		selector:Set(i)
 	end
@@ -332,34 +348,34 @@ function GradientMod:InitColorSettings(parent)
 	end
 	
 	local rowRemove = MRF:LoadForm("HalvedRow", parent)
-	rowRemove:FindChild("Left"):SetText("Remove this Color:")
+	rowRemove:FindChild("Left"):SetText(L["Remove this Color:"])
 	MRF:applyDropdown(rowRemove:FindChild("Right"), colors, removeOpt, removeTrans)
 	
 	local rowAdd = MRF:LoadForm("HalvedRow", parent)
-	rowAdd:FindChild("Left"):SetText("Add a new Color:")
-	MRF:LoadForm("Button",rowAdd:FindChild("Right"), addCHandler):SetText("Add")
+	rowAdd:FindChild("Left"):SetText(L["Add a new Color:"])
+	MRF:LoadForm("Button",rowAdd:FindChild("Right"), addCHandler):SetText(L["Add"])
 	
 	MRF:LoadForm("HalvedRow", parent) --just to make some Space.
 	
 	local selectRow = MRF:LoadForm("HalvedRow", parent)
-	selectRow:FindChild("Left"):SetText("Select a color to be reworked:")
+	selectRow:FindChild("Left"):SetText(L["Select a color to be reworked:"])
 	MRF:applyDropdown(selectRow:FindChild("Right"), selection, selector, selectTrans, selected) --extra updates from selected
 	
 	local nameRow = MRF:LoadForm("HalvedRow", parent)
-	nameRow:FindChild("Left"):SetText("Set Name:")
+	nameRow:FindChild("Left"):SetText(L["Set Name:"])
 	MRF:applyTextbox(nameRow:FindChild("Right"), MRF:GetOption(selected, "name"))
 	
 	local addPRow = MRF:LoadForm("HalvedRow", parent)
-	addPRow:FindChild("Left"):SetText("Add a new Color-Point")
-	MRF:LoadForm("Button",addPRow:FindChild("Right"), addPHandler):SetText("Add")
+	addPRow:FindChild("Left"):SetText(L["Add a new Color-Point:"])
+	MRF:LoadForm("Button",addPRow:FindChild("Right"), addPHandler):SetText(L["Add"])
 	
 	local remPRow = MRF:LoadForm("HalvedRow", parent)
-	remPRow:FindChild("Left"):SetText("Remove the last Color-Point")
-	MRF:LoadForm("Button",remPRow:FindChild("Right"), remPHandler):SetText("Remove")
+	remPRow:FindChild("Left"):SetText(L["Remove the last Color-Point:"])
+	MRF:LoadForm("Button",remPRow:FindChild("Right"), remPHandler):SetText(L["Remove"])
 	
 	local header = MRF:LoadForm("HalvedRow", parent)
-	header:FindChild("Left"):SetText("Point")
-	header:FindChild("Right"):SetText("Color")
+	header:FindChild("Left"):SetText(L["Point"])
+	header:FindChild("Right"):SetText(L["Color"])
 	
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
 	handler:UpdateSize()

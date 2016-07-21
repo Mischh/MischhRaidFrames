@@ -104,6 +104,18 @@ function DispelMod:miscUpdate(frame, unit)
 end
 
 function DispelMod:InitMiscSettings(parent)
+	local L = MRF:Localize({--English
+		["ttOffset"] = [[These Offsets are always from the Edge of each frame. Going positive moves the edges right/bottom.]],
+	}, {--German
+		["ttMouse"] = [[Diese Abstände sind immer relativ zum jeweiligen Rand. Positive Werte verschieben dabei nach rechts bzw. unten.]],
+		["Indicators Color:"] = "Farbe des Indikators:",
+		["Offset Left:"] = "Abstand Links:",
+		["Offset Right:"] = "Abstand Rechts:",
+		["Offset Top:"] = "Abstand Oben:",
+		["Offset Bottom:"] = "Abstand Unten:",
+	}, {--French
+	})
+
 	local rowC = MRF:LoadForm("HalvedRow", parent)
 	local rowL = MRF:LoadForm("HalvedRow", parent)
 	local rowR = MRF:LoadForm("HalvedRow", parent)
@@ -111,13 +123,13 @@ function DispelMod:InitMiscSettings(parent)
 	local rowB = MRF:LoadForm("HalvedRow", parent)
 	
 	local question = MRF:LoadForm("QuestionMark", rowL:FindChild("Left"))
-	question:SetTooltip([[These Offsets are always from the Edge of each frame. Going positive moves the edges right/bottom.]])
+	question:SetTooltip(L["ttMouse"])
 	
-	rowC:FindChild("Left"):SetText("Indicators Color:")
-	rowL:FindChild("Left"):SetText("Offset Left:")
-	rowR:FindChild("Left"):SetText("Offset Right:")
-	rowT:FindChild("Left"):SetText("Offset Top:")
-	rowB:FindChild("Left"):SetText("Offset Bottom:")
+	rowC:FindChild("Left"):SetText(L["Indicators Color:"])
+	rowL:FindChild("Left"):SetText(L["Offset Left:"])
+	rowR:FindChild("Left"):SetText(L["Offset Right:"])
+	rowT:FindChild("Left"):SetText(L["Offset Top:"])
+	rowB:FindChild("Left"):SetText(L["Offset Bottom:"])
 	
 	MRF:applyColorbutton(rowC:FindChild("Right"), cOpt)
 	MRF:applySlider(rowL:FindChild("Right"), lOpt, -25, 25, 1)
