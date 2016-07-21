@@ -822,6 +822,11 @@ function FrameHandler:PreviewSpacing(parent)
 	local templateOpt = MRF:GetOption(nil, "frame")
 	local template = templateOpt:Get();
 	
+	local hFSpace = hFrameSpace
+	local vFSpace = vFrameSpace
+	local tHSpace = tHeaderSpace
+	local bHSpace = bHeaderSpace
+	
 	local function recolor(frame)
 		frame:SetVar("backcolor", nil, cBlue)
 		for _, modKey in ipairs(frame.oldTemp) do
@@ -841,18 +846,18 @@ function FrameHandler:PreviewSpacing(parent)
 		local height = tl.frame:GetHeight()
 		local heightHead = th:GetHeight()
 		
-		local leftStart = -floor(hFrameSpace/2)
-		local rightStart = ceil(hFrameSpace/2)
+		local leftStart = -floor(hFSpace/2)
+		local rightStart = ceil(hFSpace/2)
 		local leftEnd = leftStart - width
 		local rightEnd = rightStart + width
 		
-		local topFrameStart = -floor(vFrameSpace/2)
-		local botFrameStart = ceil(vFrameSpace/2)
+		local topFrameStart = -floor(vFSpace/2)
+		local botFrameStart = ceil(vFSpace/2)
 		local topFrameEnd = topFrameStart - height
 		local botFrameEnd = botFrameStart + height
 		
-		local topHeaderStart = topFrameEnd - bHeaderSpace
-		local botHeaderStart = botFrameEnd + tHeaderSpace
+		local topHeaderStart = topFrameEnd - tHSpace
+		local botHeaderStart = botFrameEnd + bHSpace
 		local topHeaderEnd = topHeaderStart - heightHead
 		local botHeaderEnd = botHeaderStart + heightHead
 		
@@ -879,10 +884,10 @@ function FrameHandler:PreviewSpacing(parent)
 		reposition()
 	end)
 	
-	hSpFrOpt:OnUpdate(reposition);
-	vSpFrOpt:OnUpdate(reposition);
-	tSpHeOpt:OnUpdate(reposition);
-	bSpHeOpt:OnUpdate(reposition);
+	hSpFrOpt:OnUpdate(function(val) hFSpace= val or 0; reposition() end);
+	vSpFrOpt:OnUpdate(function(val) vFSpace= val or 0; reposition() end);
+	tSpHeOpt:OnUpdate(function(val) hHSpace= val or 0; reposition() end);
+	bSpHeOpt:OnUpdate(function(val) vHSpace= val or 0; reposition() end);
 	
 	local parent = MRF:LoadForm("PreviewSlot", parent)
 	parent:SetAnchorOffsets(0,0,0,230)
