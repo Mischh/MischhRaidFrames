@@ -11,7 +11,11 @@ local hSpFrOpt = MRF:GetOption(Options, "horizonalFrameSpace")
 local vSpFrOpt = MRF:GetOption(Options, "verticalFrameSpace")
 local tSpHeOpt = MRF:GetOption(Options, "topHeaderSpace")
 local bSpHeOpt = MRF:GetOption(Options, "bottomHeaderSpace")
-MRF:AddMainTab("Frame Handler", FrameHandler, "InitSettings")
+
+MRF:AddMainTab("Frame Handler")
+MRF:AddChildTab("Size", "Frame Handler", FrameHandler, "InitSizingSettings")
+MRF:AddChildTab("Position", "Frame Handler", FrameHandler, "InitPositioningSettings")
+MRF:AddChildTab("Spaces", "Frame Handler", FrameHandler, "InitSpacingSettings")
 
 local L = MRF:Localize({--[[English]]
 	["sFirtTagger"] = "First",
@@ -620,56 +624,28 @@ function FrameHandler:BuildLimitlessSlider(slider)
 	end)
 end
 
-function FrameHandler:InitSettings(parent, name)
+function FrameHandler:InitSizingSettings(parent, name)
 	local L = MRF:Localize({--English
 		["Frame Width:"] = "Frame Width:",
 		["Frame Height:"] = "Frame Height:",
 		["qSize"] = [[These Sliders set the size of each unit-frame inside your group.]],
 		["Frame Inset:"] = "Frame Inset:",
 		["qInset"] = [[This Option lets you select how far the actual bars are inset from each of the frames edges.]],
-		["Anchor Left Offset:"] = "Anchor Left Offset:",
-		["Anchor Top Offset:"] = "Anchor Top Offset:",
-		["qOffset"] = [[These two sliders define where the top-left corner of the raid will be.]],
-		["Fill-Direction:"] = "Fill-Direction:",
-		["First right"] = "First right",
-		["First down"] = "First down",
-		["Fill-Until:"] = "Fill-Until:",
-		["qFill"] = [[These Options define which direction the addon should fill your raid first and how many its maximally allowed to display in that direction.
-				Note that if the addon is allowed to display less downside than there are groups(tanks, heals, dps), he will still display a row for each group.]],
-		["Frame Spaces - Horizontal:"] = "Frame Spaces - Horizontal:",
-		["Frame Spaces - Vertical:"] = "Frame Spaces - Vertical:",
-		["qFSpace"] = [[With these sliders you can apply additional spaces between the Frames. No space will be added left of the left-most frame, top of the top-most frame, ...]],
-		["Header Spaces - Top:"] = "Header Spaces - Top:",
-		["Header Spaces - Bottom:"] = "Header Spaces - Bottom:",
-		["qHSpace"] = [[These allow you to make space above and below the group-headers (tank, heal, dps). No space will be added top of the first header]],
 	}, {--German
 		["Frame Width:"] = "Frame Breite:",
 		["Frame Height:"] = "Frame Höhe:",
 		["qSize"] = [[Diese Schieberegler bestimmen die Größe eines jeden Frames in dem Raid.]],
 		["Frame Inset:"] = "Innenseitiger Abstand:",
 		["qInset"] = [[Diese Option erlaubt es die Bars weiter vom Rand des Frames zu entfernen.]],
-		["Anchor Left Offset:"] = "Ankerpunkt Links:",
-		["Anchor Top Offset:"] = "Ankerpunkt Oben:",
-		["qOffset"] = [[Diese Schieberegler ermöglichen es die obere linke Ecke des Raids zu verschieben.]],
-		["Fill-Direction:"] = "Füll-Richtung:",
-		["First right"] = "Rechts zuerst",
-		["First down"] = "Runter zuerst",
-		["Fill-Until:"] = "Füllen, bis:",
-		["qFill"] = [[Diese Optionen definieren, in welche Richtung das Addon zunächst den Raid füllen soll und wieviele Frames es maximal in diese Richtung platzieren darf.
-						Achtung: Falls es dem Addon nicht erlaubt wird mindestens genausoviele Frames nach unten zu Zeichnen, wie es Gruppen(Tank/Heal/DD) gibt, so wird das Addon dennoch genau diese Anzahl an Reihen erstellen.]],
-		["Frame Spaces - Horizontal:"] = "Frame Abstände - Horizontal:",
-		["Frame Spaces - Vertical:"] = "Frame Abstände - Vertikal:",
-		["qFSpace"] = [[Mit diesen Schiebereglern kann mehr Platz zwischen den einzelnen Frames geschaffen werden. Oberhalb des obersten, unterhalb des untersten(, ...) wird kein zusätzlicher Abstand eingefügt.]],
-		["Header Spaces - Top:"] = "Überschriften-Abstand - Oberhalb:",
-		["Header Spaces - Bottom:"] = "Überschriften-Abstand - Unterhalb:",
-		["qHSpace"] = [[Hier kann mehr Platz über/unter den Gruppen-Überschriften geschaffen werden.]],
 	}, {--French
 	})
-	
 
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
+	
+	local prev = MRF:LoadForm("PreviewSlot", parent)
+	MRF:applyPreview(prev, false, "none")
 	
 	local wOpt = MRF:GetOption(frameOpt, "size", 3)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
@@ -692,7 +668,43 @@ function FrameHandler:InitSettings(parent, name)
 	local iQuest = MRF:LoadForm("QuestionMark", iRow:FindChild("Left"))
 	iQuest:SetTooltip(L["qInset"])
 	
-	MRF:LoadForm("HalvedRow", parent)
+	local children = parent:GetChildren()
+	local anchor = {parent:GetAnchorOffsets()}
+	anchor[4] = anchor[2] + #children*30+50
+	parent:SetAnchorOffsets(unpack(anchor))
+	parent:ArrangeChildrenVert()
+	parent:GetParent():RecalculateContentExtents()
+	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+	Options:ForceUpdate()
+	frameOpt:ForceUpdate()
+end
+
+function FrameHandler:InitPositioningSettings(parent, name)
+	local L = MRF:Localize({--English
+		["Anchor Left Offset:"] = "Anchor Left Offset:",
+		["Anchor Top Offset:"] = "Anchor Top Offset:",
+		["qOffset"] = [[These two sliders define where the top-left corner of the raid will be.]],
+		["Fill-Direction:"] = "Fill-Direction:",
+		["First right"] = "First right",
+		["First down"] = "First down",
+		["Fill-Until:"] = "Fill-Until:",
+		["qFill"] = [[These Options define which direction the addon should fill your raid first and how many its maximally allowed to display in that direction.
+				Note that if the addon is allowed to display less downside than there are groups(tanks, heals, dps), he will still display a row for each group.]],
+	}, {--German
+		["Anchor Left Offset:"] = "Ankerpunkt Links:",
+		["Anchor Top Offset:"] = "Ankerpunkt Oben:",
+		["qOffset"] = [[Diese Schieberegler ermöglichen es die obere linke Ecke des Raids zu verschieben.]],
+		["Fill-Direction:"] = "Füll-Richtung:",
+		["First right"] = "Rechts zuerst",
+		["First down"] = "Runter zuerst",
+		["Fill-Until:"] = "Füllen, bis:",
+		["qFill"] = [[Diese Optionen definieren, in welche Richtung das Addon zunächst den Raid füllen soll und wieviele Frames es maximal in diese Richtung platzieren darf.]],
+	}, {--French
+	})
+	
+	local form = MRF:LoadForm("SimpleTab", parent)
+	form:FindChild("Title"):SetText(name)
+	parent = form:FindChild("Space")
 	
 	local xRow = MRF:LoadForm("HalvedRow", parent)
 	xRow:FindChild("Left"):SetText(L["Anchor Left Offset:"])
@@ -720,6 +732,39 @@ function FrameHandler:InitSettings(parent, name)
 	local fQuest = MRF:LoadForm("QuestionMark", dirRow:FindChild("Left"))
 	fQuest:SetTooltip(L["qFill"])
 	
+	local children = parent:GetChildren()
+	local anchor = {parent:GetAnchorOffsets()}
+	anchor[4] = anchor[2] + #children*30
+	parent:SetAnchorOffsets(unpack(anchor))
+	parent:ArrangeChildrenVert()
+	parent:GetParent():RecalculateContentExtents()
+	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+	Options:ForceUpdate()
+	frameOpt:ForceUpdate()
+end
+
+function FrameHandler:InitSpacingSettings(parent, name)
+	local L = MRF:Localize({--English
+		["Frame Spaces - Horizontal:"] = "Frame Spaces - Horizontal:",
+		["Frame Spaces - Vertical:"] = "Frame Spaces - Vertical:",
+		["qFSpace"] = [[With these sliders you can apply additional spaces between the Frames. No space will be added left of the left-most frame, top of the top-most frame, ...]],
+		["Header Spaces - Top:"] = "Header Spaces - Top:",
+		["Header Spaces - Bottom:"] = "Header Spaces - Bottom:",
+		["qHSpace"] = [[These allow you to make space above and below the group-headers (tank, heal, dps). No space will be added top of the first header]],
+	}, {--German
+		["Frame Spaces - Horizontal:"] = "Frame Abstände - Horizontal:",
+		["Frame Spaces - Vertical:"] = "Frame Abstände - Vertikal:",
+		["qFSpace"] = [[Mit diesen Schiebereglern kann mehr Platz zwischen den einzelnen Frames geschaffen werden. Oberhalb des obersten, unterhalb des untersten(, ...) wird kein zusätzlicher Abstand eingefügt.]],
+		["Header Spaces - Top:"] = "Überschriften-Abstand - Oberhalb:",
+		["Header Spaces - Bottom:"] = "Überschriften-Abstand - Unterhalb:",
+		["qHSpace"] = [[Hier kann mehr Platz über/unter den Gruppen-Überschriften geschaffen werden.]],
+	}, {--French
+	})
+	
+	local form = MRF:LoadForm("SimpleTab", parent)
+	form:FindChild("Title"):SetText(name)
+	parent = form:FindChild("Space")
+	
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	hRow:FindChild("Left"):SetText(L["Frame Spaces - Horizontal:"])
 	MRF:applySlider(hRow:FindChild("Right"), hSpFrOpt, -20, 80, 1)
@@ -740,11 +785,11 @@ function FrameHandler:InitSettings(parent, name)
 	MRF:applySlider(bRow:FindChild("Right"), bSpHeOpt, -20, 80, 1)
 	
 	local shQuest = MRF:LoadForm("QuestionMark", tRow:FindChild("Left"))
-	shQuest:SetTooltip(L["qHSpace"])	
+	shQuest:SetTooltip(L["qHSpace"])
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
-	anchor[4] = anchor[2] + #children*30 --we want to display six 30-high rows.
+	anchor[4] = anchor[2] + #children*30
 	parent:SetAnchorOffsets(unpack(anchor))
 	parent:ArrangeChildrenVert()
 	parent:GetParent():RecalculateContentExtents()
@@ -752,4 +797,3 @@ function FrameHandler:InitSettings(parent, name)
 	Options:ForceUpdate()
 	frameOpt:ForceUpdate()
 end
-
