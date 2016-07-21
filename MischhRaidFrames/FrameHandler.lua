@@ -745,6 +745,11 @@ end
 
 function FrameHandler:InitSpacingSettings(parent, name)
 	local L = MRF:Localize({--English
+		["qPreview"] = [[Preview:
+			This picture is supposed to help undestand whats changing, when adding spaces.
+			Its not accurate by how many frames are shown in a column/row. There will always be four frames and two headers.
+			Green is the visible part of the headers.
+			Blue/Red outlines a frame.]],
 		["Frame Spaces - Horizontal:"] = "Frame Spaces - Horizontal:",
 		["Frame Spaces - Vertical:"] = "Frame Spaces - Vertical:",
 		["qFSpace"] = [[With these sliders you can apply additional spaces between the Frames. No space will be added left of the left-most frame, top of the top-most frame, ...]],
@@ -752,6 +757,11 @@ function FrameHandler:InitSpacingSettings(parent, name)
 		["Header Spaces - Bottom:"] = "Header Spaces - Bottom:",
 		["qHSpace"] = [[These allow you to make space above and below the group-headers (tank, heal, dps). No space will be added top of the first header]],
 	}, {--German
+		["qPreview"] = [[Vorschau:
+			Dieses Bild soll helfen klarzustellen, welche Änderungen Abstände mit sich bringen.
+			Die Anzahl von Frames stimmen nicht mit den Einstellungen aus anderen Teilen des Addons überein. Hier werden immer vier Frames und zwei Überschriften in dieser Sortierung gezeigt.
+			Grün ist der sichtbare Teil von Überschriften.
+			Blau/Rot sind Frames.]],
 		["Frame Spaces - Horizontal:"] = "Frame Abstände - Horizontal:",
 		["Frame Spaces - Vertical:"] = "Frame Abstände - Vertikal:",
 		["qFSpace"] = [[Mit diesen Schiebereglern kann mehr Platz zwischen den einzelnen Frames geschaffen werden. Oberhalb des obersten, unterhalb des untersten(, ...) wird kein zusätzlicher Abstand eingefügt.]],
@@ -764,6 +774,9 @@ function FrameHandler:InitSpacingSettings(parent, name)
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
+	
+	local prev = self:PreviewSpacing(parent)
+	MRF:LoadForm("QuestionMark", prev):SetTooltip(L["qPreview"])
 	
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	hRow:FindChild("Left"):SetText(L["Frame Spaces - Horizontal:"])
@@ -789,11 +802,99 @@ function FrameHandler:InitSpacingSettings(parent, name)
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
-	anchor[4] = anchor[2] + #children*30
+	anchor[4] = anchor[2] + #children*30+200
 	parent:SetAnchorOffsets(unpack(anchor))
 	parent:ArrangeChildrenVert()
 	parent:GetParent():RecalculateContentExtents()
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
 	Options:ForceUpdate()
 	frameOpt:ForceUpdate()
+end
+
+function FrameHandler:PreviewSpacing(parent)
+	local floor, ceil = math.floor, math.ceil
+	local cBlue = ApolloColor.new("A000A0FF")
+	local cGreen = ApolloColor.new("A000FF00")
+	local cRed = ApolloColor.new("A0FF0000")
+	
+	local tl, tr, bl, br, th, bh; --top-left, ..., bottom-right, top-header, bottom-header
+	
+	local templateOpt = MRF:GetOption(nil, "frame")
+	local template = templateOpt:Get();
+	
+	local function recolor(frame)
+		frame:SetVar("backcolor", nil, cBlue)
+		for _, modKey in ipairs(frame.oldTemp) do
+			frame:SetVar("progress", modKey, 1)
+			frame:SetVar("barcolor", modKey, cRed, cRed)
+		end
+	end
+	
+	local function reposition()		
+		--from above:
+		--local hFrameSpace = 0
+		--local vFrameSpace = 0
+		--local tHeaderSpace = 0
+		--local bHeaderSpace = 0
+		
+		local width = tl.frame:GetWidth()
+		local height = tl.frame:GetHeight()
+		local heightHead = th:GetHeight()
+		
+		local leftStart = -floor(hFrameSpace/2)
+		local rightStart = ceil(hFrameSpace/2)
+		local leftEnd = leftStart - width
+		local rightEnd = rightStart + width
+		
+		local topFrameStart = -floor(vFrameSpace/2)
+		local botFrameStart = ceil(vFrameSpace/2)
+		local topFrameEnd = topFrameStart - height
+		local botFrameEnd = botFrameStart + height
+		
+		local topHeaderStart = topFrameEnd - bHeaderSpace
+		local botHeaderStart = botFrameEnd + tHeaderSpace
+		local topHeaderEnd = topHeaderStart - heightHead
+		local botHeaderEnd = botHeaderStart + heightHead
+		
+		--lleft,top,right,bottom
+		tl.frame:SetAnchorOffsets(leftEnd, topFrameEnd, leftStart, topFrameStart)
+		tr.frame:SetAnchorOffsets(rightStart, topFrameEnd, rightEnd, topFrameStart)
+		bl.frame:SetAnchorOffsets(leftEnd, botFrameStart, leftStart, botFrameEnd)
+		br.frame:SetAnchorOffsets(rightStart, botFrameStart, rightEnd, botFrameEnd)
+		
+		th:SetAnchorOffsets(leftEnd, topHeaderEnd, rightEnd, topHeaderStart)
+		bh:SetAnchorOffsets(leftEnd, botHeaderStart, rightEnd, botHeaderEnd)
+	end
+	
+	templateOpt:OnUpdate(function(newTemplate)
+		template = newTemplate;
+		
+		tl:UpdateOptions(newTemplate); tl.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
+		tr:UpdateOptions(newTemplate); tr.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
+		bl:UpdateOptions(newTemplate); bl.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
+		br:UpdateOptions(newTemplate); br.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
+		--reposition all frames.
+		
+		recolor(tl); recolor(tr); recolor(bl); recolor(br);
+		reposition()
+	end)
+	
+	hSpFrOpt:OnUpdate(reposition);
+	vSpFrOpt:OnUpdate(reposition);
+	tSpHeOpt:OnUpdate(reposition);
+	bSpHeOpt:OnUpdate(reposition);
+	
+	local parent = MRF:LoadForm("PreviewSlot", parent)
+	parent:SetAnchorOffsets(0,0,0,230)
+	
+	tl, tr, bl, br = MRF:newFrame(parent, template), MRF:newFrame(parent, template), MRF:newFrame(parent, template), MRF:newFrame(parent, template)
+	th, bh = MRF:LoadForm("GroupHeader", parent), MRF:LoadForm("GroupHeader", parent)
+	
+	recolor(tl); recolor(tr); recolor(bl); recolor(br);
+	th:FindChild("line"):SetBGColor(cGreen); bh:FindChild("line"):SetBGColor(cGreen);
+	th:FindChild("text"):SetText("Text"); bh:FindChild("text"):SetText("Text")
+	th:SetAnchorPoints(0.5,0.5,0.5,0.5); bh:SetAnchorPoints(0.5,0.5,0.5,0.5)
+	th:Show(true); bh:Show(true);
+	
+	return parent
 end
