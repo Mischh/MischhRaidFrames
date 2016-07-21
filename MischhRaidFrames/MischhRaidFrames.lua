@@ -190,8 +190,8 @@ do
 		progress = function(handler, barHandler, barVal)
 			barHandler:SetProgress(barVal)
 		end,
-		backcolor = function(handler, frame, color)
-			frame:SetBGColor(color or bgColor)
+		backcolor = function(handler, _, color)
+			handler:SetBGColor(color or bgColor)
 		end,
 	}
 	
@@ -274,7 +274,7 @@ do
 	end
 	
 	local function setVar( handler, mode, key, ... )
-		modes[mode](handler, handler[key], ...)
+		modes[mode](handler, handler[key or ""], ...)
 	end
 	
 	local function empty()
@@ -293,6 +293,10 @@ do
 		return handler.tarOp
 	end
 	
+	local function setBGCol(handler, color)
+		handler.frame:SetBGColor(color)
+	end
+	
 	function MischhRaidFrames:newFrame(parent, options)
 		local handler = {
 			SetVar = setVar,
@@ -305,6 +309,7 @@ do
 			SetOpacity = setOp,
 			GetOpacity = getOp,
 			GetTargetedOpacity = getTarOp,
+			SetBGColor = setBGCol,
 		}
 		handler.frame = Apollo.LoadForm(self.xmlDoc, "FrameBackground", parent, handler)
 		handler.panel = handler.frame:FindChild("InsetFrame")
