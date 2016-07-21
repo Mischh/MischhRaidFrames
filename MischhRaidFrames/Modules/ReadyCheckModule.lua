@@ -30,6 +30,7 @@ activeOption:OnUpdate(ReadyMod, "UpdateActivated")
 MRF:OnceDocLoaded(function()
 	Apollo.RegisterEventHandler("Group_ReadyCheck", "OnReadyCheck", ReadyMod)
 	timer = ApolloTimer.Create(interval, false, "TimerExceeded", ReadyMod)
+	timer:Stop()
 end)
 
 --############ SIZE ############
