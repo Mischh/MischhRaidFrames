@@ -28,6 +28,7 @@
 	<Script Name="Modules\ClassIconsModule.lua" />
 	<Script Name="Modules\LeadMarkerModule.lua" />
 	<Script Name="Modules\ReadyCheckModule.lua" />
+	<Script Name="Modules\ConsumableIconModule.lua" />
 	
 	<Script Name="FrameHandler.lua" />
 	<Script Name="GroupHandler.lua" />
