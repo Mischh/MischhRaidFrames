@@ -1,3 +1,17 @@
+<p><strong>Release v1.4:</strong></p>
+<p>Added:</p>
+<ul>
+<li>ConsumableIcon: Show Icons for Consumbales used by your Raidmembers. (Food, Speedflask, Boost, Firebuff)</li>
+<li>Split the FrameHandler into Size, Position &amp; Spaces.</li>
+<li>Previews for Bars, Icons and FrameHandler.</li>
+<li>German Localization:&nbsp;Colors.</li>
+<li>German Localization:&nbsp;Texts.</li>
+<li>German Localization:&nbsp;Misc.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Some Minor, probably unnoticed Problems.</li>
+</ul>
 <p><strong>Release v1.3:</strong></p>
 <p>Fixes:</p>
 <ul>
