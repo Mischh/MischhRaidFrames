@@ -566,7 +566,7 @@ do
 		
 		frame:UpdateOptions(template)
 		reposition(frame)
-		recolorNone(frame)
+		recolorIcon(frame, modKey)
 	end}
 	
 	local btnNoneHandler = {ButtonClick = function(self, btn) 
@@ -574,7 +574,7 @@ do
 		
 		frame:UpdateOptions(template)
 		reposition(frame)
-		recolorIcon(frame)
+		recolorNone(frame)
 	end}
 	
 	local L = MRF:Localize({--English
