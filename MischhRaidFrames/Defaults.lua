@@ -85,6 +85,20 @@ function MRF:GetDefaults()
 				distance = 40,
 				fraction = 0.3,
 			},
+			["Consumables"] = {
+				activated = true,
+				boxed = false,
+				nocombat = true,
+				showBoost = true,
+				showFire = true,
+				showFood = true,
+				showSpeed = true,
+				size = 20,
+				space = -2,
+				xOffset = 0.83,
+				yOffset = 0.5,
+				sorting = {"Fire", "Speed", "Food", "Boost"},
+			}
 		},
 		frame = {
 			size = {0,0,250,25},

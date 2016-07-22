@@ -19,7 +19,7 @@ local spaceOpt = MRF:GetOption(ModOptions, "space")
 local boxed = true
 local boxedOpt = MRF:GetOption(ModOptions, "boxed")
 
-local sorting = {"Food", "Speed", "Boost", "Fire"}
+local sorting = {"Fire", "Speed", "Food", "Boost"}
 local sortingOpt = MRF:GetOption(ModOptions, "sorting")
 MRF:GatherUpdates(sortingOpt)
 
@@ -62,7 +62,7 @@ boxedOpt:OnUpdate(ConsMod, "UpdateBoxed")
 
 function ConsMod:UpdateSorting(sort)
 	if type(sort) ~= "table" or #sort<4 then
-		sortingOpt:Set({"Food", "Speed", "Boost", "Fire"})
+		sortingOpt:Set({"Fire", "Speed", "Food", "Boost"})
 	else
 		sorting = sort
 		self:RelocateAll()
