@@ -380,15 +380,10 @@ function ConsMod:InitIconSettings(parent)
 	local lblRow3 = sortRow3:FindChild("Left")
 	local lblRow4 = sortRow4:FindChild("Left")
 	
-	local optRow1 = MRF:GetOption(ModOptions, "sorting", 1)
-	local optRow2 = MRF:GetOption(ModOptions, "sorting", 2)
-	local optRow3 = MRF:GetOption(ModOptions, "sorting", 3)
-	local optRow4 = MRF:GetOption(ModOptions, "sorting", 4)
-	
-	optRow1:OnUpdate(function(new) lblRow1:SetText(L[new or ""]); lblRow1:SetData(new) end)
-	optRow2:OnUpdate(function(new) lblRow2:SetText(L[new or ""]); lblRow2:SetData(new) end)
-	optRow3:OnUpdate(function(new) lblRow3:SetText(L[new or ""]); lblRow3:SetData(new) end)
-	optRow4:OnUpdate(function(new) lblRow4:SetText(L[new or ""]); lblRow4:SetData(new) end)
+	MRF:GetOption(sortingOpt, 1):OnUpdate(function(new) lblRow1:SetText(L[new or ""]) end)
+	MRF:GetOption(sortingOpt, 2):OnUpdate(function(new) lblRow2:SetText(L[new or ""]) end)
+	MRF:GetOption(sortingOpt, 3):OnUpdate(function(new) lblRow3:SetText(L[new or ""]) end)
+	MRF:GetOption(sortingOpt, 4):OnUpdate(function(new) lblRow4:SetText(L[new or ""]) end)
 	
 	local btnRow1 = MRF:LoadForm("HalvedRow", sortRow1:FindChild("Right"))
 	local btnRow2 = MRF:LoadForm("HalvedRow", sortRow2:FindChild("Right"))
@@ -396,25 +391,28 @@ function ConsMod:InitIconSettings(parent)
 	local btnRow4 = MRF:LoadForm("HalvedRow", sortRow4:FindChild("Right"))
 	
 	--Down-Buttons:
-	MRF:LoadForm("Button", btnRow1:FindChild("Right"), {ButtonClick = function() 
-		local down = lblRow1:GetData()
-		local up = lblRow2:GetData()
-		optRow1:Set(up)
-		optRow2:Set(down)
+	MRF:LoadForm("Button", btnRow1:FindChild("Right"), {ButtonClick = function()
+		local down = sorting[1]
+		local up = sorting[2]
+		sorting[1] = up
+		sorting[2] = down
+		sortingOpt:ForceUpdate()
 	end}):SetText(L["Down"])
 	
 	MRF:LoadForm("Button", btnRow2:FindChild("Right"), {ButtonClick = function() 
-		local down = lblRow2:GetData()
-		local up = lblRow3:GetData()
-		optRow2:Set(up)
-		optRow3:Set(down)
+		local down = sorting[2]
+		local up = sorting[3]
+		sorting[2] = up
+		sorting[3] = down
+		sortingOpt:ForceUpdate()
 	end}):SetText(L["Down"])
 	
 	MRF:LoadForm("Button", btnRow3:FindChild("Right"), {ButtonClick = function() 
-		local down = lblRow3:GetData()
-		local up = lblRow4:GetData()
-		optRow3:Set(up)
-		optRow4:Set(down)
+		local down = sorting[3]
+		local up = sorting[4]
+		sorting[3] = up
+		sorting[4] = down
+		sortingOpt:ForceUpdate()
 	end}):SetText(L["Down"])
 	
 	local disabled = MRF:LoadForm("Button", btnRow4:FindChild("Right"))
@@ -427,24 +425,27 @@ function ConsMod:InitIconSettings(parent)
 	disabled:Enable(false)
 	
 	MRF:LoadForm("Button", btnRow2:FindChild("Left"), {ButtonClick = function() 
-		local down = lblRow1:GetData()
-		local up = lblRow2:GetData()
-		optRow1:Set(up)
-		optRow2:Set(down)
+		local down = sorting[1]
+		local up = sorting[2]
+		sorting[1] = up
+		sorting[2] = down
+		sortingOpt:ForceUpdate()
 	end}):SetText(L["Up"])
 	
 	MRF:LoadForm("Button", btnRow3:FindChild("Left"), {ButtonClick = function() 
-		local down = lblRow2:GetData()
-		local up = lblRow3:GetData()
-		optRow2:Set(up)
-		optRow3:Set(down)
+		local down = sorting[2]
+		local up = sorting[3]
+		sorting[2] = up
+		sorting[3] = down
+		sortingOpt:ForceUpdate()
 	end}):SetText(L["Up"])
 	
 	MRF:LoadForm("Button", btnRow4:FindChild("Left"), {ButtonClick = function() 
-		local down = lblRow3:GetData()
-		local up = lblRow4:GetData()
-		optRow3:Set(up)
-		optRow4:Set(down)
+		local down = sorting[3]
+		local up = sorting[4]
+		sorting[3] = up
+		sorting[4] = down
+		sortingOpt:ForceUpdate()
 	end}):SetText(L["Up"])
 	
 	local anchor = {parent:GetAnchorOffsets()}
