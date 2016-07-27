@@ -16,10 +16,14 @@ local state = {} --[frame] = true/false/nil for Lead/canMark/none
 
 local activeOption = MRF:GetOption(ModOptions, "activated")
 
-local width = 3
-local height = 15
 local widthOpt = MRF:GetOption(ModOptions, "width")
 local heightOpt = MRF:GetOption(ModOptions, "height")
+
+--the 'new' way of sizing icons.
+local lOff, tOff, rOff, bOff = -3, -15, 3, 15
+local hSizeOpt = MRF:GetOption(ModOptions, "hSize")
+local vSizeOpt = MRF:GetOption(ModOptions, "vSize")
+
 local colLeadOpt = MRF:GetOption(ModOptions, "leadColor")
 local colInvOpt = MRF:GetOption(ModOptions, "invColor")
 local fillOpt = MRF:GetOption(ModOptions, "fill")
@@ -34,28 +38,48 @@ activeOption:OnUpdate(LeadMod, "UpdateActivated")
 --############ SIZE ############
 
 function LeadMod:UpdateWidth(w)
-	if type(w) ~= "number" or w<=0 then
-		widthOpt:Set(3) --default
-	else
-		width = w
-		self:UpdateAllSize()
+	if type(w) == "number" and w>0 then
+		hSizeOpt:Set(2*w)
+		widthOpt:Set(nil)
 	end
 end
 widthOpt:OnUpdate(LeadMod, "UpdateWidth")
 
 function LeadMod:UpdateHeight(h)
-	if type(h) ~= "number" or h<1 then
-		heightOpt:Set(15) --default
-	else
-		height = h
-		self:UpdateAllSize()
+	if type(h) == "number" and h>0 then
+		vSizeOpt:Set(2*h)
+		heightOpt:Set(nil)
 	end
 end
 heightOpt:OnUpdate(LeadMod, "UpdateHeight")
 
+local floor = math.floor
+function LeadMod:UpdateHSize(val)
+	if type(val) ~= "number" or val<=0 then
+		hSizeOpt:Set(6)
+	else
+		lOff = -floor(val/2)
+		rOff = val+lOff
+		self:UpdateAllSize()
+	end
+end
+hSizeOpt:OnUpdate(LeadMod, "UpdateHSize")
+
+function LeadMod:UpdateVSize(val)
+	if type(val) ~= "number" or val<=0 then
+		vSizeOpt:Set(30)
+	else
+		tOff = -floor(val/2)
+		bOff = val+tOff
+		self:UpdateAllSize()
+	end
+end
+vSizeOpt:OnUpdate(LeadMod, "UpdateVSize")
+
+
 function LeadMod:UpdateAllSize()
 	for _, icon in pairs(icons) do
-		icon:SetAnchorOffsets(-width, -height, width, height)
+		icon:SetAnchorOffsets(lOff, tOff, rOff, bOff)
 	end
 end
 
@@ -108,7 +132,7 @@ do
 	local orig = meta.__index
 	meta.__index = function(t,k)
 		local icon = orig(t,k)
-		icon:SetAnchorOffsets(-width, -height, width, height)
+		icon:SetAnchorOffsets(lOff, tOff, rOff, bOff)
 		return icon
 	end
 	setmetatable(icons, meta)
@@ -170,8 +194,8 @@ function LeadMod:InitIconSettings(parent)
 	
 	wRow:FindChild("Left"):SetText(L["Width:"])
 	hRow:FindChild("Left"):SetText(L["Height:"])
-	MRF:applySlider(wRow:FindChild("Right"), widthOpt, 1, 50, 1)
-	MRF:applySlider(hRow:FindChild("Right"), heightOpt, 1, 50, 1)
+	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1)
+	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1)
 
 	local fillRow = MRF:LoadForm("HalvedRow", parent)
 	local leadRow = MRF:LoadForm("HalvedRow", parent)

@@ -8,10 +8,13 @@ local icons = MRF:GetModIcons(modKey)
 
 local activeOption = MRF:GetOption(ModOptions, "activated")
 
-local width = 10
-local height = 10
 local widthOpt = MRF:GetOption(ModOptions, "width")
 local heightOpt = MRF:GetOption(ModOptions, "height")
+
+--the 'new' way of sizing icons.
+local lOff, tOff, rOff, bOff = -10, -10, 10, 10
+local hSizeOpt = MRF:GetOption(ModOptions, "hSize")
+local vSizeOpt = MRF:GetOption(ModOptions, "vSize")
 
 function ClassMod:UpdateActivated(active)
 	if active == nil then
@@ -21,30 +24,48 @@ end
 activeOption:OnUpdate(ClassMod, "UpdateActivated")
 
 --############ SIZE ############
-
 function ClassMod:UpdateWidth(w)
-	if type(w) ~= "number" or w<=0 then
-		widthOpt:Set(10) --default
-	else
-		width = w
-		self:UpdateAllSize()
+	if type(w) == "number" and w>0 then
+		hSizeOpt:Set(2*w)
+		widthOpt:Set(nil)
 	end
 end
 widthOpt:OnUpdate(ClassMod, "UpdateWidth")
 
 function ClassMod:UpdateHeight(h)
-	if type(h) ~= "number" or h<1 then
-		heightOpt:Set(10) --default
-	else
-		height = h
-		self:UpdateAllSize()
+	if type(h) == "number" and h>0 then
+		vSizeOpt:Set(2*h)
+		heightOpt:Set(nil)
 	end
 end
 heightOpt:OnUpdate(ClassMod, "UpdateHeight")
 
+local floor = math.floor
+function ClassMod:UpdateHSize(val)
+	if type(val) ~= "number" or val<=0 then
+		hSizeOpt:Set(20)
+	else
+		lOff = -floor(val/2)
+		rOff = val+lOff
+		self:UpdateAllSize()
+	end
+end
+hSizeOpt:OnUpdate(ClassMod, "UpdateHSize")
+
+function ClassMod:UpdateVSize(val)
+	if type(val) ~= "number" or val<=0 then
+		vSizeOpt:Set(20)
+	else
+		tOff = -floor(val/2)
+		bOff = val+tOff
+		self:UpdateAllSize()
+	end
+end
+vSizeOpt:OnUpdate(ClassMod, "UpdateVSize")
+
 function ClassMod:UpdateAllSize()
 	for _, icon in pairs(icons) do
-		icon:SetAnchorOffsets(-width, -height, width, height)
+		icon:SetAnchorOffsets(lOff, tOff, rOff, bOff)
 	end
 end
 
@@ -54,7 +75,7 @@ do
 	local orig = meta.__index
 	meta.__index = function(t,k)
 		local icon = orig(t,k)
-		icon:SetAnchorOffsets(-width, -height, width, height)
+		icon:SetAnchorOffsets(lOff, tOff, rOff, bOff)
 		return icon
 	end
 	setmetatable(icons, meta)
@@ -98,8 +119,8 @@ function ClassMod:InitIconSettings(parent)
 	
 	wRow:FindChild("Left"):SetText(L["Width:"])
 	hRow:FindChild("Left"):SetText(L["Height:"])
-	MRF:applySlider(wRow:FindChild("Right"), widthOpt, 1, 50, 1)
-	MRF:applySlider(hRow:FindChild("Right"), heightOpt, 1, 50, 1)
+	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1)
+	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1)
 
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + 60 --we want to display two 30-high rows.
