@@ -673,12 +673,20 @@ do
 			[GameLib.CodeEnumAddonSaveLevel.Account] = "Account", 
 			[GameLib.CodeEnumAddonSaveLevel.General] = "General",
 			[GameLib.CodeEnumAddonSaveLevel.Realm] = "Realm",
+			[true] = "Default",
 		}
 		local listed = {
 			GameLib.CodeEnumAddonSaveLevel.Character,
 			GameLib.CodeEnumAddonSaveLevel.Realm,
 			GameLib.CodeEnumAddonSaveLevel.Account,
 			GameLib.CodeEnumAddonSaveLevel.General,
+		}
+		local listed_copy = {
+			GameLib.CodeEnumAddonSaveLevel.Character,
+			GameLib.CodeEnumAddonSaveLevel.Realm,
+			GameLib.CodeEnumAddonSaveLevel.Account,
+			GameLib.CodeEnumAddonSaveLevel.General,
+			true, --Default
 		}
 		local function trans(eLvl)
 			if eLvl then
@@ -692,10 +700,14 @@ do
 		local optProf = MRF:GetOption("profile")
 	
 		MRF:applyDropdown(parent:FindChild("Dropdown_Profile"), listed, optProf, trans)
-		MRF:applyDropdown(parent:FindChild("Dropdown_Copy"), listed, optCopy, trans)
+		MRF:applyDropdown(parent:FindChild("Dropdown_Copy"), listed_copy, optCopy, trans)
 		
 		optCopy:OnUpdate(function(eLevel)
-			if eLevel then 
+			if eLevel == true then print(pcall(function()
+				local cur = optProf:Get()
+				MRF:CopyProfile(nil , cur)--copies default into cur.
+				optCopy:Set(nil) end))
+			elseif eLevel then
 				local cur = optProf:Get()
 				MRF:CopyProfile(eLevel, cur)
 				optCopy:Set(nil)
