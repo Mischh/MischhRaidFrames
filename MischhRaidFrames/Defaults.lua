@@ -104,9 +104,9 @@ function MRF:GetDefaults()
 			backcolor = "FF000000",
 			size = {0,0,250,25},
 			inset = 1,
-			[1] = {size = 4, modKey = "Health", lColor = colors["FUIGray"], rColor = colors["Health"], textSource = "Name", textColor = colors["Class"]},
-			[2] = {size = 1, modKey = "Shield", lColor = colors["FUIGray"], rColor = colors["LightBlue"]},
-			[{[0]=4}] = {size = 1, modKey = "Absorb", lColor = colors["Yellow"], rColor = colors["Invisible"]},
+			[1] = {size = 4, modKey = "Health", lColor = colors["FUIGray"], rColor = colors["Health"], lTexture = "ForgeUI_Smooth", rTexture = "ForgeUI_Smooth", textSource = "Name", textColor = colors["Class"]},
+			[2] = {size = 1, modKey = "Shield", lColor = colors["FUIGray"], rColor = colors["LightBlue"], lTexture = "ForgeUI_Smooth", rTexture = "ForgeUI_Smooth"},
+			[{[0]=4}] = {size = 1, modKey = "Absorb", lColor = colors["Yellow"], rColor = colors["Invisible"], lTexture = "ForgeUI_Smooth", rTexture = "ForgeUI_Smooth"},
 		},
 	}
 
