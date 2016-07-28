@@ -13,7 +13,7 @@ local tSpHeOpt = MRF:GetOption(Options, "topHeaderSpace")
 local bSpHeOpt = MRF:GetOption(Options, "bottomHeaderSpace")
 
 MRF:AddMainTab("Frame Handler")
-MRF:AddChildTab("Size", "Frame Handler", FrameHandler, "InitSizingSettings")
+MRF:AddChildTab("General", "Frame Handler", FrameHandler, "InitGeneralSettings")
 MRF:AddChildTab("Position", "Frame Handler", FrameHandler, "InitPositioningSettings")
 MRF:AddChildTab("Spaces", "Frame Handler", FrameHandler, "InitSpacingSettings")
 
@@ -624,7 +624,7 @@ function FrameHandler:BuildLimitlessSlider(slider)
 	end)
 end
 
-function FrameHandler:InitSizingSettings(parent, name)
+function FrameHandler:InitGeneralSettings(parent, name)
 	local L = MRF:Localize({--English
 		["Frame Width:"] = "Frame Width:",
 		["Frame Height:"] = "Frame Height:",
@@ -637,6 +637,7 @@ function FrameHandler:InitSizingSettings(parent, name)
 		["qSize"] = [[Diese Schieberegler bestimmen die Größe eines jeden Frames in dem Raid.]],
 		["Frame Inset:"] = "Innenseitiger Abstand:",
 		["qInset"] = [[Diese Option erlaubt es die Bars weiter vom Rand des Frames zu entfernen.]],
+		["Background Color:"] = "Hintergrund Farbe:",
 	}, {--French
 	})
 
@@ -667,6 +668,11 @@ function FrameHandler:InitSizingSettings(parent, name)
 	
 	local iQuest = MRF:LoadForm("QuestionMark", iRow:FindChild("Left"))
 	iQuest:SetTooltip(L["qInset"])
+	
+	local bOpt = MRF:GetOption(frameOpt, "backcolor")
+	local bRow = MRF:LoadForm("HalvedRow", parent)
+	bRow:FindChild("Left"):SetText(L["Background Color:"])
+	MRF:applyColorbutton(bRow:FindChild("Right"), bOpt)
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}

@@ -101,6 +101,7 @@ function MRF:GetDefaults()
 			}
 		},
 		frame = {
+			backcolor = "FF000000",
 			size = {0,0,250,25},
 			inset = 1,
 			[1] = {size = 4, modKey = "Health", lColor = colors["FUIGray"], rColor = colors["Health"], textSource = "Name", textColor = colors["Class"]},

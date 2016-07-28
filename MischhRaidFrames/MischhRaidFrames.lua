@@ -219,9 +219,14 @@ do
 		handler.frame:Show(...)
 	end
 	
+	local black = ApolloColor.new("FF000000")
 	local function updateOpt( handler, options )
 		
 		wipeEntries(handler, options)
+		
+		--background color
+		local back = options.backcolor and ApolloColor.new(options.backcolor) or black
+		handler.frame:SetBGColor(back)
 		
 		--size
 		if options.size then
