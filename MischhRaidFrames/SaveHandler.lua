@@ -183,6 +183,22 @@ function MRF:CheckFrameTemplate(frame)
 	local dupBar = {}
 	local dupTxt = {}
 	local changed = false
+	
+	if not frame.size then
+		Print("The Template had no size. Default to 250x25")
+		frame.size = {0,0,250,25}
+		changed = true
+	end
+	if not frame.backcolor then
+		Print("The Template had no background color. Default to black.")
+		frame.backcolor = "FF000000"
+		changed = true
+	end
+	if not frame.inset then
+		Print("The Template had no inset settings. Default to 1.")
+		frame.inset = 1
+		changed = true
+	end
 	for pos, bar in pairs(frame) do
 		if type(pos) ~= "string" then
 			--check all colors in all bars and look, if it has a color without a :Get() function
@@ -209,6 +225,18 @@ function MRF:CheckFrameTemplate(frame)
 			if bar.textColor and type(bar.textColor.Get) ~= "function" then
 				Print("Broken text color on bar '"..tostring(bar.modKey).."' ("..bar.textColor.name..") - replaced with default.")
 				bar.textColor = default
+				changed = true
+			end
+			
+			--check textures are selected.
+			if not bar.lTexture then
+				Print("Found a bar("..tostring(bar.modKey)..") without a filled texture - default to 'Fill'")
+				bar.lTexture = "WhiteFill"
+				changed = true
+			end
+			if not bar.rTexture then
+				Print("Found a bar("..tostring(bar.modKey)..") without a missing texture - default to 'Fill'")
+				bar.rTexture = "WhiteFill"
 				changed = true
 			end
 			
