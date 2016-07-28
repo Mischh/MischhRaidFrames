@@ -42,7 +42,6 @@ do --all workarounds for :GetOption(...)
 	end
 	
 	local function template_option_ForceUpdate(self)
-		
 		self.ForceUpdate = replace_ForceUpdate
 	
 		--let the update-force flow to all children.
@@ -60,16 +59,32 @@ do --all workarounds for :GetOption(...)
 			end
 		end
 		
+		if not self.block then 
+			self.ForceUpdate = template_option_ForceUpdate
+			if self.cached then
+				self.cached = false
+				self:ForceUpdate()
+			end
+		end
+	end
+	
+	template_option.ForceUpdate = template_option_ForceUpdate
+
+	function template_option:BlockUpdates()
+		self.ForceUpdate = replace_ForceUpdate
+		self.block = true --this option could possibly already be in a :ForceUpdate() 
+		--we need to makre sure he stays in the replacement.
+	end
+	
+	function template_option:UnblockUpdates()
+		self.block = false
 		self.ForceUpdate = template_option_ForceUpdate
 		if self.cached then
 			self.cached = false
 			self:ForceUpdate()
 		end
-		
 	end
 	
-	template_option.ForceUpdate = template_option_ForceUpdate
-
 	--same as :GetOption():Set(optSource) -> Use instead of this. | thats a profile swap.
 	function MRF:InitOptionsManager(optSource)
 		option_parents[0] = optSource;
