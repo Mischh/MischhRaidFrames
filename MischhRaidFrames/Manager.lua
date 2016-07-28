@@ -401,6 +401,7 @@ do
 			["ttRelPos"] = "These values are only used when the Mode is 'Stacking' or 'Offset'. The lowest position is the top-most. A bar in 'Offset'-Mode grows to the bottom.",
 			["ttFixPos"] = "These values are only used when the Mode is 'Fixed'.",
 			["ttBarCol"] = "These colors are displayed on the filled/missing part of the Bar. A half filled bar would be colored 50:50. The 'Filled Barcolor' always defines the left part of the Bar.",
+			["ttBarTex"] = "These textures are used for the filled/missing part of the Bar. The 'Filled Bartexture' is always used for the left part of the Bar.",
 			["ttTxtSrc"] = "These Options define which text should be applied to the bar. Be sure to never use one text-source for two bars.",
 		}, {--German
 			["Bar-Position Mode:"] = "Bar-Positionierungs-Modus:",
@@ -412,12 +413,15 @@ do
 			["Fixed Offset - Bottom:"] = "Fixer Abstand - Unten:",
 			["Filled Barcolor:"] = "Bar-Farbe, füllend:",
 			["Missing Barcolor:"] = "Bar-Farbe, leerend:",
+			["Filled Bartexture:"] = "Bar-Textur, füllend:",
+			["Missing Bartexture:"] = "Bar-Textur, leerend:",
 			["Text Source:"] = "Text Ursprung:",
 			["Text Color:"] = "Text Farbe:",
 			["ttBarPos"] = "Bestimmt, welcher Modus zur Positionierung der Bar genutzt wird. Nur Sichtbare Bars haben eine Position.",
 			["ttRelPos"] = "Diese Werte werden nur verwendet, wenn die Modi 'Stapelnd' oder 'Verschoben' gewählt sind. Die geringste Position liegt am oberen Rand. Eine Bar im Modus 'Verschoben' wächst immer nach unten.",
 			["ttFixPos"] = "Diese Werte werden nur verwendet, wenn der Modus 'Fixiert' gewählt wurde.",
 			["ttBarCol"] = "Die gewählten Farben werden auf dem vorhandenen/fehldenen Teil der Bar genutzt. Eine halb gefüllte Bar wird auf der linken Seite immer die füllende Farbe zeigen, auf der rechten hingegen die leerende.",
+			["ttBarTex"] = "Die gewählten Texturen werden auf dem vorhandenen/fehlenden Teil der Bar gezeigt. Die füllende Textur wird dabei immer im linken Teil angezeigt, die leerende hingegen rechts.",
 			["ttTxtSrc"] = "Diese Optionen definieren, welcher Text auf der Bar wiedergegeben werden soll. Stelle sicher, dass kein Text mehr als einer Bar zugewiesen wird.",
 			
 			["Stacking"] = "Stapelnd",
@@ -440,6 +444,8 @@ do
 		local relSize = MRF:GetOption("Manager:Bar", "size")
 		local lColor = MRF:GetOption("Manager:Bar", "lColor")
 		local rColor = MRF:GetOption("Manager:Bar", "rColor")
+		local lTexture = MRF:GetOption("Manager:Bar", "lTexture")
+		local rTexture = MRF:GetOption("Manager:Bar", "rTexture")
 		local txtSource = MRF:GetOption("Manager:Bar", "textSrc")
 		local txtColor = MRF:GetOption("Manager:Bar", "textColor")
 								
@@ -477,6 +483,13 @@ do
 			end
 		end}
 		
+		local textureChoices = {"WhiteFill", "ForgeUI_Smooth", "ForgeUI_Minimalist", "ForgeUI_Flat"}
+		
+		local _transTexChoices = {WhiteFill = "Fill", ForgeUI_Smooth = "ForgeUI: Smooth", ForgeUI_Minimalist = "ForgeUI: Minimalist", ForgeUI_Flat = "ForgeUI: Flat"}
+		local function transTexChoices(tex)
+			return _transTexChoices[tex or ""] or ""
+		end
+		
 		local function transRelPosChoices(pos)
 			if type(pos) == "number" then
 				if pos > 0 then
@@ -505,6 +518,8 @@ do
 		fixedB:OnUpdate(barHandler, "SwitchedFixed4")
 		lColor:OnUpdate(barHandler, "SwitchedLColor")
 		rColor:OnUpdate(barHandler, "SwitchedRColor")
+		lTexture:OnUpdate(barHandler, "SwitchedLTexture")
+		rTexture:OnUpdate(barHandler, "SwitchedRTexture")
 		txtSource:OnUpdate(barHandler, "SwitchedTextSource")
 		txtColor:OnUpdate(barHandler, "SwitchedTextColor")
 		
@@ -534,10 +549,12 @@ do
 			
 			relPos:Set(rel); fixedL:Set(l); fixedT:Set(t); fixedR:Set(r); fixedB:Set(b);
 			if bar then 
-				lColor:Set(bar.lColor); rColor:Set(bar.rColor); 
+				lColor:Set(bar.lColor); rColor:Set(bar.rColor);
+				lTexture:Set(bar.lTexture); rTexture:Set(bar.rTexture);
 				txtSource:Set(bar.textSource); txtColor:Set(bar.textColor);
 			else
-				lColor:Set(nil); rColor:Set(nil); 
+				lColor:Set(nil); rColor:Set(nil);
+				lTexture:Set(nil); rTexture:Set(nil);
 				txtSource:Set(nil); txtColor:Set(nil);
 			end
 			
@@ -574,7 +591,7 @@ do
 					
 				elseif oldMode == "Not Shown" then
 					local c = MRF:GetDefaultColor()
-					bar = { size=1, modKey=mod, lColor=c, rColor=c}
+					bar = { size=1, modKey=mod, lColor=c, rColor=c, lTexture="WhiteFill", rTexture="WhiteFill"}
 				else
 					--just set the old pos to nil
 					frameTmp[pos] = nil
@@ -596,8 +613,8 @@ do
 				oldMode = newMode;
 			end
 			for _, tbl in ipairs(self.windows) do
-				--tbl = {top, rel, fix, bar, txt, parent, tab}
-				if tbl[6]:GetParent():IsShown() then --only update the one Tab thats shown
+				--tbl = {top, rel, fix, bar, tex, txt, parent, tab}
+				if tbl[6]:GetParent():IsShown() then --only update the one Tab which is shown
 					local size = 0
 					
 					--top -> Always shown
@@ -617,21 +634,24 @@ do
 						tbl[3]:SetAnchorOffsets(0,0,0,0)
 					end
 					--bar -> now shown: Not Shown
+					--tex -> not shown: Not Shown
 					--txt -> not shown: Not Shown
 					if newMode == "Not Shown" then
 						tbl[4]:SetAnchorOffsets(0,0,0,0)
 						tbl[5]:SetAnchorOffsets(0,0,0,0)
+						tbl[6]:SetAnchorOffsets(0,0,0,0)
 					else
 						tbl[4]:SetAnchorOffsets(0,0,0,tbl[4]:GetData())
 						tbl[5]:SetAnchorOffsets(0,0,0,tbl[5]:GetData())
-						size = size + tbl[4]:GetData() + tbl[5]:GetData()
+						tbl[6]:SetAnchorOffsets(0,0,0,tbl[6]:GetData())
+						size = size + tbl[4]:GetData() + tbl[5]:GetData() + tbl[6]:GetData()
 					end
 					
 					--resort the tab, set tabs size, resort the parent
+					tbl[8]:ArrangeChildrenVert()
+					tbl[8]:SetAnchorOffsets(0,0,0,size)
 					tbl[7]:ArrangeChildrenVert()
-					tbl[7]:SetAnchorOffsets(0,0,0,size)
-					tbl[6]:ArrangeChildrenVert()
-					tbl[6]:RecalculateContentExtents()
+					tbl[7]:RecalculateContentExtents()
 				end
 			end
 		end
@@ -731,6 +751,36 @@ do
 			end
 		end
 		
+		local oldLTexture = nil;
+		function barHandler:SwitchedLTexture(newTexture)
+			if switchingTab or oldLTexture == newTexture then oldLTexture = newTexture; return end
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			
+			oldLTexture = newTexture
+			
+			if bar then
+				bar.lTexture = newTexture
+				frameOptions:Set(frameTmp)
+			end
+		end
+		
+		local oldRTexture = nil;
+		function barHandler:SwitchedRTexture(newTexture)
+			if switchingTab or oldRTexture == newTexture then oldRTexture = newTexture; return end
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			
+			oldRTexture = newTexture
+			
+			if bar then 
+				bar.rTexture = newTexture
+				frameOptions:Set(frameTmp)
+			end
+		end
+		
 		local oldSource = nil;
 		function barHandler:SwitchedTextSource(newSource)
 			if switchingTab or oldSource == newSource then oldSource = newSource; return end
@@ -787,6 +837,8 @@ do
 			form:FindChild("Window_Fixed:lblFixOffBottom"):SetText(L["Fixed Offset - Bottom:"])
 			form:FindChild("Window_Barcolor:lblBarColorL"):SetText(L["Filled Barcolor:"])
 			form:FindChild("Window_Barcolor:lblBarColorR"):SetText(L["Missing Barcolor:"])
+			form:FindChild("Window_Bartexture:lblBarTextureL"):SetText(L["Filled Bartexture:"])
+			form:FindChild("Window_Bartexture:lblBarTextureR"):SetText(L["Missing Bartexture:"])
 			form:FindChild("Window_Text:lblTextSource"):SetText(L["Text Source:"])
 			form:FindChild("Window_Text:lblTextColor"):SetText(L["Text Color:"])
 			
@@ -794,6 +846,7 @@ do
 			form:FindChild("Window_Relative:QuestionMark_Relative"):SetTooltip(L["ttRelPos"])
 			form:FindChild("Window_Fixed:QuestionMark_Fixed"):SetTooltip(L["ttFixPos"])
 			form:FindChild("Window_Barcolor:QuestionMark_Barcolor"):SetTooltip(L["ttBarCol"])
+			form:FindChild("Window_Bartexture:QuestionMark_Bartexture"):SetTooltip(L["ttBarTex"])
 			form:FindChild("Window_Text:QuestionMark_Text"):SetTooltip(L["ttTxtSrc"])
 			
 			MRF:applyPreview(form:FindChild("Window_Top:Preview"), modKey, "bar")
@@ -808,14 +861,16 @@ do
 			
 			MRF:applyDropdown(form:FindChild("Window_Barcolor:BarColorLeft"), cBarChoices, lColor, cTrans )
 			MRF:applyDropdown(form:FindChild("Window_Barcolor:BarColorRight"), cBarChoices, rColor, cTrans )
+			MRF:applyDropdown(form:FindChild("Window_Bartexture:BarTextureLeft"), textureChoices, lTexture, transTexChoices)
+			MRF:applyDropdown(form:FindChild("Window_Bartexture:BarTextureRight"), textureChoices, rTexture, transTexChoices)
 			MRF:applyDropdown(form:FindChild("Window_Text:TextSource"), txtChoices, txtSource, txtTrans ) 
 			MRF:applyDropdown(form:FindChild("Window_Text:TextColor"), cTxtChoices, txtColor, cTrans )
 			
 			do
 				local function f(x) x:SetData(x:GetHeight()) end
-				local top, rel, fix, bar, txt =  form:FindChild("Window_Top"), form:FindChild("Window_Relative"), form:FindChild("Window_Fixed"), form:FindChild("Window_Barcolor"), form:FindChild("Window_Text")
-				f(top); f(rel); f(fix); f(bar); f(txt); --apply Height to Data.
-				barHandler.windows[#barHandler.windows+1] = {top, rel, fix, bar, txt, parent, form}
+				local top, rel, fix, bar, tex, txt =  form:FindChild("Window_Top"), form:FindChild("Window_Relative"), form:FindChild("Window_Fixed"), form:FindChild("Window_Barcolor"), form:FindChild("Window_Bartexture"), form:FindChild("Window_Text")
+				f(top); f(rel); f(fix); f(bar); f(tex); f(txt); --apply Height to Data.
+				barHandler.windows[#barHandler.windows+1] = {top, rel, fix, bar, tex, txt, parent, form}
 			end
 			
 			local mod = modules[modKey]

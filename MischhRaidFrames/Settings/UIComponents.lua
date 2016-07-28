@@ -514,7 +514,7 @@ do
 	local function recolorBar(frame, modKey)
 		frame:SetVar("backcolor", nil, cBlue)
 		frame:SetVar("barcolor", modKey, cRed, cRed)
-		frame:SetVar("progress", modKey, 1)
+		frame:SetVar("progress", modKey, 0.5)
 	end
 	
 	local function recolorIcon(frame, modKey)
@@ -527,7 +527,7 @@ do
 	local function recolorNone(frame)
 		frame:SetVar("backcolor", nil, cBlue)
 		for _, modKey in ipairs(frame.oldTemp) do
-			frame:SetVar("progress", modKey, 1)
+			frame:SetVar("progress", modKey, 0.5)
 			frame:SetVar("barcolor", modKey, cRed, cRed)
 		end
 	end

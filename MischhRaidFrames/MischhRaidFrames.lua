@@ -136,17 +136,27 @@ do
 		end
 	end
 	
+	local function setTexture( handler, leftTexture, rightTexture )
+		if leftTexture then
+			handler.leftBar:SetFullSprite(leftTexture)
+		end
+		if rightTexture then
+			handler.rightBar:SetFullSprite(rightTexture)
+		end
+	end
+	
 	local function unuse( handler )
 		handler.rightBar = handler.rightBar:Destroy() and nil
 		handler.leftBar = handler.leftBar:Destroy() and nil
 		handler.frame = handler.frame:Destroy() and nil
 	end
 	
-	function MischhRaidFrames:newBar(parent, pos, fullColor, emptyColor)
+	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture)
 		local handler = {
 			SetProgress = setProgress,
 			SetText = setText,
 			SetFont = setFont,
+			SetTexture = setTexture,
 			SetColor = setColor,
 			SetTextColor = setTextColor,
 			SetUnused = unuse,
@@ -157,8 +167,7 @@ do
 		
 		handler.frame:SetAnchorPoints(unpack(pos))
 		
-		handler:SetColor( 	fullColor or CColor.new(39/255,39/255,39/255,1),
-							emptyColor or CColor.new(0.8,0,0,1) )
+		handler:SetTexture(lTexture, rTexture)
 		
 		return handler
 	end
@@ -192,6 +201,9 @@ do
 		end,
 		backcolor = function(handler, _, color)
 			handler:SetBGColor(color or bgColor)
+		end,
+		bartexture = function(handler, barHandler, leftTexture, rightTexture)
+			barHandler:SetTexture(leftTexture, rightTexture)
 		end,
 	}
 	
@@ -259,7 +271,7 @@ do
 		for i in ipairs( stacked ) do --the 'normally' placed bars
 			local tbl = options[i]
 			pos[4] = pos[2] + (tbl.size/total)
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos)
+			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture)
 			pos[2] = pos[4]
 		end
 		
@@ -267,12 +279,12 @@ do
 			local i = pos[0]
 			local tbl = options[pos]
 			pos = {0, i/total, 1, (tbl.size+i)/total}
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos)
+			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture)
 		end
 		
 		for _, pos in ipairs( fixed ) do --the fixed 'placed ontop' bars
 			local tbl = options[pos]
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos)
+			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture)
 		end
 	
 		handler.options = options
