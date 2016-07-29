@@ -124,7 +124,16 @@ function MRF:LoadProfile(prof)
 	end
 	
 	self.blockSwitch = true
+	
+	-- okay, this one is a little bit of a problem. We do not want to push updates on the
+	-- frame template, before all Color-Modules have been loaded. Else we risk a Error once
+	-- the Manager tries to apply colors, which do not yet have been updated and do not yet
+	-- have their :Get Method.
+	local frame = MRF:GetOption(options, "frame")
+	frame:BlockUpdates() --everything below will get blocked aswell, because all updates below are gathered.
 	options:Set(profiles[prof])
+	frame:UnblockUpdates() --this will do a :ForceUpdate()
+	
 	profile:Set(prof)
 	self.blockSwitch = false
 	
