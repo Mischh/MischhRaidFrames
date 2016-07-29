@@ -129,15 +129,14 @@ function MRF:LoadProfile(prof)
 	-- frame template, before all Color-Modules have been loaded. Else we risk a Error once
 	-- the Manager tries to apply colors, which do not yet have been updated and do not yet
 	-- have their :Get Method.
-	local frame = MRF:GetOption(options, "frame")
-	frame:BlockUpdates() --everything below will get blocked aswell, because all updates below are gathered.
+	local frameOpt = MRF:GetOption(options, "frame")
+	frameOpt:BlockUpdates() --everything below will get blocked aswell, because all updates below are gathered.
 	options:Set(profiles[prof])
-	frame:UnblockUpdates() --this will do a :ForceUpdate()
+	frameOpt:UnblockUpdates() --this will do a :ForceUpdate()
 	
 	profile:Set(prof)
 	self.blockSwitch = false
 	
-	local frameOpt = MRF:GetOption(nil, "frame")
 	if self:CheckFrameTemplate(frameOpt:Get()) then
 		frameOpt:ForceUpdate()
 		Print("MRF: Finished checking frame-template with Errors. See Changes above.")
