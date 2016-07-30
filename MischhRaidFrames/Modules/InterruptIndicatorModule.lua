@@ -240,11 +240,15 @@ function IntMod:VitalChange(e)
 	if not res then print(err) end
 end
 
+local blockedIds = { --copied from VinceRaidFrames, there are maybe more i do not know about.
+	[19190] = true -- Esper's Fade Out
+}
+
 function IntMod:CCStateChange(e)
 	local res, err = pcall(function()
 	if e.nInterruptArmorHit > 0 and e.unitCaster then
 		local idx = nametbl[e.unitCaster:GetName()]
-		if idx then
+		if idx and not blockedIds[e.splCallingSpell:GetBaseSpellId()] then
 			self:Start(idx)
 		end
 	end
