@@ -1,3 +1,18 @@
+<p><strong>Release v1.5:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Icons are now sized a little different.</li>
+<li>FrameHandler: Change Background Color</li>
+<li>Bars: Changeable Bar-Textures</li>
+<li>You can now Copy from the Profile 'Default', which copies from Defaults.</li>
+<li>Interrupt Indicator Module (Misc)</li>
+<li>Some more stuff the SaveHandler will now check after loading a frame template</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>A Error which sometimes occured on switching Profiles (call function 'Get', a boolean)</li>
+<li>Possible empty buttons within Ungrouped Tab of&nbsp;Grouping-Frame</li>
+</ul>
 <p><strong>Release v1.4:</strong></p>
 <p>Added:</p>
 <ul>
