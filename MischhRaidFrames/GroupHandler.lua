@@ -765,6 +765,12 @@ end
 
 function ungrHandler:GetText(unit)
 	local n = unit:GetName()
+	
+	if not name2text[n] then
+		unit:UpdateUnit() --I'm not actually sure why this breaks so badly, that we need this, but...
+		n = unit:GetName()
+	end
+	
 	return name2text[n] or n
 end
 
