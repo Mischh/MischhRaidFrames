@@ -165,9 +165,12 @@ local function sliderChanged(self, wndHandler, wndControl, value, old)
 end
 
 local function onUpdate(handler, val)
-	handler.text:SetText(tostring(val)) --we actually only update this way.
-	if handler.block then return end
-	handler.slider:SetValue(val or handler.minimum)
+	if not handler.block then
+		handler.slider:SetValue(val or handler.minimum)
+	end
+	if not handler.blockTxt then
+		handler.text:SetText(tostring(val))
+	end
 end
 
 local function setMinMax(handler, min, max, step)
@@ -186,16 +189,46 @@ local function setMinMax(handler, min, max, step)
 	handler.slider:SetMinMax(handler.minimum, handler.maximum, handler.ticklen)
 end
 
-function MRF:applySlider(parent, selector, min, max, steps)
+local function onText(self, wndHandler, wndControl, txt)
+	local value = tonumber(txt)
+	if not value then return end --non numeric values are not interesting.
+	
+	if self.tbLimited then
+		if value < self.minimum then
+			value = self.minimum
+		elseif value > self.maximum then
+			value = self.maximum
+		end
+	end
+	
+	if self.tbSteps then
+		local ticks = math.floor(((value-self.minimum)/self.ticklen)+0.5)
+		value = self.minimum + self.ticklen*ticks
+	end
+	
+	self.blockTxt = true
+	self.opt:Set(value)
+	self.blockTxt = false
+end
+
+local function lostFocus(self)
+	self.opt:ForceUpdate() --put value onto Slider & Textbox
+end
+
+--tbNoSteps, tbNoLimit -> the textbox ignores Steps, Min&Max
+function MRF:applySlider(parent, selector, min, max, steps, tbNoSteps, tbNoLimit)
 	min = min or 0
 	max = max or min+1
 	steps = steps or 0.1
 	translator = translator or tostring
 	
-	local handler = {opt = selector, block = false, minimum = min, maximum = max, ticklen = steps}
+	local handler = {opt = selector, block = false, minimum = min, maximum = max, ticklen = steps,
+					tbSteps = not tbNoSteps, tbLimited = not tbNoLimit}
 	handler.SliderChanged = sliderChanged
 	handler.OnUpdate = onUpdate
 	handler.SetMinMax = setMinMax
+	handler.OnText = onText
+	handler.LostFocus = lostFocus
 	handler.form = MRF:LoadForm(FORM_SLIDER_TEMPLATE, parent, handler)
 	handler.text = handler.form:FindChild("Label")
 	handler.slider = handler.form:FindChild("SliderBar")

@@ -132,10 +132,10 @@ function DispelMod:InitMiscSettings(parent)
 	rowB:FindChild("Left"):SetText(L["Offset Bottom:"])
 	
 	MRF:applyColorbutton(rowC:FindChild("Right"), cOpt)
-	MRF:applySlider(rowL:FindChild("Right"), lOpt, -25, 25, 1)
-	MRF:applySlider(rowR:FindChild("Right"), rOpt, -25, 25, 1)
-	MRF:applySlider(rowT:FindChild("Right"), tOpt, -25, 25, 1)
-	MRF:applySlider(rowB:FindChild("Right"), bOpt, -25, 25, 1)
+	MRF:applySlider(rowL:FindChild("Right"), lOpt, -10, 10, 1, false, true) --textbox: keep Steps, unlimited values
+	MRF:applySlider(rowR:FindChild("Right"), rOpt, -10, 10, 1, false, true)
+	MRF:applySlider(rowT:FindChild("Right"), tOpt, -10, 10, 1, false, true)
+	MRF:applySlider(rowB:FindChild("Right"), bOpt, -10, 10, 1, false, true)
 	
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + 5*30 --we want to display one 30-high rows.

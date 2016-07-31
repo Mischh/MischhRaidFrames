@@ -350,16 +350,16 @@ function IntMod:InitMiscSettings(parent)
 	rowB:FindChild("Left"):SetText(L["Offset Bottom:"])
 	
 	MRF:applyCheckbox(rowLog:FindChild("Right"), logOpt, L["Log other Players"])
-	MRF:applySlider(rowDur:FindChild("Right"), dispOpt, 0.25, 60, 0.25)
+	MRF:applySlider(rowDur:FindChild("Right"), dispOpt, 1, 60, 1, true) --textbox: ignore steps
 	MRF:applyColorbutton(rowCol:FindChild("Right"), cOpt)
 	MRF:applyCheckbox(rowBack:FindChild("Right"), backOpt, L["Backdrop Indicator"])
 	MRF:applyCheckbox(rowEdge:FindChild("Right"), edgeOpt, L["Offset from Edge"])
-	MRF:applySlider(rowHPos:FindChild("Right"), hPosOpt, -0.75, 0.75, 0.01)
-	MRF:applySlider(rowVPos:FindChild("Right"), vPosOpt, -0.75, 0.75, 0.01)
-	MRF:applySlider(rowL:FindChild("Right"), lOpt, -50, 50, 1)
-	MRF:applySlider(rowR:FindChild("Right"), rOpt, -50, 50, 1)
-	MRF:applySlider(rowT:FindChild("Right"), tOpt, -50, 50, 1)
-	MRF:applySlider(rowB:FindChild("Right"), bOpt, -50, 50, 1)
+	MRF:applySlider(rowHPos:FindChild("Right"), hPosOpt, -0.75, 0.75, 0.01, true) --textbox: ignore steps
+	MRF:applySlider(rowVPos:FindChild("Right"), vPosOpt, -0.75, 0.75, 0.01, true)
+	MRF:applySlider(rowL:FindChild("Right"), lOpt, -25, 25, 1, false, true)--textbox: use steps, unlimited values
+	MRF:applySlider(rowR:FindChild("Right"), rOpt, -25, 25, 1, false, true)
+	MRF:applySlider(rowT:FindChild("Right"), tOpt, -25, 25, 1, false, true)
+	MRF:applySlider(rowB:FindChild("Right"), bOpt, -25, 25, 1, false, true)
 	
 	logOpt:ForceUpdate()
 	

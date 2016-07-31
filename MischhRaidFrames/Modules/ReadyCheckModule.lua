@@ -165,7 +165,7 @@ function ReadyMod:InitIconSettings(parent)
 	tRow:FindChild("Left"):SetText(L["Duration to be shown:"])
 	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1)
 	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1)
-	MRF:applySlider(tRow:FindChild("Right"), intervalOpt, 1, 60, 1)
+	MRF:applySlider(tRow:FindChild("Right"), intervalOpt, 1, 60, 1, true) --textbox: ignore steps
 
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + 3*30 --we want to display three 30-high rows.

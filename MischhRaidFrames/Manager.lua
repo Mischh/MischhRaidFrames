@@ -854,10 +854,10 @@ do
 			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode, transPosMode)
 			MRF:applyDropdown(form:FindChild("Window_Relative:RelativePosition"), relPosChoices, relPos, transRelPosChoices)
 			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1)
-			MRF:applySlider(form:FindChild("Window_Fixed:FixPosLeft"), fixedL, -0.5, 1.5, 0.01)
-			MRF:applySlider(form:FindChild("Window_Fixed:FixPosRight"), fixedR, -0.5, 1.5, 0.01)
-			MRF:applySlider(form:FindChild("Window_Fixed:FixPosTop"), fixedT, -0.5, 1.5, 0.01)
-			MRF:applySlider(form:FindChild("Window_Fixed:FixPosBottom"), fixedB, -0.5, 1.5, 0.01)
+			MRF:applySlider(form:FindChild("Window_Fixed:FixPosLeft"), fixedL, -0.5, 1.5, 0.01, true) --textbox: ignore steps
+			MRF:applySlider(form:FindChild("Window_Fixed:FixPosRight"), fixedR, -0.5, 1.5, 0.01, true)
+			MRF:applySlider(form:FindChild("Window_Fixed:FixPosTop"), fixedT, -0.5, 1.5, 0.01, true)
+			MRF:applySlider(form:FindChild("Window_Fixed:FixPosBottom"), fixedB, -0.5, 1.5, 0.01, true)
 			
 			MRF:applyDropdown(form:FindChild("Window_Barcolor:BarColorLeft"), cBarChoices, lColor, cTrans )
 			MRF:applyDropdown(form:FindChild("Window_Barcolor:BarColorRight"), cBarChoices, rColor, cTrans )
@@ -909,8 +909,8 @@ do
 		MRF:applyPreview(form:FindChild("Window_Top:Preview"), modKey, "icon")
 		
 		MRF:applyCheckbox(form:FindChild("CheckboxActivated"), activeOpt, L["Activated"])
-		MRF:applySlider(form:FindChild("SliderX"), posX, -0.5, 1.5, 0.01)
-		MRF:applySlider(form:FindChild("SliderY"), posY, -0.5, 1.5, 0.01)
+		MRF:applySlider(form:FindChild("SliderX"), posX, -0.5, 1.5, 0.01, true) --textbox: ignore steps
+		MRF:applySlider(form:FindChild("SliderY"), posY, -0.5, 1.5, 0.01, true)
 		
 		local mod = modules[modKey]
 		if mod.InitIconSettings then

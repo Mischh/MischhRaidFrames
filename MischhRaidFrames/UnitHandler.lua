@@ -282,7 +282,7 @@ function UnitHandler:InitSettings(parent, name)
 	
 	local unitRow = MRF:LoadForm("HalvedRow", parent)
 	unitRow:FindChild("Left"):SetText(L["Time between two unit updates:"])
-	MRF:applySlider(unitRow:FindChild("Right"), unitOpt, 0.1, 2, 0.1)
+	MRF:applySlider(unitRow:FindChild("Right"), unitOpt, 0.1, 2, 0.1, true) --textbox: ignore steps
 	
 	local unitQuest = MRF:LoadForm("QuestionMark", unitRow:FindChild("Left"))
 	unitQuest:SetTooltip(L["ttUnit"])
@@ -291,7 +291,7 @@ function UnitHandler:InitSettings(parent, name)
 	
 	local freqRow = MRF:LoadForm("HalvedRow", parent)
 	freqRow:FindChild("Left"):SetText(L["Time for each frequent update:"])
-	MRF:applySlider(freqRow:FindChild("Right"), freqOpt, 0.1, 2, 0.1)
+	MRF:applySlider(freqRow:FindChild("Right"), freqOpt, 0.1, 2, 0.1, true)
 	
 	local eachRow = MRF:LoadForm("HalvedRow", parent)
 	MRF:applyCheckbox(eachRow:FindChild("Right"), eachOpt, L["Instead update all on each frame"])

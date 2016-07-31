@@ -107,7 +107,7 @@ function DistMod:InitMiscSettings(parent)
 	question:SetTooltip(L["ttFade"])
 	
 	MRF:applySlider(distRow:FindChild("Right"), distOption, 1, 100, 1)
-	MRF:applySlider(fraqRow:FindChild("Right"), fraqOption, 0.1, 1, 0.05)
+	MRF:applySlider(fraqRow:FindChild("Right"), fraqOption, 0.1, 1, 0.05, true) --textbox: ignore steps
 	
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + 2*30 --we want to display two 30-high rows.

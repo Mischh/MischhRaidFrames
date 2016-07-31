@@ -651,12 +651,12 @@ function FrameHandler:InitGeneralSettings(parent, name)
 	local wOpt = MRF:GetOption(frameOpt, "size", 3)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
 	wRow:FindChild("Left"):SetText(L["Frame Width:"])
-	self:BuildLimitlessSlider(MRF:applySlider(wRow:FindChild("Right"), wOpt, 0, 100, 1))
+	self:BuildLimitlessSlider(MRF:applySlider(wRow:FindChild("Right"), wOpt, 0, 100, 1, false, true))--textbox: use steps, ignore limits
 		
 	local hOpt = MRF:GetOption(frameOpt, "size", 4)
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	hRow:FindChild("Left"):SetText(L["Frame Height:"])
-	self:BuildLimitlessSlider(MRF:applySlider(hRow:FindChild("Right"), hOpt, 0, 100, 1))
+	self:BuildLimitlessSlider(MRF:applySlider(hRow:FindChild("Right"), hOpt, 0, 100, 1, false, true))
 	
 	local whQuest = MRF:LoadForm("QuestionMark", wRow:FindChild("Left"))
 	whQuest:SetTooltip(L["qSize"])
@@ -714,11 +714,11 @@ function FrameHandler:InitPositioningSettings(parent, name)
 	
 	local xRow = MRF:LoadForm("HalvedRow", parent)
 	xRow:FindChild("Left"):SetText(L["Anchor Left Offset:"])
-	self:BuildLimitlessSlider(MRF:applySlider(xRow:FindChild("Right"), xOption, 0, 100, 1))
+	self:BuildLimitlessSlider(MRF:applySlider(xRow:FindChild("Right"), xOption, 0, 100, 1, false, true))
 	
 	local yRow = MRF:LoadForm("HalvedRow", parent)
 	yRow:FindChild("Left"):SetText(L["Anchor Top Offset:"])
-	self:BuildLimitlessSlider(MRF:applySlider(yRow:FindChild("Right"), yOption, 0, 100, 1))
+	self:BuildLimitlessSlider(MRF:applySlider(yRow:FindChild("Right"), yOption, 0, 100, 1, false, true))
 	
 	local aQuest = MRF:LoadForm("QuestionMark", xRow:FindChild("Left"))
 	aQuest:SetTooltip(L["qOffset"])
