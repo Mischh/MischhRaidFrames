@@ -261,6 +261,9 @@ function UnitHandler:InitSettings(parent, name)
 			
 			Tick the Checkbox to replace this functionality and make all units get a update each frame. This results in having all units being updated about 60 times each second at 60fps]],
 		["Instead update all on each frame"] = "Instead update all on each frame",
+		
+		["ttDebug"] = [[Pushing this Button will add some lines to both of the Update-Types. The first Gathered Error will be entered on the Right of this Button. A Chat-Message will inform you.]],
+		["errMsg"] = "MRF: A Update-Error was Catched! See Textbox.",
 	}, {--German
 		["Time between two unit updates:"] = "Zeit zwischen zwei Spieler-Aktualisierungen",
 		["ttUnit"] = [[Beispiel für einen Wert von einer Sekunde: 
@@ -273,6 +276,9 @@ function UnitHandler:InitSettings(parent, name)
 			
 			Platziere den Haken um diese Funktionalität zu entfernen und einfach alle immer zu aktualisieren. Bsp: Bei 60fps würde jedes Frame 60 mal die Sekunde aktualisiert.]],
 		["Instead update all on each frame"] = "Stattdessen permanent aktualisieren.",
+		
+		["ttDebug"] = [[Nach dem drücken dieses Knopfes werden beide Aktualisierungstypen etwas erweitert, um den ersten gefundenen Fehler in die Textbox rechts zu schreiben. Eine Nachricht wird einen Fund Informieren.]],
+		["errMsg"] = "MRF: Aktualisierungsfehler gefunden! Siehe Textbox.",
 	}, {--French
 	})
 
@@ -298,6 +304,47 @@ function UnitHandler:InitSettings(parent, name)
 	
 	local freqQuest = MRF:LoadForm("QuestionMark", freqRow:FindChild("Left"))
 	freqQuest:SetTooltip(L["ttFreq"])
+	
+	MRF:LoadForm("HalvedRow", parent)
+	
+	local debugRow = MRF:LoadForm("HalvedRow", parent)
+	
+	local optDebugBox = MRF:GetOption("DebugText")
+	optDebugBox:Set(L["Errors end up here."])
+	MRF:applyTextbox(debugRow:FindChild("Right"), optDebugBox)
+	optDebugBox:ForceUpdate()
+	
+	local dbgBtn = MRF:LoadForm("Button", debugRow:FindChild("Left"), {
+		ButtonClick = function(self, wndHandler)
+			wndHandler:Enable(false)
+			
+			local unitUpd, freqUpd = MRF.PushUnitUpdate, MRF.PushFrequentUpdate
+			MRF.PushUnitUpdate = function(self, frame, unit)
+				xpcall(function()
+					unitUpd(self, frame, unit)
+				end, function(err)
+					self.PushUnitUpdate = unitUpd
+					self.PushFrequentUpdate = freqUpd
+					Print(L["errMsg"])
+					optDebugBox:Set(debug.traceback(err))
+				end)
+			end
+			
+			MRF.PushFrequentUpdate = function(self, frame, unit)
+				xpcall(function()
+					freqUpd(self, frame, unit)
+				end, function(err)
+					self.PushUnitUpdate = unitUpd
+					self.PushFrequentUpdate = freqUpd
+					Print(L["errMsg"])
+					optDebugBox:Set(debug.traceback(err))
+				end)
+			end
+		end
+	})
+	dbgBtn:SetText(L["Debug"])
+	dbgBtn:SetTooltip(L["ttDebug"])
+	
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
