@@ -9,6 +9,9 @@ local clickAction = {[0]="Target Unit",[1]="Dropdown Menu",[2]="Focus Unit",[3]=
 local supportedActions = {["Target Unit"] = true, ["Dropdown Menu"] = true, ["Focus Unit"] = true, ["Show Hint Arrow"] = true, [false] = true}
 local actions = {false, "Dropdown Menu", "Target Unit", "Focus Unit", "Show Hint Arrow"}
 
+local advEnter = false
+local invertEnter = true
+
 --Options
 local activeOption = MRF:GetOption(ModOptions, "activated")
 -- all of these shall be either false or a Sting categorizing the action.
@@ -19,6 +22,8 @@ local mouse3Option = MRF:GetOption(ModOptions, "mouse3") --LastPage (Browser-Def
 local mouse4Option = MRF:GetOption(ModOptions, "mouse4") --NextPage
 local mouseoverOption = MRF:GetOption(ModOptions, "mouseover")
 
+local advEnterOpt = MRF:GetOption(ModOptions, "advancedMouseEnter")
+local inversionOpt = MRF:GetOption(ModOptions, "invertActions")
 
 function MouseMod:UpdateActivated(active)
 	if active == nil then
@@ -73,7 +78,7 @@ end
 
 function MouseMod:UpdateMouseoverOption(action)
 	if action == nil or not supportedActions[action] then
-		mouseoverOption:Set(false)		--"DisplayTooltip"
+		mouseoverOption:Set(false)
 	else
 		clickAction["over"] = action
 	end
@@ -86,20 +91,88 @@ mouse3Option:OnUpdate(MouseMod, "UpdateMouse3Option")
 mouse4Option:OnUpdate(MouseMod, "UpdateMouse4Option")
 mouseoverOption:OnUpdate(MouseMod, "UpdateMouseoverOption")
 
+function MouseMod:UpdateAdvanced(adv)
+	if adv == nil then
+		advEnterOpt:Set(false)
+	else
+		advEnter = adv
+		Apollo.RemoveEventHandler("NextFrame", self)
+	end
+end
+
+function MouseMod:UpdateInvert(inv)
+	if inv == nil then
+		inversionOpt:Set(true)
+	else
+		invertEnter = inv
+	end
+end
+
+advEnterOpt:OnUpdate(MouseMod, "UpdateAdvanced")
+inversionOpt:OnUpdate(MouseMod, "UpdateInvert")
 
 -- HANDLERS
+local EnterMod = {}
+local LeaveMod = {}
+
+local oldTar = nil
 MouseMod["Target Unit"] = function(self, handler,wndHandler)
 	local unit = frames[handler]:GetRealUnit()
 	if unit then
+		oldTar = nil --maybe change to unit	
 		GameLib.SetTargetUnit(unit)
 	end
 end
 
+local oldFoc = nil
 MouseMod["Focus Unit"] = function(self, handler,wndHandler)
 	local unit = frames[handler]:GetRealUnit()
 	if unit then
-		GameLib.GetPlayerUnit():SetAlternateTarget(unit)
+		oldFoc = nil --maybe change to unit
+		plr:SetAlternateTarget(unit)
 	end
+end
+
+EnterMod["Target Unit"] = function(self, handler,wndHandler)
+	local unit = frames[handler]:GetRealUnit()
+	if unit then
+		if not oldTar then
+			oldTar = GameLib.GetTargetUnit() or true
+		end
+		
+		GameLib.SetTargetUnit(unit)
+	end
+end
+
+EnterMod["Focus Unit"] = function(self, handler,wndHandler)
+	local unit = frames[handler]:GetRealUnit()
+	if unit then
+		local plr = GameLib.GetPlayerUnit()
+		if not oldFoc then
+			oldFoc = plr:GetAlternateTarget() or true
+		end
+		plr:SetAlternateTarget(unit)
+	end
+end
+
+LeaveMod["Target Unit"] = function(self, handler, wndHandler)
+	if not oldTar then return end
+	if oldTar == true then
+		GameLib.SetTargetUnit(nil)
+	else
+		GameLib.SetTargetUnit(oldTar)
+	end
+	oldTar = nil
+end
+
+LeaveMod["Focus Unit"] = function(self, handler, wndHandler)
+	if not oldFoc then return end
+	if oldFoc == true then
+		GameLib.GetPlayerUnit():SetAlternateTarget(nil)
+	else
+		GameLib.GetPlayerUnit():SetAlternateTarget(oldFoc)
+	end
+	oldFoc = nil
 end
 
 MouseMod["Dropdown Menu"] = function(self, handler,wndHandler)
@@ -111,13 +184,7 @@ MouseMod["Dropdown Menu"] = function(self, handler,wndHandler)
 		Event_FireGenericEvent("GenericEvent_NewContextMenuPlayer", wndHandler, fakeUnit:GetName())
 	end
 end
-
-MouseMod["Display Tooltip"] = function(self, handler,wndHandler) --not supported right now. Doesnt work.
-	local unit = frames[handler]:GetRealUnit()
-	if unit then
-		Event_FireGenericEvent("MouseOverUnitChanged", unit)
-	end
-end
+EnterMod["Dropdown Menu"] = EnterMod["Dropdown Menu"]
 
 MouseMod["Show Hint Arrow"] = function(self, handler, ...)
 	local fakeUnit = frames[handler]
@@ -126,6 +193,7 @@ MouseMod["Show Hint Arrow"] = function(self, handler, ...)
 		unit:ShowHintArrow()
 	end
 end
+EnterMod["Show Hint Arrow"] = EnterMod["Show Hint Arrow"]
 
 -- HANDLE THE REGISTERED EVENTS
 
@@ -137,23 +205,63 @@ local function MouseMod_MouseUp(self, handler, wndHandler, wndControl, button, p
 end
 MouseMod.MouseUp = MouseMod_MouseUp;
 
+local curHandler = nil
 local function MouseMod_MouseEnter(self, handler, wndHandler, wndControl)
-	if wndHandler ~= wndControl then return end
+	if curHandler == handler then return end
+	curHandler = handler
+	
 	if clickAction["over"] then
-		self[clickAction["over"]](self,handler,wndHandler)
+		Apollo.RemoveEventHandler("NextFrame", self)
+		EnterMod[clickAction["over"]](self,handler,wndHandler)
 	end
 end
 MouseMod.MouseEnter = MouseMod_MouseEnter;
+
+local leftHandler = nil
+local function MouseMod_MouseExit(self, handler, wndHanlder, wndControl)
+	if curHandler ~= handler then return end
+	curHandler = nil
+	leftHandler = handler
+	
+	local act = clickAction["over"]
+	if act then
+		if invertEnter and LeaveMod[act] then
+			LeaveMod[act](self, handler, wndHandler)
+		end
+		if advEnter then
+			Apollo.RegisterEventHandler("NextFrame", "MouseUpdate", self)
+		end
+	end
+end
+MouseMod.MouseExit = MouseMod_MouseExit;
+
+local function MouseMod_MouseUpdate(self)
+	local wndTarget = Apollo.GetMouseTargetWindow()
+	if not wndTarget then --no target? -> mouseenter is basically guaranteed.
+		Apollo.RemoveEventHandler("NextFrame", self)
+	end
+	
+	local tarHandler = wndTarget:GetData()
+	if tarHandler ~= leftHandler and frames[tarHandler] then
+		Apollo.RemoveEventHandler("NextFrame", self)
+		self:MouseEnter(tarHandler, wndTarget, wndTarget)
+	end
+end
+MouseMod.MouseUpdate = MouseMod_MouseUpdate;
 
 local function empty() end
 
 function MouseMod:Off()
 	self.MouseEnter = empty
+	self.MouseExit = empty
 	self.MouseUp = empty
+	
+	Apollo.RemoveEventHandler("NextFrame", self)
 end
 
 function MouseMod:On()
 	self.MouseEnter = MouseMod_MouseEnter
+	self.MouseExit = MouseMod_MouseExit
 	self.MouseUp = MouseMod_MouseUp
 end
 
@@ -171,6 +279,12 @@ function MouseMod:miscUpdate(frame, unit)
 			f(...)
 			self:MouseEnter(...)
 		end
+		
+		f = frame.MouseExit
+		frame.MouseExit = function(...)
+			f(...)
+			self:MouseExit(...)
+		end
 	end
 	frames[frame] = unit
 end
@@ -179,19 +293,29 @@ function MouseMod:InitMiscSettings(parent)
 	local L = MRF:Localize({--English
 		["ttMouse"] = [[Here you can define which action should occur, when a specific Mouse-Action was done.
 			Note that most actions only work, when the Unit had been updated within your Range.]],
+		["ttInv"] = [[Checking this Option makes this module try to invert mouseover-actions whenever the mouse leaves a frame again. 
+			Currently working: retarget old target (Target Unit) and refocus old focus (Focus Unit).]],
+		["ttAdv"] = [[With this Option on, the Module tries to more reliably detect mouseovers.
+			This Option only makes sense, when the frames overlap each other(negative Spaces in Frame Handler -> Spacing).]],
 	}, {--German
 		["Left Click:"] = "Linksklick:",
 		["Right Click:"] = "Rechtsklick:",
 		["Middle Click:"] = "Mittlere Maustaste:",
 		["Mouse 4 Click:"] = "Maustaste 4:",
 		["Mouse 5 Click:"] = "Maustaste 5:",
-		["Mousenter (Mouseover):"] = "Mauseintritt (Mouseover):",
+		["Mouseenter (Mouseover):"] = "Mauseintritt (Mouseover):",
 		["Dropdown Menu"]= "Options-Menü öffnen",
 		["Target Unit"] = "Als Ziel wählen",
 		["Focus Unit"] = "Als Fokus markieren",
 		["Show Hint Arrow"] = "Hinweis-Pfeil zeigen",
 		["ttMouse"] = [[Hier kann definiert werden, welche Aktion geschehen soll, wenn eine bestimmte Maus-Aktion getätigt wurde.
 			Achtung! Die meisten Aktionen fünktionieren nur, wenn der Spieler in Reichweite aktualisiert wurde.]],
+		["ttInv"] = [[Wenn diese Option gewählt wurde, versucht das Modul Mauseintritt Aktionen bei Austritt zu revidieren.
+			Momentan funktioniert: Zurückwählen des alten Ziels (Als Ziel wählen) und Markieren des alten Fokus (Als Fokus markieren).]],
+		["ttAdv"] = [[Bei aktivierter Option, versucht das Modul verlässlicher Mauseintritte zu erkennen.
+			Diese Option ergibt nur dann Sinn, wenn die frames zum Teil übereinander liegen.(negative Abstände in Frame Handler -> Spacing)]],
+		["Invert Mouseenter"] = "Mauseintritt invertieren",
+		["Advanced Mouseenter"] = "Verbesserter Mauseintritt",
 	}, {--French
 	})
 
@@ -201,16 +325,20 @@ function MouseMod:InitMiscSettings(parent)
 	local row4 = MRF:LoadForm("HalvedRow", parent)
 	local row5 = MRF:LoadForm("HalvedRow", parent)
 	local rowOver = MRF:LoadForm("HalvedRow", parent)
+	MRF:LoadForm("HalvedRow", parent) --empty row
+	local rowInv = MRF:LoadForm("HalvedRow", parent)
+	local rowAdv = MRF:LoadForm("HalvedRow", parent)
 	
 	rowL:FindChild("Left"):SetText(L["Left Click:"])
 	rowR:FindChild("Left"):SetText(L["Right Click:"])
 	rowM:FindChild("Left"):SetText(L["Middle Click:"])
 	row4:FindChild("Left"):SetText(L["Mouse 4 Click:"])
 	row5:FindChild("Left"):SetText(L["Mouse 5 Click:"])
-	rowOver:FindChild("Left"):SetText(L["Mousenter (Mouseover):"])
+	rowOver:FindChild("Left"):SetText(L["Mouseenter (Mouseover):"])
 	
-	local question = MRF:LoadForm("QuestionMark", rowL:FindChild("Left"))
-	question:SetTooltip(L["ttMouse"])
+	MRF:LoadForm("QuestionMark", rowL:FindChild("Left")):SetTooltip(L["ttMouse"])
+	MRF:LoadForm("QuestionMark", rowInv:FindChild("Left")):SetTooltip(L["ttInv"])
+	MRF:LoadForm("QuestionMark", rowAdv:FindChild("Left")):SetTooltip(L["ttAdv"])
 	
 	local function translateAction(action) return L[action] or " - " end
 	
@@ -221,8 +349,11 @@ function MouseMod:InitMiscSettings(parent)
 	MRF:applyDropdown(row5:FindChild("Right"), actions, mouse4Option, translateAction)
 	MRF:applyDropdown(rowOver:FindChild("Right"), actions, mouseoverOption, translateAction)
 	
+	MRF:applyCheckbox(rowInv:FindChild("Right"), inversionOpt, L["Invert Mouseenter"])
+	MRF:applyCheckbox(rowAdv:FindChild("Right"), advEnterOpt, L["Advanced Mouseenter"])
+	
 	local anchor = {parent:GetAnchorOffsets()}
-	anchor[4] = anchor[2] + 6*30 --we want to display six 30-high rows.
+	anchor[4] = anchor[2] + 9*30
 	parent:SetAnchorOffsets(unpack(anchor))
 	parent:ArrangeChildrenVert()
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")

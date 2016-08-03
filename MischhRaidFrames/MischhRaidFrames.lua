@@ -331,6 +331,8 @@ do
 		handler.frame = Apollo.LoadForm(self.xmlDoc, "FrameBackground", parent, handler)
 		handler.panel = handler.frame:FindChild("InsetFrame")
 		
+		handler.frame:SetData(handler)
+		
 		handler:UpdateOptions(options)
 		
 		return handler
