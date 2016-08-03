@@ -18,7 +18,7 @@ MRF:AddChildTab("Position", "Frame Handler", FrameHandler, "InitPositioningSetti
 MRF:AddChildTab("Spaces", "Frame Handler", FrameHandler, "InitSpacingSettings")
 
 local L = MRF:Localize({--[[English]]
-	["sFirtTagger"] = "First",
+	["sFirstTagger"] = "First",
 	["sRoundRobin"] = "Round Robin",
 	["sFreeForAll"] = "FFA",
 	["sNeedBeforeGreed"] = "Need & Greed",
@@ -28,8 +28,12 @@ local L = MRF:Localize({--[[English]]
 	["sGood"] = "Good",
 	["sExcellent"] = "Excellent",
 	["sSuperb"] = "Superb",
-	["sLegend"] = "Legend",
+	["sLegendary"] = "Legend",
 	["sArtifact"] = "Artifact",
+	["sOpen"] = "Open",
+	["sNeutral"] = "Neutr.",
+	["sClosed"] = "Closed",
+	["sNone"] = "None",
 	["lFirstTagger"] = "First Tagger",
 	["lRoundRobin"] = "Round Robin",
 	["lFreeForAll"] = "Free For All",
@@ -42,17 +46,23 @@ local L = MRF:Localize({--[[English]]
 	["lLegendary"] = "Legendary",
 	["lArtifact"] = "Artifact",
 	["lInferior"] = "Inferior",
+	["lOpen"] = "Open",
+	["lNeutral"] = "Neutral",
+	["lClosed"] = "Closed",
+	["lNone"] = "None",
 	["Above: "] = "Above: ",
 	["Threshold: "] = "Threshold: ",
 	["Below: "] = "Below: ",
 	["Harvests: "] = "Harvests: ",
+	["Joins: "] = "Joins: ",
+	["Referrals: "] = "Referrals: ",
 	["Readycheck"] = "Readycheck",
 	["Switch Instance"] = "Switch Instance",
 	["To Raid"] = "To Raid",
 	["Disband"] = "Disband",
 	
 }, {--[[German]]
-	["sFirtTagger"] = "Erster",
+	["sFirstTagger"] = "Erster",
 	["sRoundRobin"] = "Jeder",
 	["sFreeForAll"] = "FFA",
 	["sNeedBeforeGreed"] = "Bedarf/Gier",
@@ -62,8 +72,12 @@ local L = MRF:Localize({--[[English]]
 	["sGood"] = "Gut",
 	["sExcellent"] = "Ausgez.",
 	["sSuperb"] = "Hervorr.",
-	["sLegend"] = "Legendär",
+	["sLegendary"] = "Legendär",
 	["sArtifact"] = "Artefakt",
+	["sOpen"] = "Offen",
+	["sNeutral"] = "Neutr.",
+	["sClosed"] = "Geschl.",
+	["sNone"] = "Keine",
 	["lFirstTagger"] = "Erster gewinnt",
 	["lRoundRobin"] = "Jeder gegen Jeden",
 	["lFreeForAll"] = "Frei für alle",
@@ -76,10 +90,16 @@ local L = MRF:Localize({--[[English]]
 	["lSuperb"] = "Hervorragend",
 	["lLegendary"] = "Legendär",
 	["lArtifact"] = "Artefakt",
+	["lOpen"] = "Offen",
+	["lNeutral"] = "Neutral",
+	["lClosed"] = "Geschlossen",
+	["lNone"] = "Keine",
 	["Above: "] = "Drüber: ",
 	["Threshold: "] = "Grenzwert: ",
 	["Below: "] = "Drunter: ",
 	["Harvests: "] = "Sammeln: ",
+	["Joins: "] = "Beitritte: ",
+	["Referrals: "] = "Empfehlungen: ",
 	["Readycheck"] = "Bereitschaftscheck",
 	["Switch Instance"] = "Instanz wechseln",
 	["To Raid"] = "Zum Raid",
@@ -390,14 +410,22 @@ do --FastMenu
 		[GroupLib.LootThreshold.Legendary] = "Legendary",
 		[GroupLib.LootThreshold.Artifact] = "Artifact"}
 	
-	local shorts = { FirstTagger = L["sFirtTagger"], RoundRobin = L["sRoundRobin"], FreeForAll = L["sFreeForAll"], 
-		NeedBeforeGreed = L["sNeedBeforeGreed"], Master = L["sMaster"],
-		Average = L["sAverage"], Good = L["sGood"], Excellent = L["sExcellent"], Superb = L["sSuperb"], 
-		Legendary = L["sLegend"], Artifact = L["sArtifact"], Inferior = L["sInferior"] }
+	local shorts = { FirstTagger = L["sFirstTagger"], RoundRobin = L["sRoundRobin"], FreeForAll = L["sFreeForAll"], 
+		NeedBeforeGreed = L["sNeedBeforeGreed"], Master = L["sMaster"], Average = L["sAverage"], Good = L["sGood"], 
+		Excellent = L["sExcellent"], Superb = L["sSuperb"], Legendary = L["sLegendary"], Artifact = L["sArtifact"], 
+		Inferior = L["sInferior"], Open = L["sOpen"], Neutral = L["sNeutral"], Closed = L["sClosed"], None = L["sNone"]}
 	local longer = { FirstTagger = L["lFirstTagger"], RoundRobin = L["lRoundRobin"], FreeForAll = L["lFreeForAll"], 
 		NeedBeforeGreed = L["lNeedBeforeGreed"], Master = L["lMaster"], Average = L["lAverage"], Good = L["lGood"], 
-		Excellent = L["lExcellent"], Superb = L["lSuperb"], Legendary = L["lLegendary"], Artifact = L["lArtifact"], Inferior = L["lInferior"]}
-		
+		Excellent = L["lExcellent"], Superb = L["lSuperb"], Legendary = L["lLegendary"], Artifact = L["lArtifact"], 
+		Inferior = L["lInferior"], Open = L["lOpen"], Neutral = L["lNeutral"], Closed = L["lClosed"], None = L["lNone"]}
+	
+	local Inv_Invite = {
+		[GroupLib.InvitationMethod.Open] = "Open",
+		[GroupLib.InvitationMethod.Neutral] = "Neutral",
+		[GroupLib.InvitationMethod.Closed] = "Closed",
+		[3] = "None", --this value you get, when not in Group.
+	}
+	local Rule_Invite = {"Open", "Neutral", "Closed"}
 		
 	local function trans(str)
 		if not str or not longer[str] then
@@ -413,11 +441,15 @@ do --FastMenu
 	local oBelow = MRF:GetOption("FastMenu", "below")
 	local oThreshold = MRF:GetOption("FastMenu", "threshold")
 	local oHarvest = MRF:GetOption("FastMenu", "harvest")
+	local oJoin = MRF:GetOption("FastMenu", "join")
+	local oRefer = MRF:GetOption("FastMenu", "referral")
 	
 	oAbove:OnUpdate(RClickHandler, "SetAbove")
 	oBelow:OnUpdate(RClickHandler, "SetBelow")
 	oThreshold:OnUpdate(RClickHandler, "SetThreshold")
 	oHarvest:OnUpdate(RClickHandler, "SetHarvest")
+	oJoin:OnUpdate(RClickHandler, "SetJoin")
+	oRefer:OnUpdate(RClickHandler, "SetReferral")
 	
 	local function applyLoot(above, thres, below, harvest)
 		local tbl = GroupLib.GetLootRules()
@@ -447,7 +479,7 @@ do --FastMenu
 		if type(val) == "number" then --only apply String
 			oThreshold:Set(L["Threshold: "]..shorts[Inv_Threshold[val]])
 		elseif val and shorts[val] then --the dropdown had selected something
-			applyLoot(nil, GroupLib.LootThreshold[val], nil, nil)
+			
 			oThreshold:Set(L["Threshold: "]..shorts[val])
 		end
 	end
@@ -458,6 +490,24 @@ do --FastMenu
 		elseif val and shorts[val] then --the dropdown had selected something
 			applyLoot(nil, nil, nil, GroupLib.HarvestLootRule[val])
 			oHarvest:Set(L["Harvests: "]..shorts[val])
+		end
+	end
+	
+	function RClickHandler:SetJoin(val)
+		if type(val) == "number" then --only apply String
+			oJoin:Set(L["Joins: "]..shorts[Inv_Invite[val]])
+		elseif val and shorts[val] then --the dropdown had selected something
+			GroupLib.SetJoinRequestMethod(GroupLib.InvitationMethod[val])
+			oJoin:Set(L["Joins: "]..shorts[val])
+		end
+	end
+	
+	function RClickHandler:SetReferral(val)
+		if type(val) == "number" then --only apply String
+			oRefer:Set(L["Referrals: "]..shorts[Inv_Invite[val]])
+		elseif val and shorts[val] then --the dropdown had selected something
+			GroupLib.SetReferralMethod(GroupLib.InvitationMethod[val])
+			oRefer:Set(L["Referrals: "]..shorts[val])
 		end
 	end
 	
@@ -520,11 +570,20 @@ do --FastMenu
 		oHarvest:Set(tbl.eHarvestRule)
 		
 		if isLead and noInst then
-			self.dropAbove:Enable(true); self.dropThres:Enable(true); self.dropBelow:Enable(true); self.dropHarvest:Enable(true);
+			self.dropAbove:Enable(true);  self.dropThres:Enable(true);  self.dropBelow:Enable(true);  self.dropHarvest:Enable(true);
 		else
 			self.dropAbove:Enable(false); self.dropThres:Enable(false); self.dropBelow:Enable(false); self.dropHarvest:Enable(false);
 		end
 		
+		--Dropdowns / Invitations
+		oJoin:Set(GroupLib.GetJoinRequestMethod())
+		oRefer:Set(GroupLib.GetReferralMethod())
+		
+		if isLead and noInst then
+			self.dropJoin:Enable(true);  self.dropRefer:Enable(true)
+		else
+			self.dropJoin:Enable(false); self.dropRefer:Enable(false)
+		end
 	end
 	
 	function RClickHandler:SwitchInstance( wndHandler, wndControl, eMouseButton )
@@ -586,6 +645,9 @@ do --FastMenu
 		self.dropThres = MRF:applyDropdown(self.frame:FindChild("Loot_Threshold"), Loot_Threshold, oThreshold, trans).drop:FindChild("DropdownButton")
 		self.dropBelow = MRF:applyDropdown(self.frame:FindChild("Loot_Below"), Loot_Rule, oBelow, trans).drop:FindChild("DropdownButton")
 		self.dropHarvest = MRF:applyDropdown(self.frame:FindChild("Loot_Harvest"), Loot_Harvest, oHarvest, trans).drop:FindChild("DropdownButton")
+		
+		self.dropJoin = MRF:applyDropdown(self.frame:FindChild("Request_Join"), Rule_Invite, oJoin, trans).drop:FindChild("DropdownButton")
+		self.dropRefer = MRF:applyDropdown(self.frame:FindChild("Request_Referral"), Rule_Invite, oRefer, trans).drop:FindChild("DropdownButton")
 	end
 	
 	function MRF:ShowFastMenu(...)
