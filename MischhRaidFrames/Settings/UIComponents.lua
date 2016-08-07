@@ -546,6 +546,9 @@ do
 	local cRed = ApolloColor.new("A0FF0000")
 	local function recolorBar(frame, modKey)
 		frame:SetVar("backcolor", nil, cBlue)
+		--you can gain access to the barHandler by indexing with the modKey,
+		--all shown bars are available throught this. We cant recolor not shown stuff...
+		if not frame[modKey] then return end
 		frame:SetVar("barcolor", modKey, cRed, cRed)
 		frame:SetVar("progress", modKey, 0.5)
 	end
