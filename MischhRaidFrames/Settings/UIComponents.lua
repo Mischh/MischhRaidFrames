@@ -220,7 +220,6 @@ function MRF:applySlider(parent, selector, min, max, steps, tbNoSteps, tbNoLimit
 	min = min or 0
 	max = max or min+1
 	steps = steps or 0.1
-	translator = translator or tostring
 	
 	local handler = {opt = selector, block = false, minimum = min, maximum = max, ticklen = steps,
 					tbSteps = not tbNoSteps, tbLimited = not tbNoLimit}
