@@ -44,6 +44,7 @@ function MischhRaidFrames:OnLoad()
     -- load our form file
 	MRF = self
 	self.xmlDoc = XmlDoc.CreateFromFile("MischhRaidFrames.xml")
+	Apollo.LoadSprites("textures/ForgeUI_Textures.xml")
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
 end
 
