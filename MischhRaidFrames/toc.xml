@@ -31,6 +31,8 @@
 	<Script Name="Modules\ReadyCheckModule.lua" />
 	<Script Name="Modules\ConsumableIconModule.lua" />
 	<Script Name="Modules\BuffModule.lua" />
+	<Script Name="Modules\DirectiveArrowModule.lua" />
+	
 	
 	<Script Name="FrameHandler.lua" />
 	<Script Name="GroupHandler.lua" />
