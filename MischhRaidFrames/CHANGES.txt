@@ -1,3 +1,15 @@
+<p><strong>Release v1.6:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Buffs - You can choose to show a colored box, if there is a specified buff active.</li>
+<li>Arrow Icon&nbsp;-&nbsp;Targeting the unit with a colored arrow, if far enough away.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Previews - Error with 'Not Shown' bars.</li>
+<li>Actually load bar-textures (non-ForgeUI-Users were not able to use them)</li>
+<li>Consumables - Hide all Icons, if no information about buffs available</li>
+</ul>
 <p><strong>Release v1.5b:</strong></p>
 <p>Added:</p>
 <ul>
