@@ -291,9 +291,6 @@ local checks = {
 }
 
 function ConsMod:iconUpdate(frame, unit)
-	local buffs = unit:GetBuffs()
-	if not buffs then return end
-	
 	local icon = icons[frame.frame]
 	local shows = {
 		showFood and "Food" or nil, 
@@ -301,23 +298,26 @@ function ConsMod:iconUpdate(frame, unit)
 		showBoost and "Boost" or nil,
 		showFire and "Fire" or nil,
 	}
-	local num = (showFood and 1 or 0) + (showSpeed and 1 or 0) + (showBoost and 1 or 0) + (showFire and 1 or 0)
-	local incombat = nocombat and GameLib.GetPlayerUnit():IsInCombat() or false
 	
-	if not (nocombat and incombat) then 
-		for _, buff in ipairs(buffs.arBeneficial) do	
-			if num == 0 then break; end
-			for i, con in pairs(shows) do
-				if checks[con](buff) then
-					iconTables[icon][con]:Show(true)
-					shows[i] = nil
-					num = num-1
-					break;
+	local buffs = unit:GetBuffs()
+	if buffs then
+		local num = (showFood and 1 or 0) + (showSpeed and 1 or 0) + (showBoost and 1 or 0) + (showFire and 1 or 0)
+		local incombat = nocombat and GameLib.GetPlayerUnit():IsInCombat() or false
+		
+		if not (nocombat and incombat) then 
+			for _, buff in ipairs(buffs.arBeneficial) do	
+				if num == 0 then break; end
+				for i, con in pairs(shows) do
+					if checks[con](buff) then
+						iconTables[icon][con]:Show(true)
+						shows[i] = nil
+						num = num-1
+						break;
+					end
 				end
 			end
 		end
 	end
-	
 	for _, con in pairs(shows) do --hide all left consumables.
 		iconTables[icon][con]:Show(false)
 	end
