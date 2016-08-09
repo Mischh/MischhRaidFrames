@@ -13,7 +13,10 @@ function BuffMod:UpdateActiveMod(act)
 	elseif not act then
 		BuffMod:DeactivateMod()
 	end
-	MRF:GetOption(ModOptions, "buffs"):ForceUpdate() --i know this looks stupid, it is and i really hate it.
+	
+	--i know this looks stupid, it is and i really hate it.
+	--there seems to be some kind of problem, why i need it, dont get it...
+	MRF:GetOption(ModOptions, "buffs"):ForceUpdate() 
 end
 
 local buffs = {}
