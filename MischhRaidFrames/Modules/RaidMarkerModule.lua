@@ -123,8 +123,8 @@ function MarkerMod:InitIconSettings(parent)
 	
 	wRow:FindChild("Left"):SetText(L["Width:"])
 	hRow:FindChild("Left"):SetText(L["Height:"])
-	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1)
-	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1)
+	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1, false, false, true) --textbox: positive unlimited
+	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1, false, false, true)
 
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + 60 --we want to display two 30-high rows.

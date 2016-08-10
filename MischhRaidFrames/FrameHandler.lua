@@ -726,7 +726,7 @@ function FrameHandler:InitGeneralSettings(parent, name)
 	local iOpt = MRF:GetOption(frameOpt, "inset")
 	local iRow = MRF:LoadForm("HalvedRow", parent)
 	iRow:FindChild("Left"):SetText(L["Frame Inset:"])
-	MRF:applySlider(iRow:FindChild("Right"), iOpt, 0, 20, 1)
+	MRF:applySlider(iRow:FindChild("Right"), iOpt, 0, 20, 1, false, false, true) --textbox: no pos limit
 	
 	local iQuest = MRF:LoadForm("QuestionMark", iRow:FindChild("Left"))
 	iQuest:SetTooltip(L["qInset"])

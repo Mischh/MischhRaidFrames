@@ -194,8 +194,8 @@ function LeadMod:InitIconSettings(parent)
 	
 	wRow:FindChild("Left"):SetText(L["Width:"])
 	hRow:FindChild("Left"):SetText(L["Height:"])
-	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1)
-	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1)
+	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1, false, false, true) --textbox: positive no limit
+	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1, false, false, true)
 
 	local fillRow = MRF:LoadForm("HalvedRow", parent)
 	local leadRow = MRF:LoadForm("HalvedRow", parent)

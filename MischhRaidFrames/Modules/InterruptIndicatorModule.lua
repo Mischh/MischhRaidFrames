@@ -350,7 +350,7 @@ function IntMod:InitMiscSettings(parent)
 	rowB:FindChild("Left"):SetText(L["Offset Bottom:"])
 	
 	MRF:applyCheckbox(rowLog:FindChild("Right"), logOpt, L["Log other Players"])
-	MRF:applySlider(rowDur:FindChild("Right"), dispOpt, 1, 60, 1, true) --textbox: ignore steps
+	MRF:applySlider(rowDur:FindChild("Right"), dispOpt, 1, 60, 1, true, false, true) --textbox: ignore steps, no pos limit
 	MRF:applyColorbutton(rowCol:FindChild("Right"), cOpt)
 	MRF:applyCheckbox(rowBack:FindChild("Right"), backOpt, L["Backdrop Indicator"])
 	MRF:applyCheckbox(rowEdge:FindChild("Right"), edgeOpt, L["Offset from Edge"])

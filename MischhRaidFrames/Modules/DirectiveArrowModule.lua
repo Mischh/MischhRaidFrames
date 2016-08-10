@@ -198,8 +198,8 @@ function ArrowMod:InitIconSettings(parent)
 	
 	wRow:FindChild("Left"):SetText(L["Width:"])
 	hRow:FindChild("Left"):SetText(L["Height:"])
-	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1)
-	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1)
+	MRF:applySlider(wRow:FindChild("Right"), hSizeOpt, 1, 100, 1, false, false, true) --textbox: no pos limit
+	MRF:applySlider(hRow:FindChild("Right"), vSizeOpt, 1, 100, 1, false, false, true)
 	
 	MRF:LoadForm("HalvedRow", parent) --spacing
 	
@@ -210,7 +210,7 @@ function ArrowMod:InitIconSettings(parent)
 	distRow:FindChild("Left"):SetText(L["Minimal Distance:"])
 	colorRow:FindChild("Left"):SetText(L["Color of Arrow:"])
 	MRF:applySlider(timeRow:FindChild("Right"), timeOpt, 0, 3, 0.1, true)
-	MRF:applySlider(distRow:FindChild("Right"), distOpt, 0, 100, 1)
+	MRF:applySlider(distRow:FindChild("Right"), distOpt, 0, 100, 1, false, false, true) --textbox: no pos limit
 	MRF:applyColorbutton(colorRow:FindChild("Right"), colorOpt)
 	
 	MRF:LoadForm("QuestionMark", timeRow:FindChild("Left")):SetTooltip(L["ttTime"])

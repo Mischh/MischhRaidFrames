@@ -106,7 +106,7 @@ function DistMod:InitMiscSettings(parent)
 	local question = MRF:LoadForm("QuestionMark", distRow:FindChild("Left")) 
 	question:SetTooltip(L["ttFade"])
 	
-	MRF:applySlider(distRow:FindChild("Right"), distOption, 1, 100, 1)
+	MRF:applySlider(distRow:FindChild("Right"), distOption, 1, 100, 1, false, false, true) --textbox: no pos limit
 	MRF:applySlider(fraqRow:FindChild("Right"), fraqOption, 0.1, 1, 0.05, true) --textbox: ignore steps
 	
 	local anchor = {parent:GetAnchorOffsets()}

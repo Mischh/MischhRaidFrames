@@ -354,11 +354,11 @@ function ConsMod:InitIconSettings(parent)
 	
 	local sizeRow = MRF:LoadForm("HalvedRow", parent)
 	sizeRow:FindChild("Left"):SetText(L["Size:"])
-	MRF:applySlider(sizeRow:FindChild("Right"), sizeOpt, 1, 50, 1)
+	MRF:applySlider(sizeRow:FindChild("Right"), sizeOpt, 1, 50, 1, false, false, true) --textbox: no positive limit
 	
 	local spaceRow = MRF:LoadForm("HalvedRow", parent)
 	spaceRow:FindChild("Left"):SetText(L["Space:"])
-	MRF:applySlider(spaceRow:FindChild("Right"), spaceOpt, -10, 40, 1)
+	MRF:applySlider(spaceRow:FindChild("Right"), spaceOpt, -10, 40, 1, false, true) --textbox: limitless
 
 	
 	local showRow1 = MRF:LoadForm("HalvedRow", parent)

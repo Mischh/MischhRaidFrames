@@ -853,7 +853,7 @@ do
 			
 			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode, transPosMode)
 			MRF:applyDropdown(form:FindChild("Window_Relative:RelativePosition"), relPosChoices, relPos, transRelPosChoices)
-			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1)
+			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1, false, false, true)
 			MRF:applySlider(form:FindChild("Window_Fixed:FixPosLeft"), fixedL, -0.5, 1.5, 0.01, true) --textbox: ignore steps
 			MRF:applySlider(form:FindChild("Window_Fixed:FixPosRight"), fixedR, -0.5, 1.5, 0.01, true)
 			MRF:applySlider(form:FindChild("Window_Fixed:FixPosTop"), fixedT, -0.5, 1.5, 0.01, true)

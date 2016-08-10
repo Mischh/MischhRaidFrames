@@ -196,7 +196,7 @@ local function onText(self, wndHandler, wndControl, txt)
 	if self.tbLimited then
 		if value < self.minimum then
 			value = self.minimum
-		elseif value > self.maximum then
+		elseif value > self.maximum and self.tbPosLimit then
 			value = self.maximum
 		end
 	end
@@ -216,13 +216,13 @@ local function lostFocus(self)
 end
 
 --tbNoSteps, tbNoLimit -> the textbox ignores Steps, Min&Max
-function MRF:applySlider(parent, selector, min, max, steps, tbNoSteps, tbNoLimit)
+function MRF:applySlider(parent, selector, min, max, steps, tbNoSteps, tbNoLimit, tbNoLimitPos)
 	min = min or 0
 	max = max or min+1
 	steps = steps or 0.1
 	
 	local handler = {opt = selector, block = false, minimum = min, maximum = max, ticklen = steps,
-					tbSteps = not tbNoSteps, tbLimited = not tbNoLimit}
+					tbSteps = not tbNoSteps, tbLimited = not tbNoLimit, tbPosLimit = not tbNoLimitPos}
 	handler.SliderChanged = sliderChanged
 	handler.OnUpdate = onUpdate
 	handler.SetMinMax = setMinMax
