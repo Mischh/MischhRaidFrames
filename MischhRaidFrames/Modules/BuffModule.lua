@@ -58,6 +58,7 @@ local icons = setmetatable({}, {__index = function(self,parent)
 		BuffMod:UpdateSize(tbl[idx], buff.ySiz, buff.xSiz)
 		BuffMod:UpdatePosition(tbl[idx], buff.xPos, buff.yPos)
 		tbl[idx]:SetBGColor(ApolloColor.new(buff.color))
+		tbl[idx]:SetTextColor(ApolloColor.new(buff.textColor))
 	end
 	rawset(self, parent, tbl)
 	return tbl
@@ -69,6 +70,7 @@ function BuffMod:UpdateIcons()
 			self:UpdateSize(tbl[idx], buff.ySiz, buff.xSiz)
 			self:UpdatePosition(tbl[idx], buff.xPos, buff.yPos)
 			tbl[idx]:SetBGColor(ApolloColor.new(buff.color))
+			tbl[idx]:SetTextColor(ApolloColor.new(buff.textColor))
 		end
 		for idx = #buffs+1, #tbl, 1 do
 			tbl[idx]:Show(false)
@@ -129,6 +131,8 @@ function BuffMod:GetDefaultBuff()
 		xSiz = 10,
 		ySiz = 10,
 		color = "FFFFFFFF",
+		pattern = "",
+		textColor = "FFFFFFFF",
 		stackLimit = nil,
 		stackComp = "<",
 		timeLimit = nil,
@@ -138,6 +142,7 @@ end
 
 function BuffMod:iconUpdate(frame, unit)
 	local show = {} --[buff] = true
+	local info = {} --[buff] = {s = 123, t = 234}
 	
 	local unitBuffs = unit:GetBuffs()
 	if not unitBuffs then return end
@@ -146,15 +151,18 @@ function BuffMod:iconUpdate(frame, unit)
 		local tblName = self.names[buff.splEffect:GetName()]
 		local tblID = self.ids[buff.splEffect:GetId()]
 		for i, b in ipairs(tblName or {}) do
-			show[b] = show[b] or self:CheckBuff(buff, b) or nil
+			show[b] = show[b] or self:CheckBuff(buff, b, info) or nil
 		end
 		for i, b in ipairs(tblID or {}) do
-			show[b] = show[b] or self:CheckBuff(buff, b) or nil
+			show[b] = show[b] or self:CheckBuff(buff, b, info) or nil
 		end
 	end
 	
 	for i, buff in ipairs(buffs) do
 		icons[frame.frame][i]:Show(show[buff] or false)
+		if show[buff] then
+			self:ApplyText(icons[frame.frame][i], buff.pattern, info[buff])
+		end
 	end
 end
 
@@ -181,7 +189,7 @@ local comps = {
 	["!="] = function(a,b) return a~=b end,
 }
 
-function BuffMod:CheckBuff(buff, buffTbl)
+function BuffMod:CheckBuff(buff, buffTbl, info)
 	local ret = true
 	if buffTbl.stackLimit and buffTbl.stackComp then
 		ret = ret and comps[buffTbl.stackComp](buff.nCount, buffTbl.stackLimit)
@@ -192,8 +200,37 @@ function BuffMod:CheckBuff(buff, buffTbl)
 	if buffTbl.onlyMine then
 		ret = ret and buff.unitCaster and buff.unitCaster:GetName() == self.playerName or false
 	end
-		
+	
+	if ret then --fill info
+		info[buffTbl] = info[buffTbl] or {stacks = 0, time = 0}
+		info[buffTbl].stacks = info[buffTbl].stacks + buff.nCount
+		if buff.fTimeRemaining > 0 then
+			info[buffTbl].time = (info[buffTbl].time == 0 or info[buffTbl].time > buff.fTimeRemaining) and buff.fTimeRemaining or info[buffTbl].time
+		end
+	end
+	
 	return ret
+end
+
+local floor = math.floor
+local patterns = setmetatable({ --makes the text pattern easier & faster
+	_h = function(tbl) return floor(tbl.t/3600) end,
+	_m = function(tbl) return floor(tbl.t/60)%60 end,
+	_s = function(tbl) return tbl.t%60 end,
+} , { __index = function(tbl, key)
+	local f = rawget(tbl, "_"..key) -- see functions above. 
+	if f then
+		return f(tbl)
+	else
+		rawset(tbl, key, key) --invalid stuff will stay invalid - just save this funcs return.
+		return key;-- if ppl do invalid stuff, the key will be returned (this will make %% work aswell)
+	end
+end})
+function BuffMod:ApplyText(icon, pattern, info)
+	patterns["n"] = info.stacks
+	patterns["t"] = floor(info.time)
+	
+	icon:SetText((pattern or ""):gsub("%%(.)", patterns))	
 end
 
 function BuffMod:InitIconSettings(parent)
@@ -202,6 +239,13 @@ function BuffMod:InitIconSettings(parent)
 		["ttSpell"] = [[Enter the buffs name or the SpellID to search for. This is case-sensitive and should be the exact name/SpellID of the buff. To enter a SpellID you should check the box below.]],
 		["ttPosition"] = [[Choose a position and the size of the Icon.]],
 		["ttLimit"] = [[You can make the Icon to be only shown whenever stacks and/or time meet a certain criteria. Note that non-number(or empty) values disable this.]],
+		["ttPattern"] = [[To apply a text to this Icon, you can choose a pattern. Within this pattern specific characters will be replaced:
+			%n = Stacks of this Buff (Sum of all*)
+			%t = Left time in seconds (Shortest of all*)
+			%h, %m, %s = the time split up in hours, minutes and seconds.
+			
+			*'all' references every buff meeting the criteria of this icon.
+		]],
 	}, {--German
 		["Add"] = "Neu",
 		["Remove"] = "Entf.",
@@ -214,6 +258,8 @@ function BuffMod:InitIconSettings(parent)
 		["Height:"] = "Höhe:",
 		["Width:"] = "Breite:",
 		["Icons Color:"] = "Farbe des Icons:",
+		["Text Pattern:"] = "Text Schema:",
+		["Text Color:"] = "Text Farbe:",
 		["Stacks Comparator:"] = "Vergleichsmethode, Stapel:",
 		["Stacks compare value:"] = "Vergleichswert, Stapel:",
 		["Time Comparator:"] = "Vergleichsmethode, Zeit:",
@@ -225,6 +271,13 @@ function BuffMod:InitIconSettings(parent)
 		["ttSpell"] = [[Füge hier den Namen des Buffs bzw. die SpellID ein. Achtung! Der Name muss exakt mit dem des Buffs übereinstimmen. Um eine SpellID zu verwenden, sollte der Hacken unten gesetzt sein.]],
 		["ttPosition"] = [[Setze eine Position, sowie die Größe dieses Icons.]],
 		["ttLimit"] = [[Es ist möglich das Icon nur dann zu zeigen, wenn der Buff bestimmte Stapel bzw. eine bestimmte Restzeit hat. Werte, die keine Zahl darstellen deaktivieren diese Funktion.]],
+		["ttPattern"] = [[Mit einem hier gewählten Schema kann der Text auf dem Icon gewählt werden. Innerhlab dieses Schemas werden bestimmte Zeichenkombinationen ersetzt:
+			%n = Stapel dieses Buffs (Summe über alle*)
+			%t = Restliche Zeit in Sekunden (Kürzeste aller*)
+			%h, %m, %s = Restzeit aufgeteilt in Stunden, Minuten und Sekunden
+			
+			*'alle' referenziert auf alle Buffs, die die Kriterien dieses Icons erfüllen.
+		]]
 	}, {--French
 	})
 
@@ -364,8 +417,8 @@ function BuffMod:InitIconSettings(parent)
 	local hSizeRow = MRF:LoadForm("HalvedRow", parent)
 	vSizeRow:FindChild("Left"):SetText(L["Height:"])
 	hSizeRow:FindChild("Left"):SetText(L["Width:"])
-	MRF:applySlider(vSizeRow:FindChild("Right"), ySiz, 1, 50, 1)
-	MRF:applySlider(hSizeRow:FindChild("Right"), xSiz, 1, 50, 1)
+	MRF:applySlider(vSizeRow:FindChild("Right"), ySiz, 1, 50, 1, false, false, true) --textbox: no pos limit
+	MRF:applySlider(hSizeRow:FindChild("Right"), xSiz, 1, 50, 1, false, false, true)
 	
 	--Color
 	
@@ -374,8 +427,22 @@ function BuffMod:InitIconSettings(parent)
 	colorRow:FindChild("Left"):SetText(L["Icons Color:"])
 	MRF:applyColorbutton(colorRow:FindChild("Right"), colorOpt)
 	
-	MRF:LoadForm("HalvedRow", parent)
+	--Text pattern
+	local patternOpt = MRF:GetOption(selected, "pattern")
+	local patternRow = MRF:LoadForm("HalvedRow", parent)
+	patternRow:FindChild("Left"):SetText(L["Text Pattern:"])
+	MRF:applyTextbox(patternRow:FindChild("Right"), patternOpt)
 	
+	MRF:LoadForm("QuestionMark", patternRow:FindChild("Left")):SetTooltip(L["ttPattern"])
+	
+	--Text color
+	local tcolorOpt = MRF:GetOption(selected, "textColor")
+	local tcolorRow = MRF:LoadForm("HalvedRow", parent)
+	tcolorRow:FindChild("Left"):SetText(L["Text Color:"])
+	MRF:applyColorbutton(tcolorRow:FindChild("Right"), tcolorOpt)
+		
+	MRF:LoadForm("HalvedRow", parent)
+		
 	--Limits:
 	local comparators = {"<", ">", "<=", ">=", "==", "!="}
 	local transStack = function(comp)
