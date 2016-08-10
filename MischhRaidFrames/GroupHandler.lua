@@ -1,4 +1,5 @@
 --[[]]
+require "ICComm"
 
 local GroupHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
@@ -13,6 +14,7 @@ local optPermSave = MRF:GetOption(Options, "saved")
 local optUse = MRF:GetOption(Options, "use")
 local optAcc = MRF:GetOption(Options, "accept")
 local optLead = MRF:GetOption(Options, "lead")
+local optPublish = MRF:GetOption(Options, "publish")
 local optActAcc = MRF:GetOption(Options, "activationAccept")
 local optDeactGrp = MRF:GetOption(Options, "decativationGroup")
 MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
@@ -56,6 +58,7 @@ local accept = true --do we accept the leaders groupings?
 local activateAccept = false --true is default
 local onlyLead = true
 local useUserDef = false
+local publishing = false
 local permData = {}
 local userdef = {
 	--[1] = "Group1" --these Names NEED to be unique, the UI gets problems in other cases.
@@ -161,7 +164,30 @@ function GroupHandler:UpdateRecieveLead(new)
 	if new == nil then
 		optLead:Set(true)
 	else
-		onlyLead = new
+		if onlyLead ~= nil and onlyLead~=new then
+			onlyLead = new
+			self:ICCommShareVersion()
+		else
+			onlyLead = new
+		end
+	end
+end
+
+optPublish:OnUpdate(GroupHandler, "UpdatePublishing")
+function GroupHandler:UpdatePublishing(new)
+	if new == nil then
+		optPublish:Set(false)
+	else
+		if publishing == false and new == true then
+			publishing = new
+			if useUserDef then
+				self:ICCommShareGroup()
+			else
+				self:ICCommShareDeact()
+			end
+		else
+			publishing = new
+		end
 	end
 end
 
@@ -202,19 +228,25 @@ do
 end
 
 function GroupHandler:VRFSerialize(t) --use VinceRaidFrames Serializing and Deserializing to be compatible.
-	local tbl = {"{"}
-	local indexed = #t > 0
-	local hasValues = false
-	for k, v in pairs(t) do
-		hasValues = true
-		tinsert(tbl, type(v) == "number" and tostring(v) or '"'..v..'"' )
-		tinsert(tbl, ",")
+	local type = type(t)
+	if type == "string" then
+		return ("%q"):format(t)
+	elseif type == "table" then
+		local tbl = {"{"}
+		local indexed = #t > 0
+		local hasValues = false
+		for k, v in pairs(t) do
+			hasValues = true
+			tinsert(tbl, indexed and self:VRFSerialize(v) or "[" .. self:VRFSerialize(k) .. "]=" .. self:VRFSerialize(v) )
+			tinsert(tbl, ",")
+		end
+		if hasValues then
+			tbl[#tbl] = nil
+		end
+		tinsert(tbl, "}")
+		return table.concat(tbl)
 	end
-	if hasValues then
-		tbl[#tbl] = nil
-	end
-	tinsert(tbl, "}")
-	return table.concat(tbl)
+	return tostring(t)
 end
 
 function GroupHandler:VRFDeserialize(str)
@@ -227,7 +259,7 @@ function GroupHandler:VRFDeserialize(str)
 	end
 	setfenv(func, {}) --not sure about this one... might not be needed.
 	local success, value = pcall(func)
-	return value
+	return value	
 end
 
 function GroupHandler:GetNameIdTable() --VinceRaidFrames (adapted)
@@ -245,8 +277,7 @@ function GroupHandler:GetNameIdTable() --VinceRaidFrames (adapted)
 	return memberNameToId, memberNames
 end
 
-local shareKey = "}=>"
-function GroupHandler:PublishGroup()
+function GroupHandler:GetVRFLayout()
 	local idTbl = self:GetNameIdTable()
 	
 	local groups = setmetatable({}, {__index = function(t,k) t[k] = {}; return t[k] end})
@@ -270,8 +301,47 @@ function GroupHandler:PublishGroup()
 		end
 	end
 	
+	return layout
+end
+
+local shareKey = "}=>"
+function GroupHandler:PublishGroup()
+	local layout = self:GetVRFLayout()
 	local str = shareKey..self:VRFSerialize(layout)
 	ChatSystemLib.GetChannels()[ChatSystemLib.ChatChannel_Party]:Send(str)
+end
+
+function GroupHandler:ChangedGroupLayout()
+	if useUserDef and publishing then
+		self:ICCommShareGroup()
+	end
+end
+
+function GroupHandler:ICCommShareGroup()
+	if self.channel and publishing then
+		local msg = self:VRFSerialize({layout = self:GetVRFLayout()})
+		self.channel:SendMessage(msg)
+	end
+end
+
+function GroupHandler:ICCommShareDeact()
+	if self.channel and publishing then
+		self.channel:SendMessage(self:VRFSerialize({defaultGroups = true}))
+	end
+end
+
+function GroupHandler:ICCommShareVersion()
+	if self.channel and accept then --only ask for stuff, if we actually accept stuff, duh?
+		if onlyLead then --if we only accept messages from our leader -> send him private message.
+			local leader = self:GetLead()
+			local leadName = leader:GetName()
+			if not leader or not leadName then return end
+			--we are compatible with this version of VRF, dont use any other.
+			self.channel:SendPrivateMessage(leadName, self:VRFSerialize({version = "0.17.2"}))
+		else --might want to remove this later, this could fuck up stuff rly bad.
+			self.channel:SendMessage(self:VRFSerialize({version = "0.17.2"}))
+		end
+	end
 end
 
 -- tbl = {"GroupName1", idOfMemberInGroup1, "GroupName2", idOfMemberInGroup2, idOfMemberInGroup2, ...}
@@ -299,12 +369,11 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	if not accept then
 		return
 	end
+	
 	if channelSource:GetType() ~= ChatSystemLib.ChatChannel_Party then
 		return
 	end
-	if onlyLead and not self:IsLead(tMessageInfo.strSender) then
-		return
-	end
+	
 	local msg = {}
 	for i, segment in ipairs(tMessageInfo.arMessageSegments) do
 		tinsert(msg, segment.strText)
@@ -316,6 +385,15 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	end
 	
 	local layout = self:VRFDeserialize(strMsg)
+	
+	self:RecievedGroupLayout(srcName, layout)
+end
+
+function GroupHandler:RecievedGroupLayout(srcName, layout)
+	if onlyLead and not self:IsLead(srcName) then
+		return
+	end	
+
 	self:ImportGroup(layout)
 	
 	if useUserDef then
@@ -335,6 +413,76 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	end
 end
 
+function GroupHandler:RecievedDeactRequest(srcName)
+	if activateAccept and (not onlyLead or self:IsLead(srcName)) then
+		optUse:Set(false)
+	end
+end
+
+
+MRF:OnceDocLoaded(function()
+	--ALL THESE TIMERS ........
+	GroupHandler.timerJoinICCommChannel = ApolloTimer.Create(5, false, "JoinICCommChannel", GroupHandler) 
+end)
+
+function MRF:GroupHandler_OnICCommJoin(...)
+end
+function MRF:GroupHandler_OnICCommSendMessageResult(...)
+end
+function MRF:GroupHandler_OnICCommThrottled(...)
+end
+
+function GroupHandler:JoinICCommChannel()
+	self.timerJoinICCommChannel = nil
+	--we want to sync with VRF
+	self.channel = ICCommLib.JoinChannel("VinceRF", ICCommLib.CodeEnumICCommChannelType.Group)
+	self.channel:SetJoinResultFunction("OnICCommJoin", MRF)
+	
+	if not self.channel:IsReady() then
+		self.timerJoinICCommChannel = ApolloTimer.Create(3, false, "JoinICCommChannel", self)
+	else
+		self.channel:SetReceivedMessageFunction("GroupHandler_OnICCommMessageReceived", MRF)
+		self.channel:SetSendMessageResultFunction("OnICCommSendMessageResult", MRF)
+		self.channel:SetThrottledFunction("OnICCommThrottled", MRF)
+		
+		self.addonVersionAnnounceTimer = ApolloTimer.Create(2, false, "ICCommShareVersion", self)
+	end
+end
+
+function MRF:GroupHandler_OnICCommMessageReceived(...)
+	GroupHandler:OnICCommMessageReceived(...)
+end
+
+function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?
+	if not accept then 
+		return 
+	end
+		
+	local message = self:VRFDeserialize(strMessage)
+	if type(message) ~= "table" then
+		return
+	end
+	if type(message.rw) == "table" and #message.rw > 0 and self:IsLeader(idMessage) then
+		--a RaidWarning? Well - okay.... Do whatever VRF defines xD
+		Event_FireGenericEvent("StoryPanelDialog_Show", GameLib.CodeEnumStoryPanel.Urgent, message.rw, 6)
+	end
+	
+	if message.version then
+		--we dont save the version, because i do not know what would change..
+		--but VRF shares its GroupLayout, whenever somebody shares his version with him.
+		if publishing and useUserDef then
+			self:ICCommShareGroup()
+		end
+		return
+	end
+	
+	if message.layout then
+		self:RecievedGroupLayout(idMessage, message.layout)
+	elseif message.defaultGroups then
+		self:RecievedDeactRequest(idMessage)
+	end
+end
+
 function GroupHandler:IsLead(name)
 	for _, unit in ipairs(units) do
 		if unit:IsLeader() then
@@ -348,6 +496,15 @@ function GroupHandler:IsLead(name)
 		end
 	end
 	return false --no leader in group?! --nobody with the name?! --wtf?!
+end
+
+function GroupHandler:GetLead()
+	for _, unit in ipairs(units) do
+		if unit:IsLeader() then
+			return unit
+		end
+	end
+	return nil --no leader? no group?
 end
 
 function MRF:GetGroupHandlersRegroup(unithandler_groups, unithandler_units, UnitHandler)
@@ -550,6 +707,7 @@ end
 function handler:ResetGroups() --Pressed 'Reset All'
 	wipe(userdef)
 	self:Update()
+	GroupHandler:ChangedGroupLayout()
 end
 
 local function findUniqueName(i)
@@ -566,6 +724,7 @@ end
 function handler:AddGroup() --Pressed 'Add'
 	userdef[#userdef+1] = findUniqueName()
 	optGrIdx:Set(#userdef)
+	GroupHandler:ChangedGroupLayout()
 end
 
 function handler:RemoveGroup() --Pressed 'Remove'
@@ -580,6 +739,7 @@ function handler:RemoveGroup() --Pressed 'Remove'
 		end
 	end
 	self:Update()
+	GroupHandler:ChangedGroupLayout()
 end
 
 function handler:MoveToGroup() --Pressed '-->'
@@ -591,6 +751,7 @@ function handler:MoveToGroup() --Pressed '-->'
 		end
 	end
 	self:Update()
+	GroupHandler:ChangedGroupLayout()
 end
 
 function handler:MoveFromGroup() --Pressed '<--'
@@ -603,6 +764,7 @@ function handler:MoveFromGroup() --Pressed '<--'
 		end 
 	end
 	self:Update()
+	GroupHandler:ChangedGroupLayout()
 end
 
 function handler:ToggleSaveMenu(btn) --Pressed 'Load/Save'
@@ -617,7 +779,18 @@ function handler:UpdateUse(use) -- called by optUse:ForceUpdate()
 	if use == nil then
 		optUse:Set(false)
 	else
-		useUserDef = use
+		if useUserDef ~= nil and useUserDef~=use then
+			useUserDef = use
+			if publishing then
+				if use then
+					GroupHandler:ICCommShareGroup()
+				else
+					GroupHandler:ICCommShareDeact()
+				end
+			end
+		else
+			useUserDef = use
+		end
 		handler:Update()
 	end
 end
@@ -626,7 +799,12 @@ function handler:UpdateAccept(acc) -- called by optAcc:ForceUpdate()
 	if acc == nil then
 		optAcc:Set(true)
 	else
-		accept = acc
+		if accept == false and acc == true then
+			accept = true
+			GroupHandler:ICCommShareVersion()
+		else
+			accept = acc
+		end
 	end
 end
 
@@ -643,6 +821,7 @@ function handler:UpdateGrName(name) -- called by optGrName:ForceUpdate()
 		
 		userdef[idx] = name
 		grouHandler[idx]:SetText(grouHandler:GetText(idx))
+		GroupHandler:ChangedGroupLayout()
 	end
 end
 
@@ -761,6 +940,8 @@ function grpdHandler:UnitSelected(button)
 	userdef[name] = nil
 	
 	handler:Update()
+	
+	GroupHandler:ChangedGroupLayout()
 end
 
 function ungrHandler:GetText(unit)
@@ -806,6 +987,8 @@ function ungrHandler:UnitSelected(button)
 	userdef[n] = idx
 	
 	handler:Update()
+	
+	GroupHandler:ChangedGroupLayout()
 end
 
 function MRF:InitGroupForm()
@@ -846,7 +1029,7 @@ function MRF:InitGroupForm()
 		["Activate"] = "Aktiviert",
 		["Accept"] = "Akzeptiere",
 		["Lead only"] = "Nur Leiter",
-		["ttActivated"] = "Nutze diese Einstellungen, anstelle der normalen tank-heiler-DD gruppen.",
+		["ttActivated"] = "Nutze diese Einstellungen, anstelle der normalen Tank-Heiler-DD Gruppen.",
 		["ttAccept"] = "Akzeptiere publizierte Einstellungen aus dem Chat.",
 		["ttAll"] = "Akzeptiere nur die Einstellungen des Gruppenleiters.",
 		["ttGroupName"] = [[Achtung: Jede Gruppe muss einen einzigartigen Namen haben!]],
@@ -881,6 +1064,7 @@ function MRF:InitGroupForm()
 	MRF:applyCheckbox(form:FindChild("Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
 	MRF:applyCheckbox(form:FindChild("Checkbox_Accept"), optAcc, L["Accept"]).form:SetTooltip(L["ttAccept"])
 	MRF:applyCheckbox(form:FindChild("Checkbox_All"), optLead, L["Lead only"]).form:SetTooltip(L["ttAll"])
+	MRF:applyCheckbox(form:FindChild("Checkbox_Publish"), optPublish, L["Publish"]).form:SetTooltip(L["ttPublish"])
 	MRF:applyTextbox(form:FindChild("Textbox_GroupName"), optGrName)
 	MRF:LoadForm("QuestionMark", form:FindChild("Textbox_GroupName")):SetTooltip(L["ttGroupName"])
 	
@@ -889,7 +1073,6 @@ function MRF:InitGroupForm()
 	form:FindChild("lblGroups"):SetText(L["Groups:"])
 	form:FindChild("Group_Add"):SetText(L["Add"])
 	form:FindChild("Group_Remove"):SetText(L["Rem."])
-	form:FindChild("Group_Publish"):SetText(L["Publish"])
 	form:FindChild("Group_Reset"):SetText(L["Reset All"])
 	form:FindChild("Button_OpenSave"):SetText(L["Save/Load"])
 	form:FindChild("SavesFrame:Title"):SetText(L["SaveTitle"])
@@ -902,8 +1085,6 @@ function MRF:InitGroupForm()
 	form:FindChild("Group_Add"):SetTooltip(L["ttAdd"])
 	form:FindChild("Group_Remove"):SetTooltip(L["ttRemove"])
 	form:FindChild("Group_Reset"):SetTooltip(L["ttReset"])
-	
-	form:FindChild("Group_Publish"):SetTooltip(L["ttPublish"])
 	
 	ungrHandler = setmetatable(ungrHandler, {__index = function(t,k) 
 		if type(k) == "number" then
