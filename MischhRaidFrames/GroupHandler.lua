@@ -56,6 +56,7 @@ local L = MRF:Localize({--English
 
 local accept = true --do we accept the leaders groupings?
 local activateAccept = false --true is default
+local groupDeactivate = false --true is default
 local onlyLead = true
 local useUserDef = false
 local publishing = false
@@ -83,10 +84,6 @@ local function iwipe(tbl)
 		tbl[i] = nil
 	end
 end
-
-MRF:OnceDocLoaded(function()
-	Apollo.RegisterEventHandler("ChatMessage", "OnChatMessage", GroupHandler)
-end)
 
 
 function GroupHandler:Reposition() --overwritten in GetGroupHandlersRegroup
@@ -200,30 +197,13 @@ function GroupHandler:UpdateActivateAccept(val)
 	end
 end
 
-do
-	local register = false
-	optDeactGrp:OnUpdate(GroupHandler, "UpdateDeactivateGroup")
-	function GroupHandler:UpdateDeactivateGroup(val)
-		if type(val) ~= "boolean" then
-			optDeactGrp:Set(true)
-		elseif val then --val == true
-			Apollo.RegisterEventHandler("Group_Join", "GroupJoinDeactivate", GroupHandler)
-		else --val == false
-			Apollo.RemoveEventHandler("Group_Join", GroupHandler)
-		end
-		register = val
-	end
-	
-	function GroupHandler:GroupJoinDeactivate()
-		optUse:Set(false)
-	end
-	
-	local f = MRF.OnDocLoaded
-	function MRF:OnDocLoaded(...)
-		f(self,...)
-		if register then
-			Apollo.RegisterEventHandler("Group_Join", "GroupJoinDeactivate", GroupHandler)
-		end
+
+optDeactGrp:OnUpdate(GroupHandler, "UpdateDeactivateGroup")
+function GroupHandler:UpdateDeactivateGroup(val)
+	if type(val) ~= "boolean" then
+		optDeactGrp:Set(true)
+	else
+		groupDeactivate = val
 	end
 end
 
@@ -311,6 +291,43 @@ function GroupHandler:PublishGroup()
 	ChatSystemLib.GetChannels()[ChatSystemLib.ChatChannel_Party]:Send(str)
 end
 
+function GroupHandler:PublishReadable()
+	local _, idTbl = self:GetNameIdTable()
+	local channel = ChatSystemLib.GetChannels()[ChatSystemLib.ChatChannel_Party]
+	
+	local layout = self:GetVRFLayout()
+	--this layout looks like this:
+	--	{"GroupName", 5, 3, 7, "GroupName2", "GroupName3", 1}
+	--where the numbers are IDs translating to names.
+	
+	--We want to output: (continuing Example, each Comment is a line.)
+		-- 'GroupName: MembrName5, MembrName3, MembrName7.'
+		-- 'GorupName3: MembrName1.
+	--as you see: 'GroupName2' was not output.
+	
+	--Split the layout, leaving a table with all Members of the next published Group.
+	--Once we find a new GroupName, we push out the last Group. (if it wasnt empty)
+	local grpName = nil
+	local grp = {}
+	for i, v in ipairs(layout) do
+		if type(v) == "number" and idTbl[v] then
+			table.insert(grp, idTbl[v])
+		elseif type(v) == "string" then --next Group -> push old, if not empty.
+			if #grp>0 and grpName then
+				channel:Send(grpName..": "..table.concat(grp, ", ")..".")
+			end
+			--start next group:
+			grp = {}
+			grpName = v
+		end
+	end
+	
+	--the last group was not pushed, if its not empty -> do so.
+	if #grp>0 and grpName then
+		channel:Send(grpName..": "..table.concat(grp, ", ")..".")
+	end
+end
+
 function GroupHandler:ChangedGroupLayout()
 	if useUserDef and publishing then
 		self:ICCommShareGroup()
@@ -331,6 +348,8 @@ function GroupHandler:ICCommShareDeact()
 end
 
 function GroupHandler:ICCommShareVersion()
+	self.addonVersionAnnounceTimer = nil
+	
 	if self.channel and accept then --only ask for stuff, if we actually accept stuff, duh?
 		if onlyLead then --if we only accept messages from our leader -> send him private message.
 			local leader = self:GetLead()
@@ -386,7 +405,7 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	
 	local layout = self:VRFDeserialize(strMsg)
 	
-	self:RecievedGroupLayout(srcName, layout)
+	self:RecievedGroupLayout(tMessageInfo.strSender, layout)
 end
 
 function GroupHandler:RecievedGroupLayout(srcName, layout)
@@ -419,10 +438,21 @@ function GroupHandler:RecievedDeactRequest(srcName)
 	end
 end
 
+function GroupHandler:GroupJoined()
+	if groupDeactivate then
+		optUse:Set(false)
+	end
+	if accept then
+		if not self.addonVersionAnnounceTimer then
+			self.addonVersionAnnounceTimer = ApolloTimer.Create(1, false, "ICCommShareVersion", self)
+		end
+	end
+end
 
 MRF:OnceDocLoaded(function()
-	--ALL THESE TIMERS ........
-	GroupHandler.timerJoinICCommChannel = ApolloTimer.Create(5, false, "JoinICCommChannel", GroupHandler) 
+	GroupHandler:JoinICCommChannel() --VRF had a 5sec timer here, removed it..
+	Apollo.RegisterEventHandler("Group_Join", "GroupJoined", GroupHandler)
+	Apollo.RegisterEventHandler("ChatMessage", "OnChatMessage", GroupHandler)
 end)
 
 function MRF:GroupHandler_OnICCommJoin(...)
@@ -453,11 +483,7 @@ function MRF:GroupHandler_OnICCommMessageReceived(...)
 	GroupHandler:OnICCommMessageReceived(...)
 end
 
-function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?
-	if not accept then 
-		return 
-	end
-		
+function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?		
 	local message = self:VRFDeserialize(strMessage)
 	if type(message) ~= "table" then
 		return
@@ -474,6 +500,10 @@ function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --
 			self:ICCommShareGroup()
 		end
 		return
+	end
+	
+	if not accept then 
+		return 
 	end
 	
 	if message.layout then
@@ -652,12 +682,12 @@ local name2text = {}
 local nocolor = ApolloColor.new("FF666666")
 
 function handler:Update(onlyUI)
-	if not form then return end
-
 	if not onlyUI then 
 		GroupHandler:Regroup()
 		GroupHandler:Reposition()
 	end
+	
+	if not form then return end
 	
 	self:ReselectGroup() --this will end up in redrawing the selected Group & the Groups List.
 	
@@ -773,6 +803,10 @@ end
 
 function handler:PublishGroup()
 	GroupHandler:PublishGroup()
+end
+
+function handler:PublishReadable()
+	GroupHandler:PublishReadable()
 end
 
 function handler:UpdateUse(use) -- called by optUse:ForceUpdate()
@@ -1000,8 +1034,8 @@ function MRF:InitGroupForm()
 		["Activate"] = "Activate",
 		["Accept"] = "Accept",
 		["Lead only"] = "Lead only",
-		["ttActivated"] = "Use these Settings instead of the Default tank-heal-dps groups.",
-		["ttAccept"] = "Accept published Settings from Chat.",
+		["ttActivated"] = "Use these Settings instead of the default tank-heal-dps groups.",
+		["ttAccept"] = "Accept published Settings of other players.",
 		["ttAll"] = "Published settings are only imported from the group-leader.",
 		["ttGroupName"] = [[Note: Every groups name needs to be unique.]],
 		["ttPublish"] = [[Publishes your current settings to the group.
@@ -1023,6 +1057,8 @@ function MRF:InitGroupForm()
 		["ttAdd"] = "Add a new group.",
 		["ttRemove"] = "Remove the selected group.",
 		["ttReset"] = "Remove all groups.",
+		["ttPubChat"] = "Publish your current Settings to chat. To be readable for other players addons.",
+		["ttOutput"] = "Share a readable version of your Groups throught Chat.",
 	}, {--German
 		["Title"] = "MRF: Gruppierung",
 		["SaveTitle"] = "Speichern und Laden",
@@ -1030,14 +1066,14 @@ function MRF:InitGroupForm()
 		["Accept"] = "Akzeptiere",
 		["Lead only"] = "Nur Leiter",
 		["ttActivated"] = "Nutze diese Einstellungen, anstelle der normalen Tank-Heiler-DD Gruppen.",
-		["ttAccept"] = "Akzeptiere publizierte Einstellungen aus dem Chat.",
+		["ttAccept"] = "Akzeptiere Einstellungen von anderen Spielern.",
 		["ttAll"] = "Akzeptiere nur die Einstellungen des Gruppenleiters.",
 		["ttGroupName"] = [[Achtung: Jede Gruppe muss einen einzigartigen Namen haben!]],
-		["ttPublish"] = [[Publiziert deine momentanen Gruppen im Chat.
+		["ttPublish"] = [[Publiziert deine momentanen Gruppen für andere Spieler.
 			Dieses, sowie andere AddOns könnten möglicherweise diese Publikation nur akzeptieren, falls du der Gruppenleiter bist.
 			Dem Addon ist es nur möglich die Einstellungen für momentane Mitglieder der Gruppe zu Teilen.]],
 		["select one"] = "wähle eine",
-		["Publish"] = "Publiz.",--
+		["Publish"] = "Publizieren",--
 		["Ungrouped:"] = "Ungruppiert:",--
 		["Add"] = "+",--
 		["Groups:"] = "Gruppen:",--
@@ -1047,11 +1083,15 @@ function MRF:InitGroupForm()
 		["Save As:"] = "Speichern als:",--
 		["Load this:"] = "Lade diese:",--
 		["Remove this:"] = "Lösche diese:",--
+		["Publish in Chat"] = "Publiz. im Chat",
+		["Output Readable"] = "Lesbar Ausgeben",
 		["ttToGroup"] = "Füge alle Ungruppierten der momentan ausgewählten Gruppe hinzu.",
 		["ttFromGroup"] = "Entferne alle aus der ausgewählten Gruppe.",
 		["ttAdd"] = "Füge eine neue Gruppe hinzu.",
 		["ttRemove"] = "Entferne die ausgewählte Gruppe.",
 		["ttReset"] = "Entferne alle Gruppen.",
+		["ttPubChat"] = "Publiziere deine momentanen Gruppen über den Chat, um von den AddOns anderer Spieler gelesen zu werden.",
+		["ttOutput"] = "Teile eine lesbare Version deiner Gruppen über den Chat.",
 	}, {--French
 	})
 	
@@ -1061,10 +1101,10 @@ function MRF:InitGroupForm()
 	grpdHandler.parent = form:FindChild("Grouped:Items")
 	grouHandler.parent = form:FindChild("Groups:Items")
 	
-	MRF:applyCheckbox(form:FindChild("Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
-	MRF:applyCheckbox(form:FindChild("Checkbox_Accept"), optAcc, L["Accept"]).form:SetTooltip(L["ttAccept"])
-	MRF:applyCheckbox(form:FindChild("Checkbox_All"), optLead, L["Lead only"]).form:SetTooltip(L["ttAll"])
-	MRF:applyCheckbox(form:FindChild("Checkbox_Publish"), optPublish, L["Publish"]).form:SetTooltip(L["ttPublish"])
+	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
+	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Accept"), optAcc, L["Accept"]).form:SetTooltip(L["ttAccept"])
+	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_All"), optLead, L["Lead only"]).form:SetTooltip(L["ttAll"])
+	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Publish"), optPublish, L["Publish"]).form:SetTooltip(L["ttPublish"])
 	MRF:applyTextbox(form:FindChild("Textbox_GroupName"), optGrName)
 	MRF:LoadForm("QuestionMark", form:FindChild("Textbox_GroupName")):SetTooltip(L["ttGroupName"])
 	
@@ -1079,12 +1119,17 @@ function MRF:InitGroupForm()
 	form:FindChild("SavesFrame:Button_SaveTo"):SetText(L["Save As:"])
 	form:FindChild("SavesFrame:lblLoad"):SetText(L["Load this:"])
 	form:FindChild("SavesFrame:lblRemove"):SetText(L["Remove this:"])
+	form:FindChild("SideTab:Group_Publish"):SetText(L["Publish in Chat"])
+	form:FindChild("SideTab:Group_Output"):SetText(L["Output Readable"])
 	
 	form:FindChild("All_ToGroup"):SetTooltip(L["ttToGroup"])
 	form:FindChild("All_FromGroup"):SetTooltip(L["ttFromGroup"])
 	form:FindChild("Group_Add"):SetTooltip(L["ttAdd"])
 	form:FindChild("Group_Remove"):SetTooltip(L["ttRemove"])
 	form:FindChild("Group_Reset"):SetTooltip(L["ttReset"])
+	form:FindChild("SideTab:Group_Publish"):SetTooltip(L["ttPubChat"])
+	form:FindChild("SideTab:Group_Output"):SetTooltip(L["ttOutput"])
+	
 	
 	ungrHandler = setmetatable(ungrHandler, {__index = function(t,k) 
 		if type(k) == "number" then
