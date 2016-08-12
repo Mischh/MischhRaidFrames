@@ -327,7 +327,7 @@ function BuffMod:InitIconSettings(parent)
 	end}):SetText(L["Add"])
 	
 	buffTblOpt:OnUpdate(function(tbl)
-		if #tbl>1 then
+		if not tbl or  #tbl>1 then
 			btn_rem:Enable(true)
 		else
 			btn_rem:Enable(false)
