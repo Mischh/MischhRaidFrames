@@ -41,6 +41,7 @@ end
 -----------------------------------------------------------------------------------------------
 function MischhRaidFrames:OnLoad()
     -- load our form file
+	MischhRaidFrames = self --DO NOT REMOVE! -> ERRORS! (We apply the Instance to the Template)
 	self.xmlDoc = XmlDoc.CreateFromFile("MischhRaidFrames.xml")
 	Apollo.LoadSprites("textures/ForgeUI_Textures.xml")
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
