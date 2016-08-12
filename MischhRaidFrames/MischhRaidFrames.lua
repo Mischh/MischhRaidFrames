@@ -146,13 +146,39 @@ do
 		end
 	end
 	
+	local hPosOpt = { --the first is to be activated, following to be deactivated.
+		l = {nil, 'DT_CENTER', 'DT_RIGHT'},
+		c = {'DT_CENTER', 'DT_RIGHT'},
+		r = {'DT_RIGHT', 'DT_CENTER'},
+	}
+	local vPosOpt = {
+		t = {nil, 'DT_VCENTER', 'DT_BOTTOM'},
+		c = {'DT_VCENTER', 'DT_BOTTOM'},
+		b = {'DT_BOTTOM', 'DT_VCENTER'},
+	}
+	
+	-- eHPos = 'l', 'c', 'r' for Left, Center, Right
+	-- eVPos = 't', 'c', 'b' for Top, Center, Bottom
+	local function setTextPos( handler, hPos, vPos )
+		if hPosOpt[hPos or ""] then
+			for i, flag in pairs(hPosOpt[hPos]) do
+				handler.leftBar:SetTextFlags(flag, i==1)
+			end
+		end
+		if vPosOpt[vPos or ""] then
+			for i, flag in pairs(vPosOpt[vPos]) do
+				handler.leftBar:SetTextFlags(flag, i==1)
+			end
+		end
+	end
+	
 	local function unuse( handler )
 		handler.rightBar = handler.rightBar:Destroy() and nil
 		handler.leftBar = handler.leftBar:Destroy() and nil
 		handler.frame = handler.frame:Destroy() and nil
 	end
 	
-	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture)
+	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture, hTextPos, vTextPos)
 		local handler = {
 			SetProgress = setProgress,
 			SetText = setText,
@@ -160,6 +186,7 @@ do
 			SetTexture = setTexture,
 			SetColor = setColor,
 			SetTextColor = setTextColor,
+			SetTextPos = setTextPos,
 			SetUnused = unuse,
 		}
 		handler.frame = Apollo.LoadForm(self.xmlDoc, "BarForm", parent, handler)
@@ -169,6 +196,7 @@ do
 		handler.frame:SetAnchorPoints(unpack(pos))
 		
 		handler:SetTexture(lTexture, rTexture)
+		handler:SetTextPos(hTextPos, vTextPos)
 		
 		return handler
 	end
@@ -206,6 +234,9 @@ do
 		bartexture = function(handler, barHandler, leftTexture, rightTexture)
 			barHandler:SetTexture(leftTexture, rightTexture)
 		end,
+		textposition = function(handler, barHandler, hPos, vPos)
+			barhandler:SetTextPos(hPos, vPos)
+		end
 	}
 	
 	local function wipeEntries(handler, newOptions)
@@ -272,7 +303,7 @@ do
 		for i in ipairs( stacked ) do --the 'normally' placed bars
 			local tbl = options[i]
 			pos[4] = pos[2] + (tbl.size/total)
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture)
+			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 			pos[2] = pos[4]
 		end
 		
@@ -280,12 +311,12 @@ do
 			local i = pos[0]
 			local tbl = options[pos]
 			pos = {0, i/total, 1, (tbl.size+i)/total}
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture)
+			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 		end
 		
 		for _, pos in ipairs( fixed ) do --the fixed 'placed ontop' bars
 			local tbl = options[pos]
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture)
+			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 		end
 	
 		handler.options = options
