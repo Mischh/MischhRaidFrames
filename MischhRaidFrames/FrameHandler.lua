@@ -355,10 +355,18 @@ frameOpt:OnUpdate( function(newTemplate)
 	for i,frame in ipairs(frames) do
 		frame:UpdateOptions(newTemplate)
 		
-		MRF:PushUnitUpdateForFrameIndex(i) 
+		--we could very ambiguosly try to make this function to be called last, or guaranteed early than most of the others,
+		--or just do it on the next frame:
+		ApolloTimer.Create(0, false, "UpdateAllFrames", FrameHandler)
 	end
 	FrameHandler:Reposition()
 end)
+
+function FrameHandler:UpdateAllFrames()
+	for i,frame in ipairs(frames) do
+		MRF:PushUnitUpdateForFrameIndex(i)
+	end
+end
 
 function FrameHandler:InitGroupFrames()
 	if parentFrame then return end --already done.
