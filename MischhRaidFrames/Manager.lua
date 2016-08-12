@@ -841,6 +841,8 @@ do
 			if bar then 
 				bar.textSource = newSource
 				bar.textColor = bar.textColor or MRF:GetDefaultColor() --make sure the text has a color.
+				bar.hTextPos = bar.hTextPos or 'c'
+				bar.vTextPos = bar.vTextPos or 'c'
 				frameOptions:Set(frameTmp)
 			end
 		end
