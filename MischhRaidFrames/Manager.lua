@@ -160,8 +160,8 @@ do --Frame Updating
 	end
 	frameOptions:OnUpdate(frameChanged)
 	
-	function MRF:PushFrequentUpdate(frame, unit)
-		local progress = {}
+	function MRF:PushFrequentUpdate(frame, unit, progress)
+		progress = progress or {}
 	
 		for modKey, mod in pairs(frequentBars) do
 			progress[modKey] = mod:progressUpdate(frame, unit)
@@ -185,7 +185,9 @@ do --Frame Updating
 	end
 	
 	function MRF:PushUnitUpdate(frame, unit)
-		for modKey, mod in pairs(unitBars) do --do these exist?
+		local progress = {}
+		
+		for modKey, mod in pairs(unitBars) do --do these exist? --THEY DO NOW!
 			progress[modKey] = mod:progressUpdate(frame, unit)
 			frame:SetVar("progress", modKey, progress[modKey])
 		end
@@ -207,7 +209,7 @@ do --Frame Updating
 			mod:iconUpdate(frame,unit)
 		end
 		
-		self:PushFrequentUpdate(frame, unit)
+		self:PushFrequentUpdate(frame, unit, progress)
 	end
 	
 	function MRF:CreateNewTemplatedFrame()
