@@ -188,6 +188,8 @@ end
 
 function MRF:CheckFrameTemplate(frame)
 	local default = self:GetDefaultColor()
+	local valHPos = {l = true, c = true, r = true}
+	local valVPos = {t = true, c = true, b = true}
 	local dupBar = {}
 	local dupTxt = {}
 	local changed = false
