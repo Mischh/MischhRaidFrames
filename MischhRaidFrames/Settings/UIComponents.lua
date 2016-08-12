@@ -532,10 +532,10 @@ do
 	
 	local function reposition(frame)
 		local h, w = frame.frame:GetHeight(), frame.frame:GetWidth()
-		t = -floor(h/2)
-		b = ceil(h/2)
-		l = -floor(w/2)
-		r = ceil(w/2)
+		local t = -floor(h/2)
+		local b = h+t
+		local l = -floor(w/2)
+		local r = w+l
 		
 		frame.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
 		frame.frame:SetAnchorOffsets(l,t,r,b)
