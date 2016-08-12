@@ -278,6 +278,16 @@ function MRF:CheckFrameTemplate(frame)
 					bar.textColor = default
 					changed = true
 				end
+				if bar.textSource and not valHPos[bar.hTextPos or ""] then
+					Print("The bar "..tostring(bar.modKey).." had a text("..tostring(bar.textSource)..") without a horizontal position - set to center.")
+					bar.hTextPos = 'c'
+					changed = true
+				end
+				if bar.textSource and not valVPos[bar.vTextPos or ""] then
+					Print("The bar "..tostring(bar.modKey).." had a text("..tostring(bar.textSource)..") without a vertical position - set to center.")
+					bar.vTextPos = 'c'
+					changed = true
+				end
 			end
 		end
 	end
