@@ -924,8 +924,8 @@ function FrameHandler:PreviewSpacing(parent)
 		local topFrameEnd = topFrameStart - height
 		local botFrameEnd = botFrameStart + height
 		
-		local topHeaderStart = topFrameEnd - tHSpace
-		local botHeaderStart = botFrameEnd + bHSpace
+		local topHeaderStart = topFrameEnd - bHSpace
+		local botHeaderStart = botFrameEnd + tHSpace
 		local topHeaderEnd = topHeaderStart - heightHead
 		local botHeaderEnd = botHeaderStart + heightHead
 		
@@ -954,8 +954,8 @@ function FrameHandler:PreviewSpacing(parent)
 	
 	hSpFrOpt:OnUpdate(function(val) hFSpace= val or 0; reposition() end);
 	vSpFrOpt:OnUpdate(function(val) vFSpace= val or 0; reposition() end);
-	tSpHeOpt:OnUpdate(function(val) hHSpace= val or 0; reposition() end);
-	bSpHeOpt:OnUpdate(function(val) vHSpace= val or 0; reposition() end);
+	tSpHeOpt:OnUpdate(function(val) tHSpace= val or 0; reposition() end);
+	bSpHeOpt:OnUpdate(function(val) bHSpace= val or 0; reposition() end);
 	
 	local parent = MRF:LoadForm("PreviewSlot", parent)
 	parent:SetAnchorOffsets(0,0,0,230)
