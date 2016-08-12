@@ -428,7 +428,14 @@ do
 			["Offset"] = "Verschoben",
 			["Fixed"] = "Fixiert",
 			["Not Shown"] = "Versteckt",
-			["Offset: "] = "Abstand: "
+			["Offset: "] = "Abstand: ",
+			["Left"] = "Links",
+			["Right"] = "Rechts",
+			["Top"] = "Oben",
+			["Bottom"] = "Unten",
+			["Center"] = "Mitte",
+			["Horizontal Text Position:"] = "Horizontale Text-Position:",
+			["Vertical Text Position:"] = "Vertikale Text-Position:"
 		}, {--French
 		})
 		local cBarChoices, cTrans = MRF:GetBarColors()
@@ -446,6 +453,8 @@ do
 		local rColor = MRF:GetOption("Manager:Bar", "rColor")
 		local lTexture = MRF:GetOption("Manager:Bar", "lTexture")
 		local rTexture = MRF:GetOption("Manager:Bar", "rTexture")
+		local hTextPos = MRF:GetOption("Manager:Bar", "hTextPos")
+		local vTextPos = MRF:GetOption("Manager:Bar", "vTextPos")
 		local txtSource = MRF:GetOption("Manager:Bar", "textSrc")
 		local txtColor = MRF:GetOption("Manager:Bar", "textColor")
 								
@@ -490,6 +499,11 @@ do
 			return _transTexChoices[tex or ""] or ""
 		end
 		
+		local _transTextPos = {l=L["Left"], r=L["Right"], t=L["Top"], b=L["Bottom"], c=L["Center"]}
+		local function transTextPos(x)
+			return _transTextPos[x or ""] or " - "
+		end
+		
 		local function transRelPosChoices(pos)
 			if type(pos) == "number" then
 				if pos > 0 then
@@ -520,6 +534,8 @@ do
 		rColor:OnUpdate(barHandler, "SwitchedRColor")
 		lTexture:OnUpdate(barHandler, "SwitchedLTexture")
 		rTexture:OnUpdate(barHandler, "SwitchedRTexture")
+		hTextPos:OnUpdate(barHandler, "SwitchedHTextPos")
+		vTextPos:OnUpdate(barHandler, "SwitchedVTextPos")
 		txtSource:OnUpdate(barHandler, "SwitchedTextSource")
 		txtColor:OnUpdate(barHandler, "SwitchedTextColor")
 		
@@ -551,10 +567,12 @@ do
 			if bar then 
 				lColor:Set(bar.lColor); rColor:Set(bar.rColor);
 				lTexture:Set(bar.lTexture); rTexture:Set(bar.rTexture);
+				hTextPos:Set(bar.hTextPos); vTextPos:Set(bar.vTextPos);
 				txtSource:Set(bar.textSource); txtColor:Set(bar.textColor);
 			else
 				lColor:Set(nil); rColor:Set(nil);
 				lTexture:Set(nil); rTexture:Set(nil);
+				hTextPos:Set(nil); vTextPos:Set(nil);
 				txtSource:Set(nil); txtColor:Set(nil);
 			end
 			
@@ -781,6 +799,36 @@ do
 			end
 		end
 		
+		local oldHTextPos = nil;
+		function barHandler:SwitchedHTextPos(newPos)
+			if switchingTab or oldHTextPos == newPos then oldHTextPos = newPos; return end
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			
+			oldHTextPos = newPos
+			
+			if bar then 
+				bar.hTextPos = newPos
+				frameOptions:Set(frameTmp)
+			end
+		end
+		
+		local oldVTextPos = nil;
+		function barHandler:SwitchedVTextPos(newPos)
+			if switchingTab or oldVTextPos == newPos then oldVTextPos = newPos; return end
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			
+			oldVTextPos = newPos
+			
+			if bar then 
+				bar.vTextPos = newPos
+				frameOptions:Set(frameTmp)
+			end
+		end
+		
 		local oldSource = nil;
 		function barHandler:SwitchedTextSource(newSource)
 			if switchingTab or oldSource == newSource then oldSource = newSource; return end
@@ -841,6 +889,8 @@ do
 			form:FindChild("Window_Bartexture:lblBarTextureR"):SetText(L["Missing Bartexture:"])
 			form:FindChild("Window_Text:lblTextSource"):SetText(L["Text Source:"])
 			form:FindChild("Window_Text:lblTextColor"):SetText(L["Text Color:"])
+			form:FindChild("Window_Text:lblHorizontalPos"):SetText(L["Horizontal Text Position:"])
+			form:FindChild("Window_Text:lblVerticalPos"):SetText(L["Vertical Text Position:"])
 			
 			form:FindChild("Window_Top:QuestionMark_PosMode"):SetTooltip(L["ttBarPos"])
 			form:FindChild("Window_Relative:QuestionMark_Relative"):SetTooltip(L["ttRelPos"])
@@ -865,6 +915,8 @@ do
 			MRF:applyDropdown(form:FindChild("Window_Bartexture:BarTextureRight"), textureChoices, rTexture, transTexChoices)
 			MRF:applyDropdown(form:FindChild("Window_Text:TextSource"), txtChoices, txtSource, txtTrans ) 
 			MRF:applyDropdown(form:FindChild("Window_Text:TextColor"), cTxtChoices, txtColor, cTrans )
+			MRF:applyDropdown(form:FindChild("Window_Text:HorizontalPos"), {'l', 'c', 'r'}, hTextPos, transTextPos)
+			MRF:applyDropdown(form:FindChild("Window_Text:VerticalPos"), {'t', 'c', 'b'}, vTextPos, transTextPos)
 			
 			do
 				local function f(x) x:SetData(x:GetHeight()) end
