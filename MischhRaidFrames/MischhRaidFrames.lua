@@ -9,7 +9,6 @@ require "Window"
 -- MischhRaidFrames Module Definition
 -----------------------------------------------------------------------------------------------
 local MischhRaidFrames = {}
-MRF = nil
  
 -----------------------------------------------------------------------------------------------
 -- Constants
@@ -42,7 +41,6 @@ end
 -----------------------------------------------------------------------------------------------
 function MischhRaidFrames:OnLoad()
     -- load our form file
-	MRF = self
 	self.xmlDoc = XmlDoc.CreateFromFile("MischhRaidFrames.xml")
 	Apollo.LoadSprites("textures/ForgeUI_Textures.xml")
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
@@ -303,7 +301,7 @@ do
 		for i in ipairs( stacked ) do --the 'normally' placed bars
 			local tbl = options[i]
 			pos[4] = pos[2] + (tbl.size/total)
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 			pos[2] = pos[4]
 		end
 		
@@ -311,12 +309,12 @@ do
 			local i = pos[0]
 			local tbl = options[pos]
 			pos = {0, i/total, 1, (tbl.size+i)/total}
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 		end
 		
 		for _, pos in ipairs( fixed ) do --the fixed 'placed ontop' bars
 			local tbl = options[pos]
-			handler[tbl.modKey] = MRF:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 		end
 	
 		handler.options = options
