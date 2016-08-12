@@ -466,14 +466,14 @@ function GroupHandler:JoinICCommChannel()
 	self.timerJoinICCommChannel = nil
 	--we want to sync with VRF
 	self.channel = ICCommLib.JoinChannel("VinceRF", ICCommLib.CodeEnumICCommChannelType.Group)
-	self.channel:SetJoinResultFunction("OnICCommJoin", MRF)
+	self.channel:SetJoinResultFunction("GroupHandler_OnICCommJoin", MRF)
 	
 	if not self.channel:IsReady() then
 		self.timerJoinICCommChannel = ApolloTimer.Create(3, false, "JoinICCommChannel", self)
 	else
 		self.channel:SetReceivedMessageFunction("GroupHandler_OnICCommMessageReceived", MRF)
-		self.channel:SetSendMessageResultFunction("OnICCommSendMessageResult", MRF)
-		self.channel:SetThrottledFunction("OnICCommThrottled", MRF)
+		self.channel:SetSendMessageResultFunction("GroupHandler_OnICCommSendMessageResult", MRF)
+		self.channel:SetThrottledFunction("GroupHandler_OnICCommThrottled", MRF)
 		
 		self.addonVersionAnnounceTimer = ApolloTimer.Create(2, false, "ICCommShareVersion", self)
 	end
