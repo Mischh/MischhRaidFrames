@@ -664,7 +664,7 @@ end
 local function check(self)
 	if not self.slider:IsThumbDragging() then
 		Apollo.RemoveEventHandler("NextFrame", self)
-		local x = self.opt:Get()
+		local x = self.opt:Get() or 0
 		local l = x>100 and x-100 or 0
 		local r = l+200
 		self:SetMinMax(l,r)
