@@ -1,14 +1,22 @@
+require "ICComm"
+
 local MRF = Apollo.GetAddon("MischhRaidFrames")
 
 
 local getInsertable, copyInto --these need to know each other.
+local keyTbl = setmetatable({}, {__index = function(t,k)
+	local x = (rawget(t,"idx") or 0)+1
+	rawset(t,"idx", x)
+	rawset(t,k,x)
+	return x
+end})
 
 function getInsertable(self, value)
 	local t = type(value)
 	if t == "string" or t == "number" or t == "boolean" then
 		return value
 	elseif t == "table" then
-		local key = tostring(value)
+		local key = keyTbl[tostring(value)]
 		if not self[key] then
 			copyInto(self, key, value)
 		end
@@ -22,7 +30,7 @@ end
 function copyInto(self, key, tbl)
 	local copy = {}
 	local ind = 1
-	rawset(self, key, copy) --this early, to prevent loops like 'tbl[key1][key2][key3] = tbl' to call copyInto again (only works, because we check within getCopyable)
+	rawset(self, key, copy) --this early, to prevent loops like 'tbl[key1][key2][key3] = tbl' to call copyInto again (only works, because we check within getInsertable)
 	for i,v in pairs(tbl) do
 		local index = getInsertable(self, i) --can be string, number, {tableName}
 		local value = getInsertable(self, v)
@@ -67,7 +75,7 @@ local function createCache(copy)
 end
 
 local function convert(tbl)
-	local origKey = tostring(tbl)
+	local origKey = keyTbl[tostring(tbl)]
 	local copy = {[0] = origKey}
 	copyInto(copy, origKey, tbl)
 	return copy
@@ -79,6 +87,7 @@ local function restoreConverted(orig)
 end
 
 function MRF:ToSaveData(tbl)
+	keyTbl = setmetatable({}, getmetatable(keyTbl))
 	return convert(tbl)
 end
 
@@ -120,7 +129,7 @@ function MRF:LoadProfile(prof)
 	profiles[GameLib.CodeEnumAddonSaveLevel.Character].profile = prof
 	
 	if not profiles[prof] then
-		profiles[prof] = MRF:GetDefaults()
+		profiles[prof] = self:GetDefaults()
 	end
 	
 	self.blockSwitch = true
@@ -143,6 +152,14 @@ function MRF:LoadProfile(prof)
 	end
 end
 
+function MRF:LoadProfileFromTable(tbl, prof)
+	prof = prof or profile:Get() or ""
+	if not saving[prof] then return end
+	profiles[prof] = tbl
+	
+	self:LoadProfile(prof)
+end
+
 function MRF:SwitchToProfile(eLevel) 
 	if not saving[eLevel] then return end --we dont support such a profile-index
 	
@@ -157,7 +174,7 @@ local oldLevel = nil
 function MRF:SelectedProfile(eLevel)
 	local err, traceback;
 	local succ, err = xpcall(function()
-		if self.blockSwitch or oldLevel == eLevel then return end
+		if self.blockSwitch or oldLevel == eLevel then oldLevel = eLevel; return end
 		oldLevel = eLevel
 		self:SwitchToProfile(eLevel)
 	end, function(err)
@@ -316,3 +333,512 @@ do
 		f(self,...)
 	end
 end
+
+
+--CAREFUL FROM HERE ON, EVERYTHING MAGIC!
+
+--Two things to do for Strings: (1) the actual \ character needs to be replaced properly
+-- (2) '|' and '}' need to be properly replaced, because we need these for encoding.
+
+--replace \ with _], _] with _.], _.] with _..], and so on.
+--replace | with _/ , _/  with _./ , _./  with _../  and so on.
+--replace } with _) , _) with _.) , _.) with _..) and so on. 
+
+
+local gsubPatternRmv1 = "_(%.*[%]/%)])" --MAAAAAAAGIC!
+local gsubPatternRmv2 = "[\092|%}]"
+local gsubRmvBraces = setmetatable({ 
+	["\092"] = "_]", ["\124"] = "_/", ["\125"] = "_)",
+}, {__index = function(t,k)
+	local v = "_."..k
+	rawset(t,k,v)
+	return v
+end})
+
+
+--we need to revert the changes made when Removing special Characters:
+local gsubPatternFill1 = "_([%]/%)])"
+local gsubPatternFill2 = "_(%.+[%]/%)])" --no more magic - thats witchery!
+local gsubFillBraces = setmetatable({
+	["]"] = "\092", ["/"] = "|", [")"] = "}",
+},{__index = function(t,k)
+	local v = "_"..k:sub(2,-1)
+	rawset(t,k,v)
+	return v
+end})
+
+local function makeValidString(str)
+	str = str:gsub(gsubPatternRmv1, gsubRmvBraces)
+	return str:gsub(gsubPatternRmv2, gsubRmvBraces), nil
+end
+
+local function fromValidString(str)
+	str = str:gsub(gsubPatternFill1, gsubFillBraces)
+	return str:gsub(gsubPatternFill2, gsubFillBraces), nil
+end
+
+--[[Example:
+	{1,2,"abc",{3,4,"cde"},5}
+	turns into:
+	n1|n2|sabc|{n3|n4|scde|}n5|
+]]--
+local function indexedTblToString(tbl)
+	local str = ""
+	for _, val in ipairs(tbl) do
+		local t = type(val)
+		if t == "string" then
+			str = str.."s"..makeValidString(val).."|"
+		elseif t == "number" then
+			str = str.."n"..tostring(val).."|"
+		elseif t == "boolean" then
+			str = str..(val and "+" or "-") --doesnt need no limiter, they are only 1 character long.
+		elseif t == "table" then
+			str = str.."{"..indexedTblToString(val) --provides its own limiter. '}'
+		end
+	end
+	return str.."}" --provide limiter
+end
+
+
+local function stringToIndexedTbl(str)
+	local tbl = {}
+	
+	local type, val = nil, nil --local variables for the loop.
+	while true do
+		type, str = str:match("^([sn%+%-%{%}])(.*)$")
+		Print(tostring(type).." "..str:sub(1,20))
+		if type == "s" then
+			val, str = str:match("^(.-)%|(.*)$")
+			if not val then --didn't expect -> return with error.
+				return tbl, "", "invalid string"
+			end 
+			tbl[#tbl+1] = fromValidString(val)
+		elseif type == "n" then
+			val, str = str:match("^(.-)%|(.*)$")
+			val = tonumber(val)
+			if not val then --didn't expect -> return with error.
+				return tbl, "", "invalid number"
+			end 
+			tbl[#tbl+1] = val
+		elseif type == "+" then
+			tbl[#tbl+1] = true
+		elseif type == "-" then
+			tbl[#tbl+1] = false
+		elseif type == "{" then
+			tbl[#tbl+1], str, val = stringToIndexedTbl(str)
+			if val then --the table returned with error. -> pass on.
+				return tbl, "", val
+			end 
+		elseif type == "}" then
+			-- we reached the end of this table.
+			-- str is probably the rest of the parent table, or empty.
+			return tbl, str --this is the proper end of this function.
+		else
+			return tbl, "", "no or invalid identifier" -- ->returning with error. (do we even want to return tbl?)
+		end
+	end
+end
+
+local function spread(tbl)
+	local cache = {}
+	local idx = 1
+	for i, v in pairs(tbl) do --neither i nor v can be nil, because how tables work.
+		cache[idx] = v
+		cache[idx+1] = i
+		idx = idx+2
+	end
+	return cache
+end
+
+local function gather(tbl)
+	local cache = {}
+	for i = 2, #tbl, 2 do
+		cache[tbl[i]] = tbl[i-1]
+	end
+	return cache
+end
+	
+
+function MRF:CurrentProfileToString()
+	local data = self:ToSaveData( self:GetOption(nil):Get() )
+	--very important: THIS TABLE IS NOT INDEXED, we LOSE data[0] = 1.
+	local str = indexedTblToString(data)
+	
+	--some integrity checks to make sure we get all data on the recieving end:
+	--add the number of tables in the indexed part of data to the String, 
+	--this way we try to make sure the structure is going to be kept.
+	--surround with < > mainly to make sure we have both the start and the end of the string.
+	
+	return "<"..#data.."|"..str..">"
+end
+
+function MRF:StringToProfile(str)
+	local num, str = str:match("^<(%d+)|(.*)>$")
+	num = tonumber(num)
+	
+	if not num then
+		return nil, "malformed string"
+	end
+
+	local data, left, error = stringToIndexedTbl(str)
+	if error then
+		return nil, error
+	elseif not data then
+		return nil, "failed decoding"
+	elseif left ~= "" then
+		return nil, "table ended early"
+	end
+	
+	data[0] = 1
+	
+	if #data ~= num then
+		return nil, "missing data", #data, num
+	end
+	
+	local data = MRF:FromSaveData(data)
+	
+	return data
+end
+
+-- ################################# PROFILE TAB ######################################## --
+
+local ProfileTab = {}
+
+MRF:AddMainTab("Profile", ProfileTab, "InitProfileTab")
+
+function ProfileTab:InitProfileTab(parent, name)
+	local Options = MRF:GetOption("SaveHandler:Profiles")
+	local L = MRF:Localize({--English
+		["ttProfile"] = "The to be used profile can be chosen here. These profiles define their visibility to other characters. The profile 'Character' is only visible for this character, while 'Realm' can be used by any character of this account on this realm on this PC.",
+		["ttCopy"] = "Insert the contents of this Profile into your current one. Selecting one will instantly replace.",
+	
+		--ICComm
+		["ttStatus"] = "Displays what the AddOn just did. The ICComm Library very reliably breaks on first use. Please follow the /reloadui instructions.",
+		["ttShare"] = "Share your current profile with your group. Only those waiting on an input will recieve this.",
+		["ttWait"] = "Wait for a profile being shared by one of your groupmembers. They need to share their profile while you are waiting.",
+		["ttImport"] = "Once you successfully recieved a profile, you can import it by clicking this button. Note: This will replace your current profile.",
+		
+		--Text
+		["ttTxExport"] = "Exports your current profile to the textbox below. This text can then be shared with other people to be imported by them.",
+		["ttTxImport"] = "Imports the profile from the textbox below. Valid profiles start with a '<*number*|', and end with a '>'. Leave no spaces in front or behind the text. The *number* is dependant on the profiles size, a wrong *number* will invalidate the profile.",
+	}, {--German
+		["ttProfile"] = "Hier kann das verwendete Profil gewählt werden. Diese Profile geben auch ihre Sichtbarkeit an. So ist das Profil 'Charakter' nur für diesen Charakter sichtbar, 'Realm' hingegen kann von jedem Charakter dieses Accounts auf diesem Realm auf diesem Computer genutzt werden.",
+		["ttCopy"] = "Ersetzt den Inhalt des momentanen Profils mit dem Ausgewählten. Achtung! Wählen eines Profils wird das momentane SOFORT ersetzen.",
+	
+		["Selected profile:"] = "Ausgewähltes Profil:",
+		["Replace Profile:"] = "Profil ersetzten:",
+		["Copy profile from:"] = "Kopiere dieses Profil:",
+		
+		["Character"] = "Charakter",
+		["Account"] = "Account",
+		["General"] = "Generell",
+		["Realm"] = "Realm",
+		["Default: "] = "Standard: ",
+		["- select to copy -"] = "- Auswählen zum Kopieren -",
+		
+		--ICComm stuff:
+		["Import/Export: ICComm Group"] = "Importieren/Exportieren: ICComm Gruppe",
+		["Recieved Invalid Data: "] = "Fehlerhafte Daten erhalten: ",
+		["Failed to join. /reloadui and try again."] = "Beitritt schlug fehl. /reloadui und neu versuchen.",
+		["Joined Channel."] = "Channel beigetreten.",
+		["Current Status:"] = "Momentanter Status:",
+		["Ready."] = "Bereit.",
+		["Sent Profile."] = "Profil gesendet.",
+		["Share with Group:"] = "Mit Gruppe teilen:",
+		["Share"] = "Teilen",
+		["Waiting... (1 minute)"] = "Warte... (1 Minute)",
+		["Wait for Input:"] = "Auf Daten warten:",
+		["Wait"] = "Warten",
+		["Import the resulting profile:"] = "Importiere das erhaltene Profil",
+		["No profile recieved."] = "Kein Profil erhalten.",
+		["Profile imported."] = "Profil importiert.",
+		["Profile: "] = "Profil: ",
+		["Profile too big. Aborted."] = "Profil zu groß. Abgebrochen.",
+		["ttStatus"] = "Beschreibt, was das AddOn gerade getan hat. Die ICComm Bibliothek schlägt meist beim ersten Versuch fehl. Bitte dem '/reloadui'-Vorschlag folge leisten.",
+		["ttShare"] = "Teile dein momentanes Profil mit deiner Gruppe. Nur wartende Mitglieder werden dieses erhalten.",
+		["ttWait"] = "Warte auf ein Profil, dass von einem Gruppenmitglied geteilt wird. Damit du dieses Profil erhalten kannst muss das Gruppenmitglied währenddem du wartest sein Profil teilen.",
+		["ttImport"] = "Sobald ein Profil erfolgreich erhalten wurde, kann dieser Knopf zum Importieren des Profils gedrückt werden. Achtung! Dies wird das momentane Profil überschreiben.",		
+	
+		--Text import stuff:
+		["Import/Export: Text"] = "Importieren/Exportieren: Text",
+		["Export current Profile:"] = "Profil exportieren:",
+		["Import Profile from Text:"] = "Profil importieren:",
+		["Profile too big for text export."] = "Profil zu groß für Textexportierung",
+		["Export"] = "Exportiere",
+		["Import Profile"] = "Profil importieren",
+		["Successfully imported Profile."] = "Profil erfolgreich importiert.",
+		["Invalid Profile"] = "Fehlerhaftes Profil",
+		["ttTxExport"] = "Exportiert das momentane Profil in die Textbox unten. Dieser Text kann dann mit anderen geteilt und von ihnen importiert werden.",
+		["ttTxImport"] = "Importiert das Profil aus der Textbox unten. Fehlerfreie Profile starten mit '<*zahl*|' und enden mit einem '>'. Es dürfen keine Leerstellen vor/nach dem Profil existieren. Die *zahl* ist abhängig von der Profilgröße, mit einer falschen *zahl* ist das Profil Fehlerhaft.",
+	}, {--French
+	})
+
+	local invProf = {
+		[GameLib.CodeEnumAddonSaveLevel.Character] = "Character", 
+		[GameLib.CodeEnumAddonSaveLevel.Account] = "Account", 
+		[GameLib.CodeEnumAddonSaveLevel.General] = "General",
+		[GameLib.CodeEnumAddonSaveLevel.Realm] = "Realm",
+	}
+	local profiles = {
+		GameLib.CodeEnumAddonSaveLevel.Character,
+		GameLib.CodeEnumAddonSaveLevel.Realm,
+		GameLib.CodeEnumAddonSaveLevel.Account,
+		GameLib.CodeEnumAddonSaveLevel.General,
+	}
+	local profiles_copy = {
+		GameLib.CodeEnumAddonSaveLevel.Character,
+		GameLib.CodeEnumAddonSaveLevel.Realm,
+		GameLib.CodeEnumAddonSaveLevel.Account,
+		GameLib.CodeEnumAddonSaveLevel.General,
+	}
+	local defaults = MRF:GetDefaultProfiles()
+	for name in pairs(defaults) do profiles_copy[#profiles_copy+1] = name end
+	
+	local function transProf(idx)
+		if type(idx) == "number" then
+			return L[invProf[idx]]
+		elseif type(idx) == "string" then
+			return L["Default: "]..idx
+		else
+			return L["- select to copy -"]
+		end
+	end
+
+	local form = MRF:LoadForm("SimpleTab", parent)
+	form:FindChild("Title"):SetText(name)
+	parent = form:FindChild("Space")
+
+	local optProf = MRF:GetOption("profile")
+	local profRow = MRF:LoadForm("HalvedRow", parent)
+	MRF:LoadForm("QuestionMark", profRow:FindChild("Left")):SetTooltip(L["ttProfile"])
+	profRow:FindChild("Left"):SetText(L["Selected profile:"])
+	MRF:applyDropdown(profRow:FindChild("Right"), profiles, optProf, transProf)
+	
+	MRF:LoadForm("HalvedRow", parent):SetText(L["Replace Profile:"])
+	
+	local optCopy = MRF:GetOption(Options, "ProfileCopy")
+	local copyRow = MRF:LoadForm("HalvedRow", parent)
+	MRF:LoadForm("QuestionMark", copyRow:FindChild("Left")):SetTooltip(L["ttCopy"])
+	copyRow:FindChild("Left"):SetText(L["Copy profile from:"])
+	MRF:applyDropdown(copyRow:FindChild("Right"), profiles_copy, optCopy, transProf)
+	optCopy:OnUpdate(function(prof)
+		if type(prof) == "string" then
+			local p = defaults[prof]()
+			MRF:LoadProfileFromTable(p)
+			optCopy:Set(nil)
+		elseif prof then
+			local cur = optProf:Get()
+			MRF:CopyProfile(prof, cur)
+			optCopy:Set(nil)
+		end
+	end)
+	
+	-- ########### ICOmm Lib ############# --
+	MRF:LoadForm("HalvedRow", parent):SetText(L["Import/Export: ICComm Group"])
+	
+	local icprofile
+	local icchannel = nil
+	
+	local icstatusOpt = MRF:GetOption(Options, "icstatus") --contains the currently displayed status-message
+	local icbusyOpt = MRF:GetOption(Options, "icbusy") --'wait', 'share' or false/nil. Whats keeping the channel busy.
+	local icimportOpt = MRF:GetOption(Options, "icimport") --the currently importable profiles owners name. (nil if none)
+	
+	function MRF:SaveHandler_OnICCommMessageReceived(channel, strMessage, srcName)
+		if icbusyOpt:Get() == "wait" then --if we are not waiting for messages, we ignore anything.		
+			local tbl = self:StringToProfile(strMessage)
+			if not tbl then
+				icstatusOpt:Set(L["Recieved Invalid Data: "]..tostring(srcName))
+			end
+			
+			icprofile = tbl
+			icimportOpt:Set(srcName)
+			icbusyOpt:Set(false)
+		end
+	end
+	
+	local function joinedChannel(self)
+		if not icchannel or not icchannel:IsReady() then
+			icchannel = ICCommLib.JoinChannel("MRFSaveHandler", ICCommLib.CodeEnumICCommChannelType.Group)
+			
+			if not icchannel:IsReady() then
+				icstatusOpt:Set(L["Failed to join. /reloadui and try again."])
+				return false
+			else
+				icchannel:SetReceivedMessageFunction("SaveHandler_OnICCommMessageReceived", MRF)
+			end
+		end
+		icstatusOpt:Set(L["Joined Channel."])
+		return true
+	end
+	
+	local icstatusRow = MRF:LoadForm("HalvedRow", parent)
+	icstatusRow:FindChild("Left"):SetText(L["Current Status:"])
+	MRF:applyTextbox(icstatusRow:FindChild("Right"), icstatusOpt).text:Enable(false)
+	
+	-- ## ICCOMM PUSH/SHARE ROW
+	local icshareHandler = {
+		misctimer = nil,
+		aborttimer = nil, --not needed
+		ButtonClick = function(self,...)
+			icbusyOpt:Set("share")
+		
+			if not joinedChannel(self) then return end --this will handle retry
+			self.misctimer = ApolloTimer.Create(2, false, "SendData", self)
+		end,
+		SendData = function(self)
+			local msg = MRF:CurrentProfileToString()
+			if msg:len() > 32750 then
+				icstatusOpt:Set(L["Profile too big. Aborted."])
+			else
+				icchannel:SendMessage(msg)
+				icstatusOpt:Set(L["Sent Profile."])
+			end
+			self.misctimer = ApolloTimer.Create(2, false, "ShareComplete", self)
+		end,
+		ShareComplete = function()
+			icbusyOpt:Set(false)
+		end,
+	}
+	local icshareRow = MRF:LoadForm("HalvedRow", parent)
+	icshareRow:FindChild("Left"):SetText(L["Share with Group:"])
+	local icshareBtn = MRF:LoadForm("Button", icshareRow:FindChild("Right"), icshareHandler)
+	icshareBtn:SetText(L["Share"])
+	
+	-- ## ICCOMM WAIT ROW
+	local icwaitHandler = {
+		misctimer = nil,
+		aborttimer = nil,
+		ButtonClick = function(self,...)
+			icbusyOpt:Set("wait")
+			
+			if not joinedChannel(self) then return end --this will handle retry
+			self.misctimer = ApolloTimer.Create(2, false, "SetWaitText", self)
+			self.aborttimer = ApolloTimer.Create(60, false, "AbortWait", self)
+		end, 
+		SetWaitText = function() 
+			icstatusOpt:Set(L["Waiting... (1 minute)"]) 
+		end,
+		AbortWait = function()
+			icbusyOpt:Set(false)
+		end,
+	}
+	local icwaitRow = MRF:LoadForm("HalvedRow", parent)
+	icwaitRow:FindChild("Left"):SetText(L["Wait for Input:"])
+	local icwaitBtn = MRF:LoadForm("Button", icwaitRow:FindChild("Right"), icwaitHandler)
+	icwaitBtn:SetText(L["Wait"])
+	
+	-- ## ICCOMM IMPORT ROW 
+	local icimportRow = MRF:LoadForm("HalvedRow", parent)
+	icimportRow:FindChild("Left"):SetText(L["Import the resulting profile:"])
+	local icimportBtn = MRF:LoadForm("Button", icimportRow:FindChild("Right"), {ButtonClick = function(self,...)
+		MRF:LoadProfileFromTable(icprofile)
+		icprofile = nil
+		icimportOpt:Set(false)
+	end})
+	
+	icimportOpt:OnUpdate(function(name)
+		if name == nil then
+			icimportBtn:Enable(false)
+			icimportBtn:SetText(L["No profile recieved."])
+		elseif not name then
+			icimportBtn:Enable(false)
+			icimportBtn:SetText(L["Profile imported."])
+		else
+			icimportBtn:Enable(true)
+			icimportBtn:SetText(L["Profile: "]..name)
+		end
+	end)
+	
+	icbusyOpt:OnUpdate(function(busy) 
+		if busy then
+			icshareBtn:Enable(false)
+			icwaitBtn:Enable(false)
+		else
+			if icshareHandler.aborttimer then icshareHandler.aborttimer:Stop() end
+			if icshareHandler.misctimer then icshareHandler.misctimer:Stop() end
+			if icwaitHandler.aborttimer then icwaitHandler.aborttimer:Stop() end
+			if icwaitHandler.misctimer then icwaitHandler.misctimer:Stop() end
+			icstatusOpt:Set(L["Ready."])
+			icshareBtn:Enable(true)
+			icwaitBtn:Enable(true)
+		end
+	end)
+	
+	MRF:LoadForm("QuestionMark", icstatusRow:FindChild("Left")):SetTooltip(L["ttStatus"])
+	MRF:LoadForm("QuestionMark", icshareRow:FindChild("Left")):SetTooltip(L["ttShare"])
+	MRF:LoadForm("QuestionMark", icwaitRow:FindChild("Left")):SetTooltip(L["ttWait"])
+	MRF:LoadForm("QuestionMark", icimportRow:FindChild("Left")):SetTooltip(L["ttImport"])
+	
+	-- ########### Text Output ############# --
+	MRF:LoadForm("HalvedRow", parent):SetText(L["Import/Export: Text"])
+	
+	local txprofile = nil --this one will hold the importable profile (if there is one)
+	local txtextOpt = MRF:GetOption(Options, "txtext") --the Option for the current text in the textbox.
+	
+	local txexportRow = MRF:LoadForm("HalvedRow", parent)
+	txexportRow:FindChild("Left"):SetText(L["Export current Profile:"])
+	local txexportBtn = MRF:LoadForm("Button", txexportRow:FindChild("Right"), {
+		ButtonClick = function(self,...) 			
+			local txt = MRF:CurrentProfileToString()
+			if txt:len() > 30000 then
+				txt = L["Profile too big for text export."]
+			end
+			txtextOpt:Set(txt)
+		end
+	}); txexportBtn:SetText(L["Export"])
+	
+	local tximportRow = MRF:LoadForm("HalvedRow", parent)
+	tximportRow:FindChild("Left"):SetText(L["Import Profile from Text:"])
+	local tximportBtn = MRF:LoadForm("Button", tximportRow:FindChild("Right"), {
+		ButtonClick = function(self, btn, ...)
+			if txprofile then
+				MRF:LoadProfileFromTable(txprofile)
+				txprofile = nil
+				txtextOpt:Set(L["Successfully imported Profile."])
+			end
+		end
+	}); --text will be applied in txtextOpt:OnUpdate()
+	
+	local txtextRow = MRF:LoadForm("HalvedRow", parent)
+	txtextRow:SetAnchorOffsets(0,0,0,180)
+	local txtextBox = MRF:applyTextbox(txtextRow, txtextOpt).text
+	txtextBox:SetAnchorOffsets(5,-87, 5, 82)
+	txtextBox:SetTextFlags('DT_CENTER', false); txtextBox:SetTextFlags('DT_VCENTER', false);
+	txtextBox:SetTextFlags('DT_WORDBREAK', true); txtextBox:SetStyleEx('MultiLine', true);
+	txtextBox:SetStyle('VScroll', true);
+	
+	txtextOpt:OnUpdate(function(txt)
+		if not txt then
+			txprofile = nil
+			tximportBtn:Enable(false)
+			tximportBtn:SetText(L["Invalid Profile"])
+		else
+			local tbl, err = MRF:StringToProfile(txt)
+			Print(err)
+			if not tbl then
+				txprofile = nil
+				tximportBtn:Enable(false)
+				tximportBtn:SetText(L["Invalid Profile"])
+			else
+				txprofile = tbl
+				tximportBtn:Enable(true)
+				tximportBtn:SetText(L["Import Profile"])
+			end
+		end
+	end)
+	
+	MRF:LoadForm("QuestionMark", txexportRow:FindChild("Left")):SetTooltip(L["ttTxExport"])
+	MRF:LoadForm("QuestionMark", tximportRow:FindChild("Left")):SetTooltip(L["ttTxImport"])
+	
+	local children = parent:GetChildren()
+	local anchor = {parent:GetAnchorOffsets()}
+	anchor[4] = anchor[2] + #children*30 +150-- 150 from textbox (180-30) +5 for the looks.
+	parent:SetAnchorOffsets(unpack(anchor))
+	parent:ArrangeChildrenVert()
+	parent:GetParent():RecalculateContentExtents()
+	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+	
+	optProf:ForceUpdate() --this is not a child of Options!
+	Options:ForceUpdate()
+end
+

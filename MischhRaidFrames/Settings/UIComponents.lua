@@ -697,61 +697,7 @@ do
 	function tabHandler:OnCancel()
 		settingsForm:Show(false,false)
 	end
-	
-	function tabHandler:ToggleProfileFrame()
-		self.profiles:Show(not self.profiles:IsShown(), false)
-	end
-	
-	function tabHandler:InitProfiles(parent)
-		local invProf = {
-			[GameLib.CodeEnumAddonSaveLevel.Character] = "Character", 
-			[GameLib.CodeEnumAddonSaveLevel.Account] = "Account", 
-			[GameLib.CodeEnumAddonSaveLevel.General] = "General",
-			[GameLib.CodeEnumAddonSaveLevel.Realm] = "Realm",
-			[true] = "Default",
-		}
-		local listed = {
-			GameLib.CodeEnumAddonSaveLevel.Character,
-			GameLib.CodeEnumAddonSaveLevel.Realm,
-			GameLib.CodeEnumAddonSaveLevel.Account,
-			GameLib.CodeEnumAddonSaveLevel.General,
-		}
-		local listed_copy = {
-			GameLib.CodeEnumAddonSaveLevel.Character,
-			GameLib.CodeEnumAddonSaveLevel.Realm,
-			GameLib.CodeEnumAddonSaveLevel.Account,
-			GameLib.CodeEnumAddonSaveLevel.General,
-			true, --Default
-		}
-		local function trans(eLvl)
-			if eLvl then
-				return invProf[eLvl]
-			else
-				return ""
-			end
-		end
 		
-		local optCopy = MRF:GetOption("Settings_ProfileCopy")
-		local optProf = MRF:GetOption("profile")
-	
-		MRF:applyDropdown(parent:FindChild("Dropdown_Profile"), listed, optProf, trans)
-		MRF:applyDropdown(parent:FindChild("Dropdown_Copy"), listed_copy, optCopy, trans)
-		
-		optCopy:OnUpdate(function(eLevel)
-			if eLevel == true then print(pcall(function()
-				local cur = optProf:Get()
-				MRF:CopyProfile(nil , cur)--copies default into cur.
-				optCopy:Set(nil) end))
-			elseif eLevel then
-				local cur = optProf:Get()
-				MRF:CopyProfile(eLevel, cur)
-				optCopy:Set(nil)
-			end
-		end)
-		
-		optProf:ForceUpdate()
-	end
-	
 	function tabHandler:AddPlayer(...)
 		MRF:MakePlayerAUnit()
 	end
@@ -766,9 +712,6 @@ do
 		settingsForm = tabHandler.frame
 		tabHandler.tabs = tabHandler.frame:FindChild("TabList")
 		tabHandler.panel = tabHandler.frame:FindChild("TabPanel")
-		tabHandler.profiles = tabHandler.frame:FindChild("ProfilesFrame")
-		
-		tabHandler:InitProfiles(tabHandler.profiles)
 		
 		for _, name in ipairs(tabs) do
 			local tab = tabs[name]
