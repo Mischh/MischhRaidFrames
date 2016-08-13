@@ -406,7 +406,6 @@ local function stringToIndexedTbl(str)
 	local type, val = nil, nil --local variables for the loop.
 	while true do
 		type, str = str:match("^([sn%+%-%{%}])(.*)$")
-		Print(tostring(type).." "..str:sub(1,20))
 		if type == "s" then
 			val, str = str:match("^(.-)%|(.*)$")
 			if not val then --didn't expect -> return with error.
