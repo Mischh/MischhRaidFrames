@@ -13,8 +13,9 @@ local optSavedDef = MRF:GetOption(Options, "cache")
 local optPermSave = MRF:GetOption(Options, "saved")
 local optUse = MRF:GetOption(Options, "use")
 local optAcc = MRF:GetOption(Options, "accept")
-local optLead = MRF:GetOption(Options, "lead")
+local optAccFrom = MRF:GetOption(Options, "lead")
 local optPublish = MRF:GetOption(Options, "publish")
+local optRepublish = MRF:GetOption(Options, "republish")
 local optActAcc = MRF:GetOption(Options, "activationAccept")
 local optDeactGrp = MRF:GetOption(Options, "decativationGroup")
 MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
@@ -57,9 +58,10 @@ local L = MRF:Localize({--English
 local accept = true --do we accept the leaders groupings?
 local activateAccept = false --true is default
 local groupDeactivate = false --true is default
-local onlyLead = true
+local acceptFrom = "lead"
 local useUserDef = false
 local publishing = false
+local republishing = false
 local permData = {}
 local userdef = {
 	--[1] = "Group1" --these Names NEED to be unique, the UI gets problems in other cases.
@@ -156,16 +158,18 @@ function GroupHandler:NewSavedDef(new)
 	end
 end
 
-optLead:OnUpdate(GroupHandler, "UpdateRecieveLead")
-function GroupHandler:UpdateRecieveLead(new)
+optAccFrom:OnUpdate(GroupHandler, "UpdateRecieveAccFrom")
+function GroupHandler:UpdateRecieveAccFrom(new)
 	if new == nil then
-		optLead:Set(true)
+		optAccFrom:Set("lead")
+	elseif type(new) == "boolean" then --old values
+		optAccFrom:Set(new and "lead" or "all")
 	else
-		if onlyLead ~= nil and onlyLead~=new then
-			onlyLead = new
+		if acceptFrom ~= nil and acceptFrom~=new then
+			acceptFrom = new
 			self:ICCommShareVersion()
 		else
-			onlyLead = new
+			acceptFrom = new
 		end
 	end
 end
@@ -185,6 +189,15 @@ function GroupHandler:UpdatePublishing(new)
 		else
 			publishing = new
 		end
+	end
+end
+
+optRepublish:OnUpdate(GroupHandler, "UpdateRepublishing")
+function GroupHandler:UpdateRepublishing(new)
+	if new == nil then
+		optRepublish:Set(false)
+	else
+		republishing = new
 	end
 end
 
@@ -334,16 +347,16 @@ function GroupHandler:ChangedGroupLayout()
 	end
 end
 
-function GroupHandler:ICCommShareGroup()
+function GroupHandler:ICCommShareGroup(srcName)
 	if self.channel and publishing then
-		local msg = self:VRFSerialize({layout = self:GetVRFLayout()})
+		local msg = self:VRFSerialize({layout = self:GetVRFLayout(), source = srcName})
 		self.channel:SendMessage(msg)
 	end
 end
 
-function GroupHandler:ICCommShareDeact()
+function GroupHandler:ICCommShareDeact(srcName)
 	if self.channel and publishing then
-		self.channel:SendMessage(self:VRFSerialize({defaultGroups = true}))
+		self.channel:SendMessage(self:VRFSerialize({defaultGroups = true, source = srcName}))
 	end
 end
 
@@ -351,7 +364,7 @@ function GroupHandler:ICCommShareVersion()
 	self.addonVersionAnnounceTimer = nil
 	
 	if self.channel and accept then --only ask for stuff, if we actually accept stuff, duh?
-		if onlyLead then --if we only accept messages from our leader -> send him private message.
+		if acceptFrom == "lead" then --if we only accept messages from our leader -> send him private message.
 			local leader = self:GetLead()
 			local leadName = leader:GetName()
 			if not leader or not leadName then return end
@@ -409,7 +422,7 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 end
 
 function GroupHandler:RecievedGroupLayout(srcName, layout)
-	if onlyLead and not self:IsLead(srcName) then
+	if not self:CheckAccepting(srcName) then
 		return
 	end	
 
@@ -433,7 +446,7 @@ function GroupHandler:RecievedGroupLayout(srcName, layout)
 end
 
 function GroupHandler:RecievedDeactRequest(srcName)
-	if activateAccept and (not onlyLead or self:IsLead(srcName)) then
+	if activateAccept and self:CheckAccepting(srcName) then
 		optUse:Set(false)
 	end
 end
@@ -485,10 +498,11 @@ end
 
 function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?		
 	local message = self:VRFDeserialize(strMessage)
-	if type(message) ~= "table" then
+	local playerName = GameLib.GetPlayerUnit():GetName()
+	if type(message) ~= "table" or message.source == playerName then
 		return
 	end
-	if type(message.rw) == "table" and #message.rw > 0 and self:IsLeader(idMessage) then
+	if type(message.rw) == "table" and #message.rw > 0 and self:IsLead(idMessage) then
 		--a RaidWarning? Well - okay.... Do whatever VRF defines xD
 		Event_FireGenericEvent("StoryPanelDialog_Show", GameLib.CodeEnumStoryPanel.Urgent, message.rw, 6)
 	end
@@ -508,8 +522,14 @@ function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --
 	
 	if message.layout then
 		self:RecievedGroupLayout(idMessage, message.layout)
+		if republishing and self:IsLead(playerName) then
+			self:ICCommShareGroup(idMessage)
+		end
 	elseif message.defaultGroups then
 		self:RecievedDeactRequest(idMessage)
+		if republishing and self:IsLead(playerName) then
+			self:ICCommShareDeact(idMessage)
+		end
 	end
 end
 
@@ -526,6 +546,31 @@ function GroupHandler:IsLead(name)
 		end
 	end
 	return false --no leader in group?! --nobody with the name?! --wtf?!
+end
+
+function GroupHandler:IsLeadOrAssist(name)
+	for _, unit in ipairs(units) do
+		if unit:GetName() == name then
+			if unit:IsRaidAssistant() then
+				return true
+			elseif unit:IsLeader() then
+				return true
+			else
+				return false
+			end
+		end
+	end
+	return false --did not find the name.
+end
+
+function GroupHandler:CheckAccepting(name)
+	if acceptFrom == "lead" then
+		return self:IsLead(name)
+	elseif acceptFrom == "assist" then
+		return self:IsLeadOrAssist(name)
+	else
+		return true
+	end
 end
 
 function GroupHandler:GetLead()
@@ -1032,15 +1077,16 @@ function MRF:InitGroupForm()
 		["Title"] = "MRF: Grouping",
 		["SaveTitle"] = "Save and Load",
 		["Activate"] = "Activate",
-		["Accept"] = "Accept",
+		["Accept:"] = "Accept:",
 		["Lead only"] = "Lead only",
 		["ttActivated"] = "Use these Settings instead of the default tank-heal-dps groups.",
-		["ttAccept"] = "Accept published Settings of other players.",
-		["ttAll"] = "Published settings are only imported from the group-leader.",
+		["ttAccept"] = "Accept published Settings of other players. If you have problems recieving groupings, you may try to /reloadui. The connection may not work the first time.",
+		["ttFrom"] = "Published settings will only be imported from this group.",
 		["ttGroupName"] = [[Note: Every groups name needs to be unique.]],
 		["ttPublish"] = [[Publishes your current settings to the group.
 			This and other addons may only accept the settings, if you are the leader of the group.
 			The addon can only publish settings for units, which are currently in your group. Make sure they are.]],
+		["ttRepublish"] = "Publish accepted settings you recieved. This only works, if you are the leader and the options are set to publish.",
 		["select one"] = "select one",
 		["Publish"] = "Publish",
 		["Ungrouped:"] = "Ungrouped:",
@@ -1059,21 +1105,26 @@ function MRF:InitGroupForm()
 		["ttReset"] = "Remove all groups.",
 		["ttPubChat"] = "Publish your current Settings to chat. To be readable for other players addons.",
 		["ttOutput"] = "Share a readable version of your Groups throught Chat.",
+		["lead"] = "Leader",
+		["assist"] = "Assistants",
+		["all"] = "all",
 	}, {--German
 		["Title"] = "MRF: Gruppierung",
 		["SaveTitle"] = "Speichern und Laden",
 		["Activate"] = "Aktiviert",
-		["Accept"] = "Akzeptiere",
+		["Accept:"] = "Akzeptiere:",
 		["Lead only"] = "Nur Leiter",
-		["ttActivated"] = "Nutze diese Einstellungen, anstelle der normalen Tank-Heiler-DD Gruppen.",
+		["ttActivated"] = "Nutze diese Einstellungen, anstelle der normalen Tank-Heiler-DD Gruppen. Falls scheinbar keine Daten empfangen werden, sollte ein /reloadui versucht werden. Die Verbindung funktioniert nicht immer beim ersten mal.",
 		["ttAccept"] = "Akzeptiere Einstellungen von anderen Spielern.",
-		["ttAll"] = "Akzeptiere nur die Einstellungen des Gruppenleiters.",
+		["ttFrom"] = "Akzeptiere nur die Einstellungen dieser Gruppe.",
 		["ttGroupName"] = [[Achtung: Jede Gruppe muss einen einzigartigen Namen haben!]],
 		["ttPublish"] = [[Publiziert deine momentanen Gruppen für andere Spieler.
 			Dieses, sowie andere AddOns könnten möglicherweise diese Publikation nur akzeptieren, falls du der Gruppenleiter bist.
 			Dem Addon ist es nur möglich die Einstellungen für momentane Mitglieder der Gruppe zu Teilen.]],
+		["ttRepublish"] = "Publiziere erhaltene settings als deine. Dies passiert nur, falls du Leiter bist und 'Publizieren' aktiv hast.",
 		["select one"] = "wähle eine",
 		["Publish"] = "Publizieren",--
+		["Republish"] = "Republizieren",
 		["Ungrouped:"] = "Ungruppiert:",--
 		["Add"] = "+",--
 		["Groups:"] = "Gruppen:",--
@@ -1092,8 +1143,14 @@ function MRF:InitGroupForm()
 		["ttReset"] = "Entferne alle Gruppen.",
 		["ttPubChat"] = "Publiziere deine momentanen Gruppen über den Chat, um von den AddOns anderer Spieler gelesen zu werden.",
 		["ttOutput"] = "Teile eine lesbare Version deiner Gruppen über den Chat.",
+		["from "] = "von ",
+		["lead"] = "Leiter",
+		["assist"] = "Assistenten",
+		["all"] = "allen",
 	}, {--French
 	})
+	
+	local function transAccept(key) return L["from "]..(L[key or ""] or "").."." end
 	
 	form = self:LoadForm("GroupingForm", nil, handler)
 	handler.saveMenu = form:FindChild("SavesFrame")
@@ -1101,10 +1158,13 @@ function MRF:InitGroupForm()
 	grpdHandler.parent = form:FindChild("Grouped:Items")
 	grouHandler.parent = form:FindChild("Groups:Items")
 	
+	local test = MRF:GetOption("Test")
+	
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
-	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Accept"), optAcc, L["Accept"]).form:SetTooltip(L["ttAccept"])
-	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_All"), optLead, L["Lead only"]).form:SetTooltip(L["ttAll"])
+	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Accept"), optAcc, L["Accept:"]).form:SetTooltip(L["ttAccept"])
+	MRF:applyDropdown(form:FindChild("SideTab:Dropdown_From"), {"lead", "assist", "all"}, optAccFrom, transAccept).drop:SetTooltip(L["ttFrom"])
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Publish"), optPublish, L["Publish"]).form:SetTooltip(L["ttPublish"])
+	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Republish"), optRepublish, L["Republish"]).form:SetTooltip(L["ttRepublish"])
 	MRF:applyTextbox(form:FindChild("Textbox_GroupName"), optGrName)
 	MRF:LoadForm("QuestionMark", form:FindChild("Textbox_GroupName")):SetTooltip(L["ttGroupName"])
 	
