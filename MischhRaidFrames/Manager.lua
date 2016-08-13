@@ -686,17 +686,8 @@ do
 			local bar = frameTmp[oldPos]
 				
 			if newPos > 0 then --Stacking
-				if newPos < oldPos then --all positions between need to move up.
-					for i = newPos, oldPos-1, 1 do
-						frameTmp[i+1] = frameTmp[i]
-					end
-					frameTmp[newPos] = bar
-				else --all positions between need to move down.
-					for i = oldPos+1, newPos, 1 do
-						frameTmp[i-1] = frameTmp[i]
-					end
-					frameTmp[newPos] = bar
-				end
+				table.remove(frameTmp, oldPos)
+				table.insert(frameTmp, newPos, bar)
 			else --Offset
 				local pnl = shownTab:Get()
 				local mod = pnl2ModKey[pnl]
