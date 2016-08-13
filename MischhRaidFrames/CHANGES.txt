@@ -1,3 +1,19 @@
+<p><strong>Release v1.7:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Bars - You now have the ability to choose the Textposition.</li>
+<li>Bar: Spacer - a Bar with a static progress, mainly for placing text anywhere on the frame.</li>
+<li>More Defaults&nbsp;-&nbsp;'Mischh'(the previous default), 'VinceRaidFrames' and 'Grid' - bth new try to come close to the defaults of their original.</li>
+<li>Importing / Exporting Profiles&nbsp;-&nbsp;Note: The Profile-Button moved into a Tab.</li>
+<li>Grouping - You can now choose to accept from all assistants.</li>
+<li>Grouping - The Raidleader can now choose to reshare/republish accepted settings to the group.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Previewing Top and Bottom Header Space didnt work</li>
+<li>Some Errors when Switching Profiles</li>
+<li>Moving a bar in 'Stacking'-Mode more than one position broke the whole frameTemplate</li>
+</ul>
 <p><strong>Release v1.6b:</strong></p>
 <p>Added:</p>
 <ul>
