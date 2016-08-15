@@ -22,6 +22,7 @@
 	<Script Name="Modules\MouseInteractionModule.lua" />
 	<Script Name="Modules\DispelIndicatorModule.lua" />
 	<Script Name="Modules\InterruptIndicatorModule.lua" />
+	<Script Name="Modules\PedanticUpdaterModule.lua" />
 	<Script Name="Modules\ClassColorModule.lua" />
 	<Script Name="Modules\ConstantColorModule.lua" />
 	<Script Name="Modules\GradientColorModule.lua" />

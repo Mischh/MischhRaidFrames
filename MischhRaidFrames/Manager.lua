@@ -163,6 +163,9 @@ do --Frame Updating
 	function MRF:PushFrequentUpdate(frame, unit, progress)
 		progress = progress or {}
 	
+		for modKey, mod in pairs(freqMisc) do
+			mod:miscUpdate(frame,unit)
+		end
 		for modKey, mod in pairs(frequentBars) do
 			progress[modKey] = mod:progressUpdate(frame, unit)
 			frame:SetVar("progress", modKey, progress[modKey])
@@ -174,9 +177,6 @@ do --Frame Updating
 			local lColor = cTbl[1] and cTbl[1]:Get(unit, progress[target])
 			local rColor = cTbl[2] and cTbl[2]:Get(unit, progress[target])
 			frame:SetVar("barcolor", target, lColor, rColor)
-		end
-		for modKey, mod in pairs(freqMisc) do
-			mod:miscUpdate(frame,unit)
 		end
 		for modKey, mod in pairs(freqIcon) do
 			mod:iconUpdate(frame,unit)
