@@ -813,7 +813,6 @@ function ProfileTab:InitProfileTab(parent, name)
 			tximportBtn:SetText(L["Invalid Profile"])
 		else
 			local tbl, err = MRF:StringToProfile(txt)
-			Print(err)
 			if not tbl then
 				txprofile = nil
 				tximportBtn:Enable(false)
