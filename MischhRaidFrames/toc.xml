@@ -27,6 +27,7 @@
 	<Script Name="Modules\GradientColorModule.lua" />
 	<Script Name="Modules\DefaultColorModule.lua" />
 	<Script Name="Modules\RaidMarkerModule.lua" />
+	<Script Name="Modules\RoleIconModule.lua" />
 	<Script Name="Modules\ClassIconsModule.lua" />
 	<Script Name="Modules\LeadMarkerModule.lua" />
 	<Script Name="Modules\ReadyCheckModule.lua" />
