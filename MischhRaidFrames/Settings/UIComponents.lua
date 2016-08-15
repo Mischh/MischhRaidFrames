@@ -664,15 +664,45 @@ do
 		children[parentName][#children[parentName]+1] = name
 	end
 	
+	local function referencer(tar)
+		return function(self, idx)
+			local f = function(_, ...)
+				return tar[idx](tar, ...)
+			end
+			rawset(self, idx, f)
+			return f
+		end
+	end
+	
+	local delayedLoader = {
+		Show = function(self, ...)
+			local name, handler, func = self.name , self.handler, self.func	
+			
+			local pnl =  MRF:LoadForm("TabForm", tabHandler.panel)
+			--we do this first, because we want this table to behave like pnl, before we call the handler.
+			for i in pairs(self) do --wipe the table.
+				self[i] = nil
+			end
+			setmetatable(self, {__index = referencer(pnl)}) --all function-calls will be referenced to pnl
+			
+			--actually load the frames:
+			if type(handler) == "function" then
+				handler(pnl, name)
+			else
+				handler[func](handler, pnl, name)
+			end
+			
+			pnl:Show(...)
+			return pnl 
+		end
+	}
+	
 	local function initPanel(tbl, name)
 		if tbl == false then return end
 		local handler, func = unpack(tbl)
-		local pnl = MRF:LoadForm("TabForm", tabHandler.panel) --needs no handler - nothing to handle
-		if type(handler) == "function" then
-			handler(pnl, name)
-		else
-			handler[func](handler, pnl, name)
-		end
+		
+		local pnl = setmetatable({name = name, handler = handler, func = func }, {__index = delayedLoader})
+		
 		return pnl
 	end
 	
@@ -680,7 +710,7 @@ do
 		local form = self:LoadForm("ListParent", tabHandler.tabs, tabHandler)
 		local btn = form:FindChild("Button")
 		btn:SetText(name)
-		btn:SetData(initPanel(handler and {handler, func} or false))
+		btn:SetData(initPanel(handler and {handler, func} or false, name))
 		tabs[name] = form
 		
 		tabHandler.tabs:ArrangeChildrenVert()
@@ -690,7 +720,7 @@ do
 		if not tabs[parentName] or not handler then return end
 		local child = self:LoadForm("ListChild", tabs[parentName], tabHandler)
 		child:SetText(name)
-		child:SetData(initPanel({handler, func}))--the tabbed Panel
+		child:SetData(initPanel({handler, func}, name))--the tabbed Panel
 		children[parentName][name] = child
 		
 		tabs[parentName]:ArrangeChildrenVert()
@@ -752,7 +782,7 @@ do
 		cont:SetAnchorOffsets(0,0,0,height)
 		
 		cont:GetParent():ArrangeChildrenVert()
-		if self:ShowTab(wndHandler:GetData()) then
+		if self:ShowTab(wndHandler) then
 			self:UnselectChild()
 		end
 	end
@@ -768,7 +798,7 @@ do
 	
 	function tabHandler:ChildTabSelected(wndHandler)
 		selectedChild = wndHandler
-		self:ShowTab(wndHandler:GetData())
+		self:ShowTab(wndHandler)
 	end
 	
 	function tabHandler:UnselectChild()
@@ -784,13 +814,21 @@ do
 	
 	local shownTab = MRF:GetOption("UI_TabShown")
 	
-	function tabHandler:ShowTab(pnl)
-		if pnl then
+	function tabHandler:ShowTab(button)
+		local pnl = button:GetData()
+		if pnl then		
 			if shownPnl then
 				shownPnl:Show(false, false)
 			end
+			
+			local rep = pnl:Show(true, false)
+			
+			if rep then --if pnl isnt really a window, but the replacement, its :Show will return a window, being the pnl.
+				button:SetData(rep)
+				pnl = rep
+			end
+			
 			shownPnl = pnl
-			pnl:Show(true, false)
 			shownTab:Set(pnl)
 			return true --shown something
 		end
