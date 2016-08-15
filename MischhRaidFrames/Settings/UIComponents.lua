@@ -639,6 +639,8 @@ do
 		btn:SetData(frame)
 		
 		MRF:LoadForm("QuestionMark", parent):SetTooltip(L["ttPreview"])
+		
+		handler:ButtonClick(btn) --Redraw or initially draw the Preview
 	end
 end
 
