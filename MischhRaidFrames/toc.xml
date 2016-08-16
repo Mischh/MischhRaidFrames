@@ -16,6 +16,8 @@
 	<Script Name="Modules\HealthModule.lua" />
 	<Script Name="Modules\ShieldModule.lua" />
 	<Script Name="Modules\AbsorbModule.lua" />
+	<Script Name="Modules\HealAbsorbModule.lua" />
+	<Script Name="Modules\HealthClampModule.lua" />
 	<Script Name="Modules\SpacerModule.lua" />
 	<Script Name="Modules\NameModule.lua" />
 	<Script Name="Modules\DistanceFaderModule.lua" />

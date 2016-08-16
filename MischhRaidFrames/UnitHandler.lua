@@ -190,6 +190,7 @@ function FakePrototype:GetMaxFocus() return self.tbl.nManaMax end
 function FakePrototype:GetFocus() return self.tbl.nMana end
 function FakePrototype:GetShieldCapacity() return self.tbl.nShield end
 function FakePrototype:GetShieldCapacityMax() return self.tbl.nShieldMax end
+function FakePrototype:GetHealingAbsorptionValue() return self.tbl.nHealingAbsorb end
 function FakePrototype:GetLevel() return self.tbl.nLevel end
 function FakePrototype:GetRaceId() return self.tbl.eRaceId end
 function FakePrototype:GetPlayerPathType() return self.tbl.ePathType end
