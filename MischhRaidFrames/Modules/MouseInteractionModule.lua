@@ -218,7 +218,8 @@ end
 MouseMod.MouseEnter = MouseMod_MouseEnter;
 
 local leftHandler = nil
-local function MouseMod_MouseExit(self, handler, wndHanlder, wndControl)
+local function MouseMod_MouseExit(self, handler, wndHandler, wndControl)
+	if wndControl ~= wndHandler then return end
 	if curHandler ~= handler then return end
 	curHandler = nil
 	leftHandler = handler
