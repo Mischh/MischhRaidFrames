@@ -366,8 +366,9 @@ function GroupHandler:ICCommShareVersion()
 	if self.channel and accept then --only ask for stuff, if we actually accept stuff, duh?
 		if acceptFrom == "lead" then --if we only accept messages from our leader -> send him private message.
 			local leader = self:GetLead()
+			if not leader then return end
 			local leadName = leader:GetName()
-			if not leader or not leadName then return end
+			if not leadName then return end
 			--we are compatible with this version of VRF, dont use any other.
 			self.channel:SendPrivateMessage(leadName, self:VRFSerialize({version = "0.17.2"}))
 		else --might want to remove this later, this could fuck up stuff rly bad.
