@@ -37,12 +37,19 @@ function CColMod:UpdateOptions(options)
 	else
 		wipeTbl(colorTrans)-- = setmetatable({}, transMeta) --wipe the table
 		wipeTbl(colors)
+		
+		local remove = {}
 		for i, colorObj in ipairs(options) do
 			if colorObj.c then
 				colorObj.Get = getColor;
 				colorObj.frequent = false
 				colors[i] = colorObj;
+			else
+				remove[#remove+1] = i
 			end
+		end
+		for idx = #remove, 1, -1 do
+			table.remove(options, remove[idx])
 		end
 	end
 end
@@ -90,12 +97,6 @@ function CColMod:InitColorSettings(parent)
 		local col = {c = "FFFFFFFF", name=L["New Color"]}
 		ModuleOptions:Get()[i] = col
 		ModuleOptions:ForceUpdate() --put the new Color into 'colors'
-		if handler.hiddenRows>0 then
-			handler.hiddenRows = handler.hiddenRows-1
-		else
-			handler:AddRow(i)
-		end
-		handler:UpdateSize()
 	end
 	
 	function handler:AddRow(i)
@@ -110,6 +111,29 @@ function CColMod:InitColorSettings(parent)
 		
 		MRF:GetOption(ModuleOptions, i):ForceUpdate()
 	end
+	
+	ModuleOptions:OnUpdate(handler, "CheckRows")
+	function handler:CheckRows(colorTbl)
+		local numColors = #colorTbl
+		for i, col in ipairs(colorTbl) do
+			if not col.c then
+				numColors = i-1
+				break;
+			end
+		end
+		
+		local numRows = #(parent:GetChildren()) -4 -- -4 for the other rows, which are not colors
+		
+		
+		for i = numRows+1, numColors, 1 do --add missing rows.
+			self:AddRow(i)
+			numRows = i
+		end
+		
+		self.hiddenRows = numRows-numColors
+
+		handler:UpdateSize()
+	end
 
 	local removeOpt = MRF:GetOption("CColMod_Remove")
 	removeOpt:OnUpdate(function(newVal) --a little workaround to use a dropdown for this.
@@ -117,8 +141,6 @@ function CColMod:InitColorSettings(parent)
 			local num = nil
 			for i, col in ipairs(colors) do
 				if col == newVal then 
-					handler.hiddenRows = handler.hiddenRows+1
-					handler:UpdateSize()
 					table.remove(ModuleOptions:Get(), i)
 					ModuleOptions:ForceUpdate()
 					MRF:RemovedColor(col)
@@ -144,14 +166,14 @@ function CColMod:InitColorSettings(parent)
 	header:FindChild("Left"):SetText(L["Color Name"])
 	header:FindChild("Right"):SetText(L["Color"])
 	
-	for i,v in ipairs(colors) do
-		local nameOpt = MRF:GetOption(ModuleOptions, i, "name")
-		local colorOpt = MRF:GetOption(ModuleOptions, i, "c")
-		local rowColor = MRF:LoadForm("HalvedRow", parent)
-		
-		MRF:applyTextbox(rowColor:FindChild("Left"), nameOpt)
-		MRF:applyColorbutton(rowColor:FindChild("Right"), colorOpt)
-	end
+	--for i,v in ipairs(colors) do
+	--	local nameOpt = MRF:GetOption(ModuleOptions, i, "name")
+	--	local colorOpt = MRF:GetOption(ModuleOptions, i, "c")
+	--	local rowColor = MRF:LoadForm("HalvedRow", parent)
+	--	
+	--	MRF:applyTextbox(rowColor:FindChild("Left"), nameOpt)
+	--	MRF:applyColorbutton(rowColor:FindChild("Right"), colorOpt)
+	--end
 	
 	
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
