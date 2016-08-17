@@ -1,3 +1,22 @@
+<p><strong>Release v1.8:</strong></p>
+<p>Added:</p>
+<ul>
+<li>API Version was changed to 13</li>
+<li>Role Icon - new Module to display role icons.</li>
+<li>Reworked the loadingprocess of the Settings. Tabs now get loaded on first view.</li>
+<li>Pedantic Updater - frequently updates 'backupdata' for the unit, to have even those out of range to have some updated data.</li>
+<li>Heal Absorb Bar&amp;Text - With API 13 Carbine added some Bars to their Addons, this is one.</li>
+<li>Health Clamp Bars - With API 13 Carbine added some Bars to their Addons, these are two more.</li>
+<li>Debuffs - Well, the same as Buffs, only with 'De'</li>
+<li>Bars - Bars are now Layerd properly, so that all those in 'Stacking'-Mode are always behind those in 'Offset'-Mode and these are always behind those in 'Fixed'-Mode. This affects the Texts applied to these Bars aswell.</li>
+<li>Colorbuttons / Colorpicker - all of these do now have four shades of Gray behind the actual colors to make colorpicking easier.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Mouse Interaction - Tried to fix a problem with reapplying old targets. Need more input on this feature.</li>
+<li>Errors while Switching Profiles.</li>
+<li>Constant Colors - Reworked Settings to properly&nbsp;update when switching Profiles.</li>
+</ul>
 <p><strong>Release v1.7:</strong></p>
 <p>Added:</p>
 <ul>
