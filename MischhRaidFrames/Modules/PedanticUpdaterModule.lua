@@ -8,7 +8,7 @@ local actOpt = MRF:GetOption(ModOptions, "activated")
 actOpt:OnUpdate(function(v) if v==nil then actOpt:Set(false) end end)
 
 function UpdtrMod:miscUpdate(frame, unit) --worlds most complicated Module!
-	unit.tbl = GroupLib.GetGroupMember(unit:GetMemberIdx())
+	unit.tbl = GroupLib.GetGroupMember(unit:GetMemberIdx()) or unit.tbl
 end
 
 function UpdtrMod:InitMiscSettings(parent)
