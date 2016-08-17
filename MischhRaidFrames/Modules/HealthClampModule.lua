@@ -2,8 +2,8 @@
 
 local MRF = Apollo.GetAddon("MischhRaidFrames")
 
-local ClampCeilMod, ModOptions = MRF:newModule("Health Clamp Ceil" , "bar", true)
 local ClampFloorMod, ModOptions = MRF:newModule("Health Clamp Floor" , "bar", true)
+local ClampCeilMod, ModOptions = MRF:newModule("Health Clamp Ceil" , "bar", true)
 
 local floor = math.floor
 
