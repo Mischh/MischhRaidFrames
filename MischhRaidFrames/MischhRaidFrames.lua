@@ -302,7 +302,7 @@ do
 		for i in ipairs( stacked ) do --the 'normally' placed bars
 			local tbl = options[i]
 			pos[4] = pos[2] + (tbl.size/total)
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.stackPnl, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 			pos[2] = pos[4]
 		end
 		
@@ -310,12 +310,12 @@ do
 			local i = pos[0]
 			local tbl = options[pos]
 			pos = {0, i/total, 1, (tbl.size+i)/total}
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.offstPnl, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 		end
 		
 		for _, pos in ipairs( fixed ) do --the fixed 'placed ontop' bars
 			local tbl = options[pos]
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.panel, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.fixedPnl, pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
 		end
 	
 		handler.options = options
@@ -361,6 +361,10 @@ do
 		}
 		handler.frame = Apollo.LoadForm(self.xmlDoc, "FrameBackground", parent, handler)
 		handler.panel = handler.frame:FindChild("InsetFrame")
+		
+		handler.stackPnl = handler.panel:FindChild("StackingLevel")
+		handler.offstPnl = handler.panel:FindChild("OffsetLevel")
+		handler.fixedPnl = handler.panel:FindChild("FixedLevel")
 		
 		handler.frame:SetData(handler)
 		
