@@ -10,20 +10,6 @@ local FORM_COLORBUTTON_TEMPLATE = "ColorButton"
 
 local settingsForm = nil;
 
-local L = MRF:Localize({--[[English]]
-	["Color Picker"] = "Color Picker",
-	["New Color:"] = "New Color:",
-	["Old Color:"] = "Old Color:",
-	["Copy"] = "Copy",
-	["Paste"] = "Paste",
-}, {--[[German]]
-	["Color Picker"] = "Farbauswahl",
-	["New Color:"] = "Neue Farbe:",
-	["Old Color:"] = "Alte Farbe:",
-	["Copy"] = "Kopieren",
-	["Paste"] = "Einfügen",
-}, {--[[French]]})
-
  --[[#####  Dropdown  ######]]
 local function toggleDropdown(self, wndHandler, wndControl)
 	if wndHandler ~= wndControl then
@@ -348,6 +334,17 @@ function MRF:applyColorbutton(parent, selector, asTbl)
 end
 
 function MRF:InitColorPicker()
+	local L = MRF:Localize({--[[English]]
+		["tt2x"] = [[WildStar supports colors with twice as high color-values. These Colors are marked as '2x'. With this you can (for example) apply bright colors to gray textures.]],
+	}, {--[[German]]
+		["Color Picker"] = "Farbauswahl",
+		["New Color:"] = "Neue Farbe:",
+		["Old Color:"] = "Alte Farbe:",
+		["Copy"] = "Kopieren",
+		["Paste"] = "Einfügen",
+		["tt2x"] = [[WildStar unterstützt Farben mit doppelten Farbwerten. Diese Farben werden mit '2x' markiert. Auf diese Weise kann zum Beispiel eine helle Farbe auf eine graue Textur gelegt werden.]],
+	}, {--[[French]]})
+
 	local colorHandler = {color = ApolloColor.new(1,1,1,1), alpha = 1, copied = ApolloColor.new(1,1,1,1)}
 	local colorPicker = nil
 	function colorHandler:OnColorChanged( wndHandler, wndControl, color )
@@ -355,8 +352,11 @@ function MRF:InitColorPicker()
 		local g = ("%x"):format(color.g*255):gsub("^(%x)$", "0%1")
 		local b = ("%x"):format(color.b*255):gsub("^(%x)$", "0%1")
 		local a = ("%x"):format(self.alpha*255):gsub("^(%x)$", "0%1")
+		local pre = self.dbl and "2x:" or ""
 		
-		color = ApolloColor.new(color.r, color.g, color.b, self.alpha)
+		local full = pre..a..r..g..b
+		
+		color = ApolloColor.new(a..r..g..b)
 		
 		self.color = color
 		
@@ -365,10 +365,11 @@ function MRF:InitColorPicker()
 		self:SetBText(b)
 		self:SetAText(a)
 		self:SetAlphaSlider(color.a)
+		self:Set2x(self.dbl)
 		
-		colorHandler.newColor:SetBGColor(color)
+		self.newColor:SetBGColor(ApolloColor.new(full))
 		if self.callback then
-			self.callback:Set({a=color.a, r=color.r, g=color.g, b=color.b}, a..r..g..b)
+			self.callback:Set({a=color.a, r=color.r, g=color.g, b=color.b}, full)
 		end
 	end 
 	
@@ -382,6 +383,20 @@ function MRF:InitColorPicker()
 	function colorHandler:SetAlphaSlider(a)
 		if self.blockAlpha then return end
 		self.slider:SetValue(a)
+	end
+	
+	function colorHandler:Check2x()
+		self.dbl = true
+		self:OnColorChanged(self.picker, self.picker, self.color)
+	end
+	
+	function colorHandler:Uncheck2x()
+		self.dbl = false
+		self:OnColorChanged(self.picker, self.picker, self.color)
+	end
+	
+	function colorHandler:Set2x(val)
+		self.btn2x:SetCheck(val)
 	end
 	
 	
@@ -461,31 +476,37 @@ function MRF:InitColorPicker()
 	
 	function colorHandler:OnOldColorClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY )
 		local color = wndControl:GetBGColor()
-		self.picker:SetColor(color)
-		self.alpha = color.a
-		self:OnColorChanged(self.picker, self.picker, color)
+		self:Pick(self.callback, color) --treat it as if we have opened the picker with this value.
 	end
 	
 	function colorHandler:ClickCopy(...)
-		self.copied = self.color
+		self.copied = self.newColor:GetBGColor()
 	end
 	
 	function colorHandler:ClickPaste(...)
 		local color = self.copied
-		self.picker:SetColor(color)
-		self.alpha = color.a
-		self:OnColorChanged(self.picker, self.picker, color)
+		self:Pick(self.callback, color) --treat it as if we have opened the picker with this value.
+	end
+	
+	function colorHandler:Is2x(c)
+		if c.r > 1 or c.g>1 or c.b>1 then
+			return true, ApolloColor.new(c.r/2, c.g/2, c.b/2, c.a)
+		else
+			return false, c
+		end
 	end
 	
 	function colorHandler:Pick(callback, initial)
 		if not initial then return end
 		local color = ApolloColor.new(initial)
 		
+		self.dbl, color = self:Is2x(color)
+		
 		self.callback = callback
 		self.color = color
 		self.alpha = color.a
 		
-		self.oldColor:SetBGColor(color)
+		self.oldColor:SetBGColor(ApolloColor.new(initial))
 		self.picker:SetColor(color)
 		self:OnColorChanged(self.picker, self.picker, color)
 		
@@ -500,6 +521,7 @@ function MRF:InitColorPicker()
 	colorHandler.header = colorPicker:FindChild("Header")
 	colorHandler.picker = colorPicker:FindChild("Color")
 	colorHandler.slider = colorPicker:FindChild("AlphaSlider")
+	colorHandler.btn2x = colorPicker:FindChild("Checkbox_2x")
 	colorHandler.boxR = colorPicker:FindChild("EditBoxR")
 	colorHandler.boxG = colorPicker:FindChild("EditBoxG")
 	colorHandler.boxB = colorPicker:FindChild("EditBoxB")
@@ -511,7 +533,9 @@ function MRF:InitColorPicker()
 	colorPicker:FindChild("Title_NewColor"):SetText(L["New Color:"])
 	colorPicker:FindChild("Title_OldColor"):SetText(L["Old Color:"])
 	colorPicker:FindChild("Button_Copy"):SetText(L["Copy"])
-	colorPicker:FindChild("Button_Paste"):SetText(L["Paste"])	
+	colorPicker:FindChild("Button_Paste"):SetText(L["Paste"])
+	
+	colorHandler.btn2x:SetTooltip(L["tt2x"])
 	
 	function MRF:InitColorPicker() --replace the function, we do not want this to be done multiple times.
 		return colorHandler
