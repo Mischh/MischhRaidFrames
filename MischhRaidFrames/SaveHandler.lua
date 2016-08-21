@@ -203,6 +203,18 @@ function MRF:CopyProfile(from, to) --both are of GameLib.CodeEnumAddonSaveLevel
 	self:LoadProfile(to)	
 end
 
+local function posToMode(pos)
+	if type(pos) == "number" then
+		return "Stacking"
+	elseif type(pos) == "table" then
+		if pos[0] then
+			return "Offset"
+		else
+			return "Fixed"
+		end
+	end
+end
+
 function MRF:CheckFrameTemplate(frame)
 	local default = self:GetDefaultColor()
 	local valHPos = {l = true, c = true, r = true}
@@ -227,7 +239,8 @@ function MRF:CheckFrameTemplate(frame)
 		changed = true
 	end
 	for pos, bar in pairs(frame) do
-		if type(pos) ~= "string" then
+		local mode = posToMode(pos)
+		if mode then
 			--check all colors in all bars and look, if it has a color without a :Get() function
 			if not bar.lColor then
 				Print("Found a bar("..tostring(bar.modKey)..") without a filled color - set to default.")
@@ -264,6 +277,14 @@ function MRF:CheckFrameTemplate(frame)
 			if not bar.rTexture then
 				Print("Found a bar("..tostring(bar.modKey)..") without a missing texture - default to 'Fill'")
 				bar.rTexture = "WhiteFill"
+				changed = true
+			end
+			
+			--check bar is on a layer.
+			if not bar.layer then
+				local layer = (mode == "Stacking" and 1 or mode == "Offset" and 2 or 3)
+				Print("Found a bar("..tostring(bar.modKey)..") without a layer. Defaulted according to Positioning-Mode ("..mode.." - "..layer..")")
+				bar.layer = layer
 				changed = true
 			end
 			
