@@ -758,6 +758,10 @@ do
 		MRF:MakePlayerAUnit()
 	end
 	
+	function tabHandler:ShowRaidAnchor()
+		MRF:ShowRaidAnchor()
+	end
+	
 	function MRF:InitSettings()
 		if settingsForm then --already Initialized
 			settingsForm:Show(true, false)

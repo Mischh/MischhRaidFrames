@@ -362,6 +362,55 @@ frameOpt:OnUpdate( function(newTemplate)
 	FrameHandler:Reposition()
 end)
 
+local anchor = nil
+function MRF:ShowRaidAnchor()
+	if anchor then return end --already displayed.
+	
+	local L = self:Localize({
+		["Tooltip"] = "Rightclick to hide.",
+	},{
+		["Tooltip"] = "Rechtsklick: Ausblenden.",
+	},{
+	})
+	
+	local handler = {}
+	
+	anchor = self:LoadForm("IconTemplate", parentFrame, handler)
+	anchor:SetAnchorOffsets(-15,-15,15,15)
+	anchor:SetSprite("WhiteFill")
+	anchor:SetBGColor("55FF0000")
+	local icon = self:LoadForm("IconTemplate", anchor)
+	icon:SetAnchorOffsets(-9,-7,9,10)
+	icon:SetAnchorPoints(0,0,1,1)
+	icon:SetSprite("CRB_MinimapSprites:sprMM_TargetShrunk")	
+	
+	anchor:SetStyle("Moveable", true)
+	anchor:SetStyle("IgnoreMouse", false)
+	
+	anchor:AddEventHandler("MouseButtonDown", "ButtonClick", handler)
+	anchor:SetTooltip(L["Tooltip"])
+	
+	function handler:ButtonClick(wnd1, wnd2, button)
+		if wnd1 ~= wnd2 or button ~= 1 then return end
+		--HIDE THE BUTTON, STOP THE TIMER!
+		self.timer:Stop()
+		self.timer = nil
+		icon:Destroy()
+		anchor:Destroy()
+		icon = nil
+		anchor = nil
+	end
+	
+	function handler:OnTimer()
+		local l,t = anchor:GetAnchorOffsets()
+		anchor:SetAnchorOffsets(-15,-15,15,15)
+		xOption:Set(xOption:Get()+l+15)
+		yOption:Set(yOption:Get()+t+15)
+	end
+	
+	handler.timer = ApolloTimer.Create(0.1, true, "OnTimer", handler)
+end
+
 function FrameHandler:UpdateAllFrames()
 	for i,frame in ipairs(frames) do
 		MRF:PushUnitUpdateForFrameIndex(i)
