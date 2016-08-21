@@ -405,6 +405,7 @@ do
 			["ttBarCol"] = "These colors are displayed on the filled/missing part of the Bar. A half filled bar would be colored 50:50. The 'Filled Barcolor' always defines the left part of the Bar.",
 			["ttBarTex"] = "These textures are used for the filled/missing part of the Bar. The 'Filled Bartexture' is always used for the left part of the Bar.",
 			["ttTxtSrc"] = "These Options define which text should be applied to the bar. Be sure to never use one text-source for two bars.",
+			["ttLayer"] = "This Option allows you to tweak the default layering of the addon, by choosing the layers yourself. Note that the layer will always fall back to its default, when changing the bars positioning mode. A bar in a higher layer will always be in front of any bar with lower layer. This applies to the bars text aswell.",
 		}, {--German
 			["Bar-Position Mode:"] = "Bar-Positionierungs-Modus:",
 			["Relative Position:"] = "Relative Position:",
@@ -425,12 +426,14 @@ do
 			["ttBarCol"] = "Die gewählten Farben werden auf dem vorhandenen/fehldenen Teil der Bar genutzt. Eine halb gefüllte Bar wird auf der linken Seite immer die füllende Farbe zeigen, auf der rechten hingegen die leerende.",
 			["ttBarTex"] = "Die gewählten Texturen werden auf dem vorhandenen/fehlenden Teil der Bar gezeigt. Die füllende Textur wird dabei immer im linken Teil angezeigt, die leerende hingegen rechts.",
 			["ttTxtSrc"] = "Diese Optionen definieren, welcher Text auf der Bar wiedergegeben werden soll. Stelle sicher, dass kein Text mehr als einer Bar zugewiesen wird.",
+			["ttLayer"] = "Diese Option erlaubt es die Standard Schichtung der Bars durch eine eigene zu ersetzen. Bei Änderung des Positionierungs-Modus wird der Standard wieder gewählt. Eine Bar in einer Schicht mit größerem Index wird immer über all denen liegen, die einen niedrigeren Schicht-Index haben. Dies gilt auch für den Text der Bar.",
 			
 			["Stacking"] = "Stapelnd",
 			["Offset"] = "Verschoben",
 			["Fixed"] = "Fixiert",
 			["Not Shown"] = "Versteckt",
 			["Offset: "] = "Abstand: ",
+			["Layer:"] = "Schicht:",
 			["Left"] = "Links",
 			["Right"] = "Rechts",
 			["Top"] = "Oben",
@@ -445,6 +448,7 @@ do
 		local txtChoices, txtTrans = MRF:GetTextChoices()
 		
 		local posMode = MRF:GetOption("Manager:Bar", "Mode")
+		local barLayer = MRF:GetOption("Manager:Bar", "Layer")
 		local fixedL = MRF:GetOption("Manager:Bar", "Left")
 		local fixedT = MRF:GetOption("Manager:Bar", "Top")
 		local fixedR = MRF:GetOption("Manager:Bar", "Right")
@@ -494,6 +498,20 @@ do
 			end
 		end}
 		
+		local function calcMaxLayer()
+			local x = 0
+			for pos, bar in pairs(frameTmp) do
+				if type(pos) ~= "string" then --strings are no position. numbers and tables are.
+					x = bar.layer > x and bar.layer or x
+				end
+			end
+			return x
+		end		
+		
+		local layerChoices = {ipairs = function()
+			return ipairs({indexes(1,calcMaxLayer()+1)})
+		end}
+		
 		local textureChoices = {"WhiteFill", "ForgeUI_Smooth", "ForgeUI_Minimalist", "ForgeUI_Flat"}
 		
 		local _transTexChoices = {WhiteFill = "Fill", ForgeUI_Smooth = "ForgeUI: Smooth", ForgeUI_Minimalist = "ForgeUI: Minimalist", ForgeUI_Flat = "ForgeUI: Flat"}
@@ -522,10 +540,18 @@ do
 			return L[mode or ""]
 		end
 		
+		local function transLayer(layer)
+			if layer then
+				return L["Layer:"].." "..tostring(layer)
+			end
+			return " - "
+		end
+		
 		local barHandler = {windows = {}}
 		shownTab:OnUpdate(barHandler, "SwitchedTab")
 		frameOptions:OnUpdate(barHandler, "UpdatedFrame")
 		posMode:OnUpdate(barHandler, "SwitchedMode")
+		barLayer:OnUpdate(barHandler, "SwitchedLayer")
 		relPos:OnUpdate(barHandler, "SwitchedRelativePosition")
 		relSize:OnUpdate(barHandler, "SwitchedRelativeSize")
 		fixedL:OnUpdate(barHandler, "SwitchedFixed1")
@@ -567,11 +593,13 @@ do
 			
 			relPos:Set(rel); fixedL:Set(l); fixedT:Set(t); fixedR:Set(r); fixedB:Set(b);
 			if bar then 
+				barLayer:Set(bar.layer);
 				lColor:Set(bar.lColor); rColor:Set(bar.rColor);
 				lTexture:Set(bar.lTexture); rTexture:Set(bar.rTexture);
 				hTextPos:Set(bar.hTextPos); vTextPos:Set(bar.vTextPos);
 				txtSource:Set(bar.textSource); txtColor:Set(bar.textColor);
 			else
+				barLayer:Set(nil);
 				lColor:Set(nil); rColor:Set(nil);
 				lTexture:Set(nil); rTexture:Set(nil);
 				hTextPos:Set(nil); vTextPos:Set(nil);
@@ -621,10 +649,13 @@ do
 				
 				if newMode == "Stacking" then
 					frameTmp[#frameTmp+1] = bar
+					bar.layer = 1
 				elseif newMode == "Offset" then
 					frameTmp[{[0]=0}] = bar
+					bar.layer = 2
 				elseif newMode == "Fixed" then
 					frameTmp[{0,0,1,1}] = bar
+					bar.layer = 3
 				end --newMode == "Not Shown" -> dont re-apply
 				
 				--:Set() the newly built frame - publish our changes.
@@ -634,46 +665,66 @@ do
 			end
 			for _, tbl in ipairs(self.windows) do
 				--tbl = {top, rel, fix, bar, tex, txt, parent, tab}
-				if tbl[6]:GetParent():IsShown() then --only update the one Tab which is shown
+				if tbl.parent:GetParent():IsShown() then --only update the one Tab which is shown
 					local size = 0
 					
 					--top -> Always shown
-					size = size + tbl[1]:GetData()
+					size = size + tbl.top:GetData()
 					--rel -> shown: Stacking, Offset
 					--fix -> shown: Fixed
 					if newMode == "Stacking" or newMode == "Offset" then
-						tbl[2]:SetAnchorOffsets(0,0,0,tbl[2]:GetData())
-						tbl[3]:SetAnchorOffsets(0,0,0,0)
-						size = size + tbl[2]:GetData()
+						tbl.rel:SetAnchorOffsets(0,0,0,tbl.rel:GetData())
+						tbl.fix:SetAnchorOffsets(0,0,0,0)
+						size = size + tbl.rel:GetData()
 					elseif newMode == "Fixed" then
-						tbl[2]:SetAnchorOffsets(0,0,0,0)
-						tbl[3]:SetAnchorOffsets(0,0,0,tbl[3]:GetData())
-						size = size + tbl[3]:GetData()
+						tbl.rel:SetAnchorOffsets(0,0,0,0)
+						tbl.fix:SetAnchorOffsets(0,0,0,tbl.fix:GetData())
+						size = size + tbl.fix:GetData()
 					else
-						tbl[2]:SetAnchorOffsets(0,0,0,0)
-						tbl[3]:SetAnchorOffsets(0,0,0,0)
+						tbl.rel:SetAnchorOffsets(0,0,0,0)
+						tbl.fix:SetAnchorOffsets(0,0,0,0)
 					end
+					--lay -> not shown: Not Shown
 					--bar -> now shown: Not Shown
 					--tex -> not shown: Not Shown
 					--txt -> not shown: Not Shown
 					if newMode == "Not Shown" then
-						tbl[4]:SetAnchorOffsets(0,0,0,0)
-						tbl[5]:SetAnchorOffsets(0,0,0,0)
-						tbl[6]:SetAnchorOffsets(0,0,0,0)
+						tbl.lay:SetAnchorOffsets(0,0,0,0)
+						tbl.bar:SetAnchorOffsets(0,0,0,0)
+						tbl.tex:SetAnchorOffsets(0,0,0,0)
+						tbl.txt:SetAnchorOffsets(0,0,0,0)
 					else
-						tbl[4]:SetAnchorOffsets(0,0,0,tbl[4]:GetData())
-						tbl[5]:SetAnchorOffsets(0,0,0,tbl[5]:GetData())
-						tbl[6]:SetAnchorOffsets(0,0,0,tbl[6]:GetData())
-						size = size + tbl[4]:GetData() + tbl[5]:GetData() + tbl[6]:GetData()
+						tbl.lay:SetAnchorOffsets(0,0,0,tbl.lay:GetData())
+						tbl.bar:SetAnchorOffsets(0,0,0,tbl.bar:GetData())
+						tbl.tex:SetAnchorOffsets(0,0,0,tbl.tex:GetData())
+						tbl.txt:SetAnchorOffsets(0,0,0,tbl.txt:GetData())
+						size = size + tbl.lay:GetData() + tbl.bar:GetData() + tbl.tex:GetData() + tbl.txt:GetData()
 					end
 					
 					--resort the tab, set tabs size, resort the parent
-					tbl[8]:ArrangeChildrenVert()
-					tbl[8]:SetAnchorOffsets(0,0,0,size)
-					tbl[7]:ArrangeChildrenVert()
-					tbl[7]:RecalculateContentExtents()
+					tbl.form:ArrangeChildrenVert()
+					tbl.form:SetAnchorOffsets(0,0,0,size)
+					tbl.parent:ArrangeChildrenVert()
+					tbl.parent:RecalculateContentExtents()
 				end
 			end
+		end
+		
+		local oldLay = 0
+		function barHandler:SwitchedLayer(newLay)
+			if switchingTab or oldLay == newLay or type(newLay) ~= "number" then
+				oldLay = newLay
+				return
+			end
+			
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			bar.layer = newLay
+			
+			oldLay = newLay
+			
+			frameOptions:Set(frameTmp)
 		end
 		
 		local oldPos = false
@@ -872,6 +923,7 @@ do
 			form:FindChild("Window_Top:Title"):SetText("Bar - "..modKey)
 			
 			form:FindChild("Window_Top:lblBarPosition"):SetText(L["Bar-Position Mode:"])
+			form:FindChild("Window_Layer:lblLayer"):SetText(L["Layer:"])
 			form:FindChild("Window_Relative:lblRelPos"):SetText(L["Relative Position:"])
 			form:FindChild("Window_Relative:lblRelSize"):SetText(L["Relative Size:"])
 			form:FindChild("Window_Fixed:lblFixOffLeft"):SetText(L["Fixed Offset - Left:"])
@@ -888,6 +940,7 @@ do
 			form:FindChild("Window_Text:lblVerticalPos"):SetText(L["Vertical Text Position:"])
 			
 			form:FindChild("Window_Top:QuestionMark_PosMode"):SetTooltip(L["ttBarPos"])
+			form:FindChild("Window_Layer:QuestionMark_Layer"):SetTooltip(L["ttLayer"])
 			form:FindChild("Window_Relative:QuestionMark_Relative"):SetTooltip(L["ttRelPos"])
 			form:FindChild("Window_Fixed:QuestionMark_Fixed"):SetTooltip(L["ttFixPos"])
 			form:FindChild("Window_Barcolor:QuestionMark_Barcolor"):SetTooltip(L["ttBarCol"])
@@ -897,6 +950,7 @@ do
 			MRF:applyPreview(form:FindChild("Window_Top:Preview"), modKey, "bar")
 			
 			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode, transPosMode)
+			MRF:applyDropdown(form:FindChild("Window_Layer:Layer"), layerChoices, barLayer, transLayer)
 			MRF:applyDropdown(form:FindChild("Window_Relative:RelativePosition"), relPosChoices, relPos, transRelPosChoices)
 			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1, false, false, true)
 			MRF:applySlider(form:FindChild("Window_Fixed:FixPosLeft"), fixedL, -0.5, 1.5, 0.01, true) --textbox: ignore steps
@@ -915,9 +969,9 @@ do
 			
 			do
 				local function f(x) x:SetData(x:GetHeight()) end
-				local top, rel, fix, bar, tex, txt =  form:FindChild("Window_Top"), form:FindChild("Window_Relative"), form:FindChild("Window_Fixed"), form:FindChild("Window_Barcolor"), form:FindChild("Window_Bartexture"), form:FindChild("Window_Text")
-				f(top); f(rel); f(fix); f(bar); f(tex); f(txt); --apply Height to Data.
-				barHandler.windows[#barHandler.windows+1] = {top, rel, fix, bar, tex, txt, parent, form}
+				local top, lay, rel, fix, bar, tex, txt =  form:FindChild("Window_Top"), form:FindChild("Window_Layer"), form:FindChild("Window_Relative"), form:FindChild("Window_Fixed"), form:FindChild("Window_Barcolor"), form:FindChild("Window_Bartexture"), form:FindChild("Window_Text")
+				f(top); f(lay); f(rel); f(fix); f(bar); f(tex); f(txt); --apply Height to Data.
+				barHandler.windows[#barHandler.windows+1] = {top = top,lay = lay,rel = rel,fix = fix,bar = bar,tex = tex,txt = txt,parent = parent,form = form}
 			end
 			
 			local mod = modules[modKey]
