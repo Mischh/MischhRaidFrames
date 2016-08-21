@@ -127,6 +127,7 @@ end
 local oldFoc = nil
 MouseMod["Focus Unit"] = function(self, handler,wndHandler)
 	local unit = frames[handler]:GetRealUnit()
+	local plr = GameLib.GetPlayerUnit()
 	if unit then
 		oldFoc = nil --maybe change to unit
 		plr:SetAlternateTarget(unit)
