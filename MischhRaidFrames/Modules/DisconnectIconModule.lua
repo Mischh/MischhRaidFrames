@@ -23,7 +23,7 @@ activeOption:OnUpdate(DCMod, "UpdateActivated")
 local floor = math.floor
 function DCMod:UpdateHSize(val)
 	if type(val) ~= "number" or val<=0 then
-		hSizeOpt:Set(20)
+		hSizeOpt:Set(30)
 	else
 		lOff = -floor(val/2)
 		rOff = val+lOff
@@ -34,7 +34,7 @@ hSizeOpt:OnUpdate(DCMod, "UpdateHSize")
 
 function DCMod:UpdateVSize(val)
 	if type(val) ~= "number" or val<=0 then
-		vSizeOpt:Set(20)
+		vSizeOpt:Set(30)
 	else
 		tOff = -floor(val/2)
 		bOff = val+tOff
