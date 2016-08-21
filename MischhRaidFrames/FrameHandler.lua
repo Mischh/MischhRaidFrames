@@ -536,7 +536,7 @@ do --FastMenu
 		if type(val) == "number" then --only apply String
 			oThreshold:Set(L["Threshold: "]..shorts[Inv_Threshold[val]])
 		elseif val and shorts[val] then --the dropdown had selected something
-			
+			applyLoot(nil, GroupLib.LootThreshold[val], nil, nil)
 			oThreshold:Set(L["Threshold: "]..shorts[val])
 		end
 	end
