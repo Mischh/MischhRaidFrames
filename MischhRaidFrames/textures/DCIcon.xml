@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Sprites>
+    <Sprite Name="DisconnectIcon" Cycle="1">
+        <Frame Texture="UI\Assets\TexPieces\UI_CRB_RaidFrames_419_71.tga" x0="8" x1="8" x2="8" x3="8" x4="38" x5="38" y0="9" y1="9" y2="9" y3="9" y4="35" y5="35" Stretchy="1" HotspotX="0" HotspotY="0" Duration="1.000" StartColor="ffffffff" EndColor="ffffffff"/>
+    </Sprite>
+</Sprites>

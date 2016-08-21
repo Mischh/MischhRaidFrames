@@ -204,6 +204,8 @@ function FakePrototype:IsMainAssist() return self.tbl.bMainAssist end
 function FakePrototype:IsMainTank() return self.tbl.bMainTank end
 function FakePrototype:IsReady() return self.tbl.bReady end
 function FakePrototype:HasSetReady() return self.tbl.bHasSetReady end
+function FakePrototype:IsDisconnected() return self.tbl.bDisconnected end
+function FakePrototype:IsOnline() return self.tbl.bIsOnline end
 
 local meta_unit = {__index = function(t, fName)
 	local f = function(self, ...)
