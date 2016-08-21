@@ -1,3 +1,17 @@
+<p><strong>Release v1.9:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Colorpicker &nbsp;- Added&nbsp;'2x'-option to intensify any&nbsp;color to their double value.</li>
+<li>Bars - Are now able to be layered&nbsp;by custom.</li>
+<li>General - Settings now has a button to show an anchor for dragging the frames around (top-left)</li>
+<li>DC-Icon - Added a Disconnect Icon to be shown for all disconnected Players.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>FastMenu - Retexted 'Tank' and 'DPS' buttons, scince tank was&nbsp;something really weird.</li>
+<li>FastMenu -&nbsp;Changing loot threshold&nbsp;didn't change anything.</li>
+</ul>
+<p>&nbsp;</p>
 <p><strong>Release v1.8:</strong></p>
 <p>Added:</p>
 <ul>
