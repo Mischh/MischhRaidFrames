@@ -102,6 +102,7 @@ local L = MRF:Localize({--[[English]]
 	["Referrals: "] = "Empfehlungen: ",
 	["Readycheck"] = "Bereitschaftscheck",
 	["Switch Instance"] = "Instanz wechseln",
+	["Raid Manager"] = "Raid Manager",
 	["To Raid"] = "Zum Raid",
 	["Disband"] = "Auflösen",
 }, {--[[French]]
@@ -579,24 +580,29 @@ do --FastMenu
 	function RClickHandler:SelectRoleTank( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		GroupLib.SetRoleTank(1, true) 
-		--GroupLib.SetRoleHealer(1, false)
-		--GroupLib.SetRoleDPS(1, false)
 	end
 
 	function RClickHandler:SelectRoleHeal( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
-		--GroupLib.SetRoleTank(1, false) 
 		GroupLib.SetRoleHealer(1, true)
-		--GroupLib.SetRoleDPS(1, false)
 	end
 
 	function RClickHandler:SelectRoleDPS( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
-		--GroupLib.SetRoleTank(1, false) 
-		--GroupLib.SetRoleHealer(1, false)
 		GroupLib.SetRoleDPS(1, true)
 	end
 
+	function RClickHandler:ShowMenuSlot(slot, show)
+		if show then
+			local h = slot:GetData()
+			local l,t,r = slot:GetAnchorOffsets()
+			slot:SetAnchorOffsets(l,t,r,t+h)
+		else
+			local l,t,r = slot:GetAnchorOffsets()
+			slot:SetAnchorOffsets(l,t,r,t)
+		end
+	end
+	
 	--this is not MRF:ShowFastMenu(), this is the OnShow of the FastMenu
 	function RClickHandler:ShowFastMenu( wndHandler, wndControl )
 		if wndHandler ~= wndControl then return end
@@ -605,21 +611,16 @@ do --FastMenu
 		local isRaid = GroupLib.InRaid()
 		local isLead = GroupLib.AmILeader() or false
 		
-		--Roles
+		-- ### Roles ###
 		self.btnTank:SetCheck(unit.bTank == true)
 		self.btnHeal:SetCheck(unit.bHealer == true)
 		self.btnDps:SetCheck(unit.bDPS == true)
 		self.btnTank:Enable(noInst or isRaid)
 		self.btnHeal:Enable(noInst or isRaid)
 		self.btnDps:Enable(noInst or isRaid)
+		--self.slotRole always shown.
 		
-		--Additional Buttons		
-		self.btnReady:Enable(isRaid and (GroupLib.GetGroupMember(1) or {}).bCanMark or noInst and isLead or false)
-		self.btnInstance:Enable(GroupLib.CanGotoGroupInstance())
-		self.btnRaid:Enable(isLead and not isRaid and noInst or false )
-		self.btnDisband:Enable(isLead and noInst or false)
-		
-		--Dropdowns / Loot-Stuff
+		-- ### Dropdowns / Loot-Stuff ###
 		local tbl = GroupLib.GetLootRules()			
 		oBelow:Set(tbl.eNormalRule)
 		oAbove:Set(tbl.eThresholdRule)
@@ -631,16 +632,53 @@ do --FastMenu
 		else
 			self.dropAbove:Enable(false); self.dropThres:Enable(false); self.dropBelow:Enable(false); self.dropHarvest:Enable(false);
 		end
+		--self.slotLoot always show.
 		
-		--Dropdowns / Invitations
+		-- ### Dropdowns / Invitations ###
 		oJoin:Set(GroupLib.GetJoinRequestMethod())
 		oRefer:Set(GroupLib.GetReferralMethod())
 		
 		if isLead and noInst then
 			self.dropJoin:Enable(true);  self.dropRefer:Enable(true)
+			self:ShowMenuSlot(self.slotRequest, true)
 		else
 			self.dropJoin:Enable(false); self.dropRefer:Enable(false)
+			self:ShowMenuSlot(self.slotRequest, false)
 		end
+		
+		-- ### Readycheck ###
+		do
+			local show = isRaid and unit.bCanMark or noInst and isLead or false
+			self.btnReady:Enable(show)
+			self:ShowMenuSlot(self.slotReady, show)
+		end
+		
+		-- ### Switch Instance ###
+		do
+			local show = GroupLib.CanGotoGroupInstance()
+			self.btnInstance:Enable(show)
+			self:ShowMenuSlot(self.slotSwitch, show)
+		end
+		
+		-- ### Rank Management ###
+		do
+			local manager = Apollo.GetAddon("RaidFrameLeaderOptions") --we only show this button, if this Addon is loaded.
+			local show = isRaid and manager and (unit.bIsLeader or unit.bRaidAssistant) or false
+			self.btnRanks:Enable(show)
+			self:ShowMenuSlot(self.slotRanks, show)
+		end
+		
+		-- ### Disband Row ###
+		do
+			local show = isLead and noInst or false
+			self.btnRaid:Enable(not isRaid and show)
+			self.btnDisband:Enable(show)
+			self:ShowMenuSlot(self.slotDisband, show)
+		end
+		
+		local l, t, r = self.frame:GetAnchorOffsets()
+		local b = select(4, self.slotDisband:GetRect())+7
+		self.frame:SetAnchorOffsets(l, t, r, b)
 	end
 	
 	function RClickHandler:SwitchInstance( wndHandler, wndControl, eMouseButton )
@@ -648,6 +686,8 @@ do --FastMenu
 		if GroupLib.CanGotoGroupInstance() then
 			GroupLib.GotoGroupInstance()
 		end
+		
+		self.frame:Show(false)
 	end
 	
 	function RClickHandler:Readycheck( wndHandler, wndControl, eMouseButton )
@@ -655,6 +695,37 @@ do --FastMenu
 		if not GroupLib.IsReadyCheckOnCooldown() then
 			GroupLib.ReadyCheck()
 		end
+		
+		self.frame:Show(false)
+	end
+	
+	function RClickHandler:EditRanks( wndHandler, wndControl, eMouseButton )
+		if wndHandler ~= wndControl then return end
+		local manager = Apollo.GetAddon("RaidFrameLeaderOptions")
+		if not manager then return end
+		
+		-- Initialize the Manager (special treatment for positioning)
+		local _LoadForm = Apollo.LoadForm
+		Apollo.LoadForm = function(xml, name, parent, handler, ...)
+			if name == "RaidFrameLeaderOptionsForm" then
+				parent = parentFrame --place it inside our own parentFrame. (for easier positioning)
+			end
+			return _LoadForm(xml, name, parent, handler, ...)
+		end
+		manager:Initialize(true) --this should create manager.wndMain.
+		Apollo.LoadForm = _LoadForm --reapply old function
+		
+		if manager.wndMain and manager.wndMain:IsValid() then  
+			--reposition to have the Fastmenu Top-Left be on the same point, as the managers Top-Left
+			
+			local _, menuT, menuL = self.spacer:GetRect() --top right of the spacer is the topleft of menu.
+			local manaL, manaT = manager.wndMain:GetRect()
+			local offH, offV = menuL-manaL+3, menuT-manaT+3 -- +3, because else its fucking close to the frames.
+			local l,t,r,b = manager.wndMain:GetAnchorOffsets()
+			manager.wndMain:SetAnchorOffsets(l+offH, t+offV, r+offH, b+offV)
+		end
+		
+		self.frame:Show(false)
 	end
 	
 	function RClickHandler:ConvertToRaid( wndHandler, wndControl, eMouseButton )
@@ -662,6 +733,8 @@ do --FastMenu
 		if GroupLib.AmILeader() then
 			GroupLib.ConvertToRaid()
 		end
+		
+		self.frame:Show(false)
 	end
 	
 	function RClickHandler:Disband( wndHandler, wndControl, eMouseButton )
@@ -669,6 +742,8 @@ do --FastMenu
 		if GroupLib.AmILeader() then
 			GroupLib.DisbandGroup()
 		end
+		
+		self.frame:Show(false)
 	end
 	
 	function RClickHandler:OnHideMenu( wndHandler, wndControl )
@@ -690,21 +765,32 @@ do --FastMenu
 		self.btnDps = self.frame:FindChild("Button_Dps")
 		self.btnReady = self.frame:FindChild("Button_Ready")
 		self.btnInstance = self.frame:FindChild("Button_Instance")
+		self.btnRanks = self.frame:FindChild("Button_Ranking")
 		self.btnRaid = self.frame:FindChild("Button_2Raid")
 		self.btnDisband = self.frame:FindChild("Button_Disband")
 		
+		local function prep(wnd) wnd:SetData(wnd:GetHeight()) end
+		self.slotRole = self.frame:FindChild("Slot_Role");			prep(self.slotRole)
+		self.slotLoot = self.frame:FindChild("Slot_Loot");			prep(self.slotLoot)
+		self.slotRequest = self.frame:FindChild("Slot_Request");	prep(self.slotRequest)
+		self.slotReady = self.frame:FindChild("Slot_Ready");		prep(self.slotReady)
+		self.slotSwitch = self.frame:FindChild("Slot_Switch");		prep(self.slotSwitch) 
+		self.slotRanks = self.frame:FindChild("Slot_Ranks");		prep(self.slotRanks)
+		self.slotDisband = self.frame:FindChild("Slot_Disband");	prep(self.slotDisband)
+		
 		self.btnInstance:SetText(L["Switch Instance"])
 		self.btnReady:SetText(L["Readycheck"])
+		self.btnRanks:SetText(L["Raid Manager"])
 		self.btnRaid:SetText(L["To Raid"])
 		self.btnDisband:SetText(L["Disband"])
 		
-		self.dropAbove = MRF:applyDropdown(self.frame:FindChild("Loot_Above"), Loot_Rule, oAbove, trans).drop:FindChild("DropdownButton")
-		self.dropThres = MRF:applyDropdown(self.frame:FindChild("Loot_Threshold"), Loot_Threshold, oThreshold, trans).drop:FindChild("DropdownButton")
-		self.dropBelow = MRF:applyDropdown(self.frame:FindChild("Loot_Below"), Loot_Rule, oBelow, trans).drop:FindChild("DropdownButton")
-		self.dropHarvest = MRF:applyDropdown(self.frame:FindChild("Loot_Harvest"), Loot_Harvest, oHarvest, trans).drop:FindChild("DropdownButton")
+		self.dropAbove = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Above"), Loot_Rule, oAbove, trans).drop:FindChild("DropdownButton")
+		self.dropThres = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Threshold"), Loot_Threshold, oThreshold, trans).drop:FindChild("DropdownButton")
+		self.dropBelow = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Below"), Loot_Rule, oBelow, trans).drop:FindChild("DropdownButton")
+		self.dropHarvest = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Harvest"), Loot_Harvest, oHarvest, trans).drop:FindChild("DropdownButton")
 		
-		self.dropJoin = MRF:applyDropdown(self.frame:FindChild("Request_Join"), Rule_Invite, oJoin, trans).drop:FindChild("DropdownButton")
-		self.dropRefer = MRF:applyDropdown(self.frame:FindChild("Request_Referral"), Rule_Invite, oRefer, trans).drop:FindChild("DropdownButton")
+		self.dropJoin = MRF:applyDropdown(self.slotRequest:FindChild("Request_Join"), Rule_Invite, oJoin, trans).drop:FindChild("DropdownButton")
+		self.dropRefer = MRF:applyDropdown(self.slotRequest:FindChild("Request_Referral"), Rule_Invite, oRefer, trans).drop:FindChild("DropdownButton")		
 	end
 	
 	function MRF:ShowFastMenu(...)
