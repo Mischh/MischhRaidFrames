@@ -78,6 +78,11 @@
                     <Event Name="ButtonSignal" Function="Disband"/>
                 </Control>
             </Control>
+            <Control Class="Window" LAnchorPoint="0" LAnchorOffset="8" TAnchorPoint="btm_disband" TAnchorOffset="0" RAnchorPoint="1" RAnchorOffset="-8" BAnchorPoint="btm_disband" BAnchorOffset="25" RelativeToClient="0" Font="Default" Text="" BGColor="UI_WindowBGDefault" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="Slot_Leave" TooltipColor="" BottomEdgeControlsAnchor="btm_leave" IgnoreMouse="1">
+                <Control Class="Button" Base="charactercreate:btnCharC_Finalize_LargeHoloBtn" Font="DefaultButton" ButtonType="PushButton" RadioGroup="Role_Selector" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="-6" RAnchorPoint="1" RAnchorOffset="0" BAnchorPoint="1" BAnchorOffset="0" DT_VCENTER="1" DT_CENTER="1" BGColor="UI_BtnBGDefault" TextColor="UI_BtnTextDefault" NormalTextColor="UI_BtnTextRedNormal" PressedTextColor="UI_BtnTextRedPressed" FlybyTextColor="UI_BtnTextRedFlyby" PressedFlybyTextColor="UI_BtnTextRedPressedFlyby" DisabledTextColor="UI_BtnTextBlueDisabled" TooltipType="OnCursor" Name="Button_Leave" TooltipColor="" FocusedTextColor="ffffffff" Text="" Template="Default" RelativeToClient="1" TextId="ContextMenu_LeaveGroup" GlobalRadioGroup="">
+                    <Event Name="ButtonSignal" Function="LeaveGroup"/>
+                </Control>
+            </Control>
         </Control>
         <Event Name="WindowShow" Function="OnShowSpacer"/>
     </Form>

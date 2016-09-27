@@ -676,8 +676,13 @@ do --FastMenu
 			self:ShowMenuSlot(self.slotDisband, show)
 		end
 		
+		-- ### Leave Row ###
+		do
+			self:ShowMenuSlot(self.slotLeave, true)
+		end
+		
 		local l, t, r = self.frame:GetAnchorOffsets()
-		local b = select(4, self.slotDisband:GetRect())+7
+		local b = select(4, self.slotLeave:GetRect())+7
 		self.frame:SetAnchorOffsets(l, t, r, b)
 	end
 	
@@ -746,6 +751,13 @@ do --FastMenu
 		self.frame:Show(false)
 	end
 	
+	function RClickHandler:LeaveGroup( wndHandler, wndControl, eMouseButton )
+		if wndHandler ~= wndControl then return end
+		GroupLib.LeaveGroup()
+		
+		self.frame:Show(false)
+	end
+	
 	function RClickHandler:OnHideMenu( wndHandler, wndControl )
 		if wndHandler ~= wndControl then return end
 		self.spacer:Show(false, false)
@@ -777,6 +789,7 @@ do --FastMenu
 		self.slotSwitch = self.frame:FindChild("Slot_Switch");		prep(self.slotSwitch) 
 		self.slotRanks = self.frame:FindChild("Slot_Ranks");		prep(self.slotRanks)
 		self.slotDisband = self.frame:FindChild("Slot_Disband");	prep(self.slotDisband)
+		self.slotLeave = self.frame:FindChild("Slot_Leave");		prep(self.slotLeave)
 		
 		self.btnInstance:SetText(L["Switch Instance"])
 		self.btnReady:SetText(L["Readycheck"])
