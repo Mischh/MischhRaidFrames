@@ -1,3 +1,20 @@
+<p><strong>Release v1.9b:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Leave Button for the FastMenu.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Make Group-Headers be sized to full width. Most recent Update made all frames 2px greater in each direction, except the headers.</li>
+<li>Updated the Defaults to be spaced&nbsp;as they were before.</li>
+</ul>
+<p>&nbsp;</p>
+<p><strong>Release v1.9a:</strong></p>
+<p>FastMenu:</p>
+<ul>
+<li>Reworked the Menu to only show useful buttons (informative or clickable)</li>
+<li>Added 'Raid Manager' Button to open up the Default Leader-Options (RaidFrameLeaderOptions Addon needs to be activated)</li>
+</ul>
 <p><strong>Release v1.9:</strong></p>
 <p>Added:</p>
 <ul>
