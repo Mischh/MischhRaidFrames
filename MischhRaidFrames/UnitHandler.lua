@@ -21,6 +21,7 @@ MRF:OnceDocLoaded(function()
 	Apollo.RegisterEventHandler("Group_Remove", "GroupUpdate", UnitHandler)
 	Apollo.RegisterEventHandler("Group_MemberFlagsChanged", "GroupUpdate", UnitHandler)
 	Apollo.RegisterEventHandler("Group_SetMark", "GroupUpdate", UnitHandler)
+	Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", UnitHandler)
 	Apollo.RegisterEventHandler("NextFrame", "OnUpdate", UnitHandler)
 	unitTimer = ApolloTimer.Create(unittime, true, "CheckNextUnit", UnitHandler)
 	UnitHandler:GroupUpdate()
@@ -129,6 +130,8 @@ function UnitHandler:UpdateUnit(i)
 		units[i]:ApplyUnit(mem, unit)
 	end
 
+	self:UpdateIdxName(i, units[i]:GetName())
+	
 	MRF:PushUnitUpdate(frames[i], units[i])
 end
 
@@ -250,6 +253,29 @@ function UnitHandler:HideAdditionalFrames()
 	end
 end
 
+do
+	local groupIdx2Name = {} -- [idx] = UnitName and [UnitName] = Idx
+
+	function UnitHandler:UpdateIdxName(idx, name)
+		if groupIdx2Name[idx] then
+			groupIdx2Name[groupIdx2Name[idx]] = nil
+		end
+		groupIdx2Name[idx] = name
+		groupIdx2Name[name] = idx
+	end
+	
+	function UnitHandler:OnUnitCreated(unit)
+		local name = unit:GetName()
+		local idx = groupIdx2Name[name or false]
+		if idx and units[idx] then print(pcall(function()
+						print("force-updated", idx, name)
+			units[idx].unit = unit
+			MRF:PushUnitUpdateForFrameIndex(idx)
+			end))
+		end
+	end
+
+end
 
 function UnitHandler:InitSettings(parent, name)
 	local L = MRF:Localize({--English
