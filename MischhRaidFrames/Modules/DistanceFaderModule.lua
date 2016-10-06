@@ -48,7 +48,7 @@ fraqOption:OnUpdate(DistMod, "UpdateFraction")
 local function checkRange(unit)
 	local pos = unit:GetPosition()
 	if pos then
-		local Ppos = GameLib.GetPlayerUnit():GetPosition()
+		local Ppos = (GameLib.GetPlayerUnit() or {GetPosition=function() return {x=0, y=0, z=0} end}):GetPosition()
 		local dist = sqrt(pow(Ppos.x-pos.x,2) + pow(Ppos.y-pos.y,2) + pow(Ppos.z-pos.z,2))
 		return dist<fadingDistance
 	end
