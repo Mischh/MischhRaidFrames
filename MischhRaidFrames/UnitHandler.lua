@@ -267,11 +267,9 @@ do
 	function UnitHandler:OnUnitCreated(unit)
 		local name = unit:GetName()
 		local idx = groupIdx2Name[name or false]
-		if idx and units[idx] then print(pcall(function()
-						print("force-updated", idx, name)
+		if idx and units[idx] then
 			units[idx].unit = unit
 			MRF:PushUnitUpdateForFrameIndex(idx)
-			end))
 		end
 	end
 
