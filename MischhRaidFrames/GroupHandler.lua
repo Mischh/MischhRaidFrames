@@ -347,16 +347,48 @@ function GroupHandler:ChangedGroupLayout()
 	end
 end
 
-function GroupHandler:ICCommShareGroup(srcName)
-	if self.channel and publishing then
-		local msg = self:VRFSerialize({layout = self:GetVRFLayout(), source = srcName})
-		self.channel:SendMessage(msg)
+do
+	local shareTimer = nil
+	local shareRequested = false
+	function GroupHandler:ICCommShareGroup(srcName)
+		if self.channel and publishing then
+			if srcName then
+				local msg = self:VRFSerialize({layout = self:GetVRFLayout(), source = srcName})
+				self.channel:SendMessage(msg)
+			elseif not shareTimer then
+				local msg = self:VRFSerialize({layout = self:GetVRFLayout()})
+				self.channel:SendMessage(msg)
+				shareTimer = ApolloTimer.Create(3, false, "OnShareTimer", self)
+			else
+				shareRequested = true
+			end
+		end
 	end
-end
 
-function GroupHandler:ICCommShareDeact(srcName)
-	if self.channel and publishing then
-		self.channel:SendMessage(self:VRFSerialize({defaultGroups = true, source = srcName}))
+	function GroupHandler:ICCommShareDeact(srcName)
+		if self.channel and publishing then
+			if srcName then
+				self.channel:SendMessage(self:VRFSerialize({defaultGroups = true, source = srcName}))
+			elseif not shareTimer then
+				self.channel:SendMessage(self:VRFSerialize({defaultGroups = true}))
+				shareTimer = ApolloTimer.Create(3, false, "OnShareTimer", self)
+			else
+				shareRequested = true
+			end
+		end
+	end
+	
+	function GroupHandler:OnShareTimer()
+		shareTimer = nil
+		if shareRequested then
+			shareRequested = false
+			if useUserDef then --share group
+				local msg = self:VRFSerialize({layout = self:GetVRFLayout()})
+				self.channel:SendMessage(msg)
+			else -- share deactivation
+				self.channel:SendMessage(self:VRFSerialize({defaultGroups = true}))
+			end
+		end
 	end
 end
 
