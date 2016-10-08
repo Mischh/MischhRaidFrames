@@ -427,6 +427,9 @@ function GroupHandler:RecievedGroupLayout(srcName, layout)
 		return
 	end	
 
+	local old = publishing
+	publishing = false --prevent the addon from re-publishing at this point (done seperate)
+	
 	self:ImportGroup(layout)
 	
 	if useUserDef then
@@ -444,11 +447,18 @@ function GroupHandler:RecievedGroupLayout(srcName, layout)
 	else
 		self:DistantUpdate() --at least update GroupDisplay
 	end
+	
+	publishing = old
 end
 
 function GroupHandler:RecievedDeactRequest(srcName)
 	if activateAccept and self:CheckAccepting(srcName) then
+		local old = publishing
+		publishing = false --prevent the addon from re-publishing at this point (done seperate)
+	
 		optUse:Set(false)
+		
+		publishing = old
 	end
 end
 
