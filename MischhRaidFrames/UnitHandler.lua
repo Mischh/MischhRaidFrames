@@ -14,6 +14,10 @@ local unitTimer = nil;
 local unittime = 1
 local freqtime = 1000 --in milliseconds
 
+function MRF:GetUnits()
+	return units, UnitHandler
+end
+
 MRF:OnceDocLoaded(function()
 	Apollo.RegisterEventHandler("Group_Left", "GroupUpdate", UnitHandler)
 	Apollo.RegisterEventHandler("Group_Join", "GroupUpdate", UnitHandler)

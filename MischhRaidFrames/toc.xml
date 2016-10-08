@@ -48,6 +48,7 @@
 	<Script Name="Defaults.lua" />
 	<Script Name="SaveHandler.lua" />
 	
+	<Script Name="TestMode.lua" />
 	
 	<Script Name="Compatability\GroupDisplay.lua"/>
 	<Form Name="Compatability\GroupDisplay.xml"/>
