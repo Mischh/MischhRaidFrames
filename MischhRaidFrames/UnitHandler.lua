@@ -122,12 +122,12 @@ end
 
 function UnitHandler:UpdateUnit(i)
 	local unit = GroupLib_GetUnitForGroupMember(i); 
-	local mem = GroupLib.GetGroupMember(i) or {}; --{} only happens, if we are actually not in a group
+	local mem = GroupLib.GetGroupMember(i); --can be nil, if we are not in a group, but are testing
 
 	if not units[i] then
-		units[i] = self:newUnit(mem, unit)
+		units[i] = self:newUnit(mem, unit) --handles nil-mem by replacing with {}
 	else
-		units[i]:ApplyUnit(mem, unit)
+		units[i]:ApplyUnit(mem, unit) --hanldes nil-mem by staying at the old one.
 	end
 
 	self:UpdateIdxName(i, units[i]:GetName())
@@ -176,7 +176,7 @@ function UnitHandler:GroupUpdate()
 end
 
 local FakePrototype = {}
-function FakePrototype:ApplyUnit(groupMember, unit) self.tbl = groupMember; self.unit = unit end
+function FakePrototype:ApplyUnit(groupMember, unit) self.tbl = groupMember or self.tbl; self.unit = unit end
 function FakePrototype:UpdateUnit() UnitHandler:UpdateUnit(self:GetMemberIdx()) end
 function FakePrototype:GetRealUnit() return rawget(self,"unit") end
 function FakePrototype:GetMemberIdx() return self.tbl.nMemberIdx or 1 end
@@ -229,7 +229,7 @@ end}
 function UnitHandler:newUnit(groupMemberTbl, unit)
 	local newUnit = setmetatable({}, meta_unit)
 	
-	newUnit:ApplyUnit(groupMemberTbl, unit)
+	newUnit:ApplyUnit(groupMemberTbl or {}, unit)
 	
 	return newUnit;
 end
