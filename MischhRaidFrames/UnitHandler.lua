@@ -139,14 +139,6 @@ function UnitHandler:UpdateUnit(i)
 	MRF:PushUnitUpdate(frames[i], units[i])
 end
 
-function MRF:MakePlayerAUnit()
-	frames[1]:Show(true, true)
-	UnitHandler:UpdateUnit(1)
-	UnitHandler:Regroup()
-	UnitHandler:Reposition()
-	UnitHandler:HideAdditionalFrames()
-end
-
 function MRF:PushUnitUpdateForFrameIndex(i)
 	if units[i] then
 		MRF:PushUnitUpdate(frames[i], units[i])

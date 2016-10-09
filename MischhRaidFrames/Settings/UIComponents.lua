@@ -754,8 +754,8 @@ do
 		settingsForm:Show(false,false)
 	end
 		
-	function tabHandler:AddPlayer(...)
-		MRF:MakePlayerAUnit()
+	function tabHandler:TestMode(...)
+		MRF:TestMode()
 	end
 	
 	function tabHandler:ShowRaidAnchor()

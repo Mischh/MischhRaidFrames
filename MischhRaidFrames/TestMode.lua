@@ -397,7 +397,7 @@ local groupMembers = {
 }
 
 
-function MRF:TestMode() print(pcall(function()
+function MRF:TestMode()
 	for i, member in ipairs(groupMembers) do
 		if units[i] then
 			units[i]:ApplyUnit(member, nil)
@@ -410,5 +410,5 @@ function MRF:TestMode() print(pcall(function()
 	
 	UnitHandler:Regroup()
 	UnitHandler:Reposition()
-	UnitHandler:HideAdditionalFrames() end))
+	UnitHandler:HideAdditionalFrames()
 end
