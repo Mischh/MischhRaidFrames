@@ -1,3 +1,13 @@
+<p><strong>Release v1.10:</strong></p>
+<p>Added:</p>
+<ul>
+<li>A proper Test-Mode! (You may want to deactivate the distance-fader to test)</li>
+<li>Grouping sharing spam reduced to once all 3 seconds. (does not reduce&nbsp;resharing)</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>The Addon could end up looping with another Player to publish their groupings back and forth.</li>
+</ul>
 <p><strong>Release v1.9c:</strong></p>
 <p>Added:</p>
 <ul>
