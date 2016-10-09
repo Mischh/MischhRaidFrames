@@ -390,6 +390,13 @@ do
 			end
 		end
 	end
+	
+	optPublish:OnUpdate(function(publish) 
+		if shareTimer and not publish then
+			shareTimer:Stop()
+			GroupHandler:OnShareTimer()
+		end	
+	end)
 end
 
 function GroupHandler:ICCommShareVersion()
