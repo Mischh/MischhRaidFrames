@@ -79,6 +79,7 @@ do
 	function UnitHandler:OnUpdate_Distant()
 		local max = #units
 		if max < 1 then return end
+		if lastUnit > max then lastUnit = max end
 		
 		local now = Apollo.GetTickCount()
 		local elapsed = now - lastUpdate
@@ -95,7 +96,7 @@ do
 				for i = start, max, 1 do
 					MRF:PushFrequentUpdate(frames[i], units[i])
 				end
-				for i = 1, lastUnit do
+				for i = 1, lastUnit, 1 do
 					MRF:PushFrequentUpdate(frames[i], units[i])
 				end
 			else
