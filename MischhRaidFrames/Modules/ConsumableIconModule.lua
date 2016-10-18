@@ -302,9 +302,13 @@ function ConsMod:iconUpdate(frame, unit)
 	local buffs = unit:GetBuffs()
 	if buffs then
 		local num = (showFood and 1 or 0) + (showSpeed and 1 or 0) + (showBoost and 1 or 0) + (showFire and 1 or 0)
-		local incombat = nocombat and GameLib.GetPlayerUnit():IsInCombat() or false
+		local incombat = nocombat
+		if incombat then
+			local player = GameLib.GetPlayerUnit()
+			incombat = player and player:IsInCombat() or false
+		end
 		
-		if not (nocombat and incombat) then 
+		if not incombat then 
 			for _, buff in ipairs(buffs.arBeneficial) do	
 				if num == 0 then break; end
 				for i, con in pairs(shows) do
