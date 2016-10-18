@@ -86,7 +86,7 @@ do
 		x = x<max and x or max
 		local update = floor(x)
 		if update>0 then
-			local excesstime = (elapsed*max or 0)%freqtime
+			local excesstime = elapsed%(freqtime/max)
 			lastUpdate = now-excesstime
 		 	local start = lastUnit+1
 			if lastUnit+update > max then 
