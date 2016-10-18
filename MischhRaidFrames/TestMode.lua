@@ -398,7 +398,12 @@ local groupMembers = {
 
 
 function MRF:TestMode()
+	local player = GameLib.GetPlayerUnit()
+	local pos = player and player:GetPosition()
+	
 	for i, member in ipairs(groupMembers) do
+		member.fakePos = pos
+	
 		if units[i] then
 			units[i]:ApplyUnit(member, nil)
 		else

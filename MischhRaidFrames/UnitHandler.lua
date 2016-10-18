@@ -205,6 +205,7 @@ function FakePrototype:IsReady() return self.tbl.bReady end
 function FakePrototype:HasSetReady() return self.tbl.bHasSetReady end
 function FakePrototype:IsDisconnected() return self.tbl.bDisconnected end
 function FakePrototype:IsOnline() return self.tbl.bIsOnline end
+function FakePrototype:GetPosition() return self.tbl.fakePos end --faked by test-mode!
 
 local meta_unit = {__index = function(t, fName)
 	local f = function(self, ...)
