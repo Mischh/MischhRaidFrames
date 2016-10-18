@@ -3,6 +3,7 @@ require "ICComm"
 
 local GroupHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
+Apollo.LinkAddon(MRF, GroupHandler)
 local groups = {} --applied in GetGroupHandlersRegroup
 local units = {} --applied in GetGroupHandlersRegroup
 local tinsert = table.insert

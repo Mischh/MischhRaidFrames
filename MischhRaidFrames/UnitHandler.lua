@@ -1,5 +1,6 @@
 local MRF = Apollo.GetAddon("MischhRaidFrames")
 local UnitHandler = {}
+Apollo.LinkAddon(MRF, UnitHandler)
 local Options = MRF:GetOption(nil, "Unit Handler")
 local unitOpt = MRF:GetOption(Options, "unit")
 local freqOpt = MRF:GetOption(Options, "frequent")

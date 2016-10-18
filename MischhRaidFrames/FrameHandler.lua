@@ -2,6 +2,7 @@
 
 local FrameHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
+Apollo.LinkAddon(MRF, FrameHandler)
 local Options = MRF:GetOption(nil, "Frame Handler")
 local dirOption = MRF:GetOption(Options, "direction")
 local lenOption = MRF:GetOption(Options, "length")
