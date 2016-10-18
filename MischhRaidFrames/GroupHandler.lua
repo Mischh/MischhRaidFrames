@@ -950,6 +950,7 @@ function handler:UpdateGrName(name) -- called by optGrName:ForceUpdate()
 		
 		userdef[idx] = name
 		grouHandler[idx]:SetText(grouHandler:GetText(idx))
+		self:Update()
 		GroupHandler:ChangedGroupLayout()
 	end
 end
