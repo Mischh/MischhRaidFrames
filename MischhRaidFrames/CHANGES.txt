@@ -1,3 +1,16 @@
+<p><strong>Release v1.10a:</strong></p>
+<p>Added:</p>
+<ul>
+<li>TestMode: All test-units now fake to be positioned where the player engaged test-mode.</li>
+<li>The three Handlers are now linked to the Main Addon. This means the Addon-Tab (Esc) is now properly populated - From now on Errors will most likely appear directly on your screen. Report them please.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Consumables: Fixed an (probably unnoticed) error when coming out of loadingscreen.</li>
+<li>GroupHandler: Changing a Groups Name now properly updates your own frames.</li>
+<li>Updates: The frequent Updates now work properly (WAY less Updates - you might want to retune this)</li>
+<li>UnitHandler: Fixed a potential Error, whenever your&nbsp;group gets smaller</li>
+</ul>
 <p><strong>Release v1.10:</strong></p>
 <p>Added:</p>
 <ul>
