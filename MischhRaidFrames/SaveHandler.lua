@@ -281,10 +281,17 @@ function MRF:CheckFrameTemplate(frame)
 			end
 			
 			--check bar is on a layer.
-			if not bar.layer then
+			if not bar.layer or type(bar.layer) ~= "number" then
 				local layer = (mode == "Stacking" and 1 or mode == "Offset" and 2 or 3)
 				Print("Found a bar("..tostring(bar.modKey)..") without a layer. Defaulted according to Positioning-Mode ("..mode.." - "..layer..")")
 				bar.layer = layer
+				changed = true
+			end
+			
+			--check the bars orientation
+			if not bar.barOrientation or type(bar.barOrientation) ~= "string" or bar.barOrientation:len()~=1 then
+				Print("Found a bar("..tostring(bar.modKey)..") without an valid orientation. Applied default: 'Left to Right'")
+				bar.barOrientation = 'R'
 				changed = true
 			end
 			

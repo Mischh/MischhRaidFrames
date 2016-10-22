@@ -99,49 +99,44 @@ end
 -- MischhRaidFrames Functions
 -----------------------------------------------------------------------------------------------
 
-do	
-	--[[###################
-		Bar (parentFrame, relPosition , fullColor , emptyColor )
-			:SetProgress( 0 - 1 )
-			:SetText( ... ) 	pass throught to Window
-			:SetFont( ... ) 	pass throught to Window
-			:SetTextColor( ... )pass throught to Window
-			:SetColor( leftColor, rightColor)		
-	--###################]]
-	local function setProgress(handler, progress)
+do
+	local Bar = {} --Template
+	Bar["__index"] = Bar
+	
+	function Bar:SetProgress(progress)
 		progress = progress < 0 and 0 or progress > 1 and 1 or progress -- 0-100 -> 0-1
 		
-		handler.leftBar:SetProgress(progress)
-		handler.rightBar:SetProgress(1-progress)
+		self.leftBar:SetProgress(progress)
+		self.rightBar:SetProgress(1-progress)
 	end
 	
-	local function setText(handler, ...)
-		handler.leftBar:SetText(...)
+	function Bar:SetText(...)
+		self.leftBar:SetText(...)
 	end
 	
-	local function setFont(handler, ...)
-		handler.leftBar:SetFont(...)
+	function Bar:SetFont(...)
+		self.leftBar:SetFont(...)
 	end
 	
-	local function setTextColor(handler, ...)
-		handler.leftBar:SetTextColor(...)
+	function Bar:SetTextColor(...)
+		self.leftBar:SetTextColor(...)
 	end
 	
-	local function setColor( handler, leftCol, rightCol )
+	function Bar:SetColor(leftCol, rightCol )
 		if leftCol then
-			handler.leftBar:SetBarColor(leftCol)
+			self.leftBar:SetBarColor(leftCol)
 		end
 		if rightCol then
-			handler.rightBar:SetBarColor(rightCol)
+			self.rightBar:SetBarColor(rightCol)
 		end
 	end
 	
-	local function setTexture( handler, leftTexture, rightTexture )
+	function Bar:SetTexture(leftTexture, rightTexture )
 		if leftTexture then
-			handler.leftBar:SetFullSprite(leftTexture)
+			self.leftBar:SetFullSprite(leftTexture)
 		end
 		if rightTexture then
-			handler.rightBar:SetFullSprite(rightTexture)
+			self.rightBar:SetFullSprite(rightTexture)
 		end
 	end
 	
@@ -158,36 +153,42 @@ do
 	
 	-- eHPos = 'l', 'c', 'r' for Left, Center, Right
 	-- eVPos = 't', 'c', 'b' for Top, Center, Bottom
-	local function setTextPos( handler, hPos, vPos )
+	function Bar:SetTextPos(hPos, vPos )
 		if hPosOpt[hPos or ""] then
 			for i, flag in pairs(hPosOpt[hPos]) do
-				handler.leftBar:SetTextFlags(flag, i==1)
+				self.leftBar:SetTextFlags(flag, i==1)
 			end
 		end
 		if vPosOpt[vPos or ""] then
 			for i, flag in pairs(vPosOpt[vPos]) do
-				handler.leftBar:SetTextFlags(flag, i==1)
+				self.leftBar:SetTextFlags(flag, i==1)
 			end
 		end
 	end
 	
-	local function unuse( handler )
-		handler.rightBar = handler.rightBar:Destroy() and nil
-		handler.leftBar = handler.leftBar:Destroy() and nil
-		handler.frame = handler.frame:Destroy() and nil
+	-- 'L' 'T' 'R' 'B' for the direction to which its increasing towards
+	local orientations = {
+		L = {false, true},
+		T = {true, true},
+		R = {false, false},
+		B = {true, false}}
+	function Bar:SetOrientation(target)
+		local arg = orientations[target]
+		self.leftBar:SetStyleEx("VerticallyAligned", arg[1])
+		self.rightBar:SetStyleEx("VerticallyAligned", arg[1])
+		
+		self.leftBar:SetStyleEx("BRtoLT", arg[2])
+		self.rightBar:SetStyleEx("BRtoLT", not arg[2])
 	end
 	
-	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture, hTextPos, vTextPos)
-		local handler = {
-			SetProgress = setProgress,
-			SetText = setText,
-			SetFont = setFont,
-			SetTexture = setTexture,
-			SetColor = setColor,
-			SetTextColor = setTextColor,
-			SetTextPos = setTextPos,
-			SetUnused = unuse,
-		}
+	function Bar:SetUnused()
+		self.rightBar = self.rightBar:Destroy() or nil
+		self.leftBar = self.leftBar:Destroy() or nil
+		self.frame = self.frame:Destroy() or nil
+	end
+	
+	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture, hTextPos, vTextPos, orientation)
+		local handler = setmetatable({}, Bar)
 		handler.frame = Apollo.LoadForm(self.xmlDoc, "BarForm", parent, handler)
 		handler.leftBar = handler.frame:FindChild("LeftBar")
 		handler.rightBar = handler.frame:FindChild("RightBar")
@@ -196,6 +197,8 @@ do
 		
 		handler:SetTexture(lTexture, rTexture)
 		handler:SetTextPos(hTextPos, vTextPos)
+		
+		handler:SetOrientation(orientation or 'R')
 		
 		return handler
 	end
@@ -302,7 +305,7 @@ do
 		for i in ipairs( stacked ) do --the 'normally' placed bars
 			local tbl = options[i]
 			pos[4] = pos[2] + (tbl.size/total)
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 1], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 1], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation)
 			pos[2] = pos[4]
 		end
 		
@@ -310,12 +313,12 @@ do
 			local i = pos[0]
 			local tbl = options[pos]
 			pos = {0, i/total, 1, (tbl.size+i)/total}
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 2], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 2], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation)
 		end
 		
 		for _, pos in ipairs( fixed ) do --the fixed 'placed ontop' bars
 			local tbl = options[pos]
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 3], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 3], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation)
 		end
 	
 		handler.options = options

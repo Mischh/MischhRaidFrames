@@ -440,7 +440,12 @@ do
 			["Bottom"] = "Unten",
 			["Center"] = "Mitte",
 			["Horizontal Text Position:"] = "Horizontale Text-Position:",
-			["Vertical Text Position:"] = "Vertikale Text-Position:"
+			["Vertical Text Position:"] = "Vertikale Text-Position:",
+			["Right to Left"] = "Rechts nach Links",
+			["Left to Right"] = "Links nach Rechts",
+			["Bottom to Top"] = "Unten nach Oben",
+			["Top to Bottom"] = "Oben nach Unten",
+			["Orientation:"] = "Orientierung:",
 		}, {--French
 		})
 		local cBarChoices, cTrans = MRF:GetBarColors()
@@ -449,6 +454,7 @@ do
 		
 		local posMode = MRF:GetOption("Manager:Bar", "Mode")
 		local barLayer = MRF:GetOption("Manager:Bar", "Layer")
+		local barOrien = MRF:GetOption("Manager:Bar", "Orientation")
 		local fixedL = MRF:GetOption("Manager:Bar", "Left")
 		local fixedT = MRF:GetOption("Manager:Bar", "Top")
 		local fixedR = MRF:GetOption("Manager:Bar", "Right")
@@ -508,21 +514,20 @@ do
 			return x
 		end		
 		
+		local orientationChoices = {"R", "L", "B", "T"}
+		local transOrientationChoices = {
+			['L']=L["Right to Left"],
+			['R']=L["Left to Right"],
+			['T']=L["Bottom to Top"],
+			['B']=L["Top to Bottom"]}
+		
 		local layerChoices = {ipairs = function()
 			return ipairs({indexes(1,calcMaxLayer()+1)})
 		end}
 		
 		local textureChoices = {"WhiteFill", "ForgeUI_Smooth", "ForgeUI_Minimalist", "ForgeUI_Flat"}
-		
-		local _transTexChoices = {WhiteFill = "Fill", ForgeUI_Smooth = "ForgeUI: Smooth", ForgeUI_Minimalist = "ForgeUI: Minimalist", ForgeUI_Flat = "ForgeUI: Flat"}
-		local function transTexChoices(tex)
-			return _transTexChoices[tex or ""] or ""
-		end
-		
-		local _transTextPos = {l=L["Left"], r=L["Right"], t=L["Top"], b=L["Bottom"], c=L["Center"]}
-		local function transTextPos(x)
-			return _transTextPos[x or ""] or " - "
-		end
+		local transTexChoices = {WhiteFill = "Fill", ForgeUI_Smooth = "ForgeUI: Smooth", ForgeUI_Minimalist = "ForgeUI: Minimalist", ForgeUI_Flat = "ForgeUI: Flat"}
+		local transTextPos = {l=L["Left"], r=L["Right"], t=L["Top"], b=L["Bottom"], c=L["Center"]}
 		
 		local function transRelPosChoices(pos)
 			if type(pos) == "number" then
@@ -552,6 +557,7 @@ do
 		frameOptions:OnUpdate(barHandler, "UpdatedFrame")
 		posMode:OnUpdate(barHandler, "SwitchedMode")
 		barLayer:OnUpdate(barHandler, "SwitchedLayer")
+		barOrien:OnUpdate(barHandler, "SwitchedOrientation")
 		relPos:OnUpdate(barHandler, "SwitchedRelativePosition")
 		relSize:OnUpdate(barHandler, "SwitchedRelativeSize")
 		fixedL:OnUpdate(barHandler, "SwitchedFixed1")
@@ -593,13 +599,13 @@ do
 			
 			relPos:Set(rel); fixedL:Set(l); fixedT:Set(t); fixedR:Set(r); fixedB:Set(b);
 			if bar then 
-				barLayer:Set(bar.layer);
+				barLayer:Set(bar.layer); barOrien:Set(bar.barOrientation);
 				lColor:Set(bar.lColor); rColor:Set(bar.rColor);
 				lTexture:Set(bar.lTexture); rTexture:Set(bar.rTexture);
 				hTextPos:Set(bar.hTextPos); vTextPos:Set(bar.vTextPos);
 				txtSource:Set(bar.textSource); txtColor:Set(bar.textColor);
 			else
-				barLayer:Set(nil);
+				barLayer:Set(nil); barOrien:Set(nil);
 				lColor:Set(nil); rColor:Set(nil);
 				lTexture:Set(nil); rTexture:Set(nil);
 				hTextPos:Set(nil); vTextPos:Set(nil);
@@ -639,7 +645,7 @@ do
 					
 				elseif oldMode == "Not Shown" then
 					local c = MRF:GetDefaultColor()
-					bar = { size=1, modKey=mod, lColor=c, rColor=c, lTexture="WhiteFill", rTexture="WhiteFill"}
+					bar = { size=1, modKey=mod, lColor=c, rColor=c, lTexture="WhiteFill", rTexture="WhiteFill", barOrientation="R"}
 				else
 					--just set the old pos to nil
 					frameTmp[pos] = nil
@@ -723,6 +729,23 @@ do
 			bar.layer = newLay
 			
 			oldLay = newLay
+			
+			frameOptions:Set(frameTmp)
+		end
+		
+		local oldOri = nil
+		function barHandler:SwitchedOrientation(newOri)
+			if switchingTab or oldOri == newOri or type(newOri) ~= "string" then
+				oldOri = newOri
+				return
+			end
+			
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			bar.barOrientation = newOri
+			
+			oldOri = newOri
 			
 			frameOptions:Set(frameTmp)
 		end
@@ -924,6 +947,7 @@ do
 			
 			form:FindChild("Window_Top:lblBarPosition"):SetText(L["Bar-Position Mode:"])
 			form:FindChild("Window_Layer:lblLayer"):SetText(L["Layer:"])
+			form:FindChild("Window_Layer:lblOrientation"):SetText(L["Orientation:"])
 			form:FindChild("Window_Relative:lblRelPos"):SetText(L["Relative Position:"])
 			form:FindChild("Window_Relative:lblRelSize"):SetText(L["Relative Size:"])
 			form:FindChild("Window_Fixed:lblFixOffLeft"):SetText(L["Fixed Offset - Left:"])
@@ -951,6 +975,7 @@ do
 			
 			MRF:applyDropdown(form:FindChild("Window_Top:PositionMode"), {"Stacking", "Offset", "Fixed", "Not Shown"}, posMode, transPosMode)
 			MRF:applyDropdown(form:FindChild("Window_Layer:Layer"), layerChoices, barLayer, transLayer)
+			MRF:applyDropdown(form:FindChild("Window_Layer:Orientation"), orientationChoices, barOrien, transOrientationChoices)
 			MRF:applyDropdown(form:FindChild("Window_Relative:RelativePosition"), relPosChoices, relPos, transRelPosChoices)
 			MRF:applySlider(form:FindChild("Window_Relative:RelativeSize"), relSize, 1, 10, 1, false, false, true)
 			MRF:applySlider(form:FindChild("Window_Fixed:FixPosLeft"), fixedL, -0.5, 1.5, 0.01, true) --textbox: ignore steps
