@@ -109,6 +109,19 @@ local function distantUpdate(handler)
 	handler:SetText(handler.trans(handler.sel:Get()))
 end
 
+local function transToFunction(input)
+	local t = type(input)
+	if t=="function" then
+		return input
+	elseif t=="table" then
+		return function(val)
+			return input[val or false] or input[false] or " - "
+		end
+	else
+		return tostring
+	end
+end
+
 --parent will be completely filled with the dropdown.
 --choices is either a array, or a object with a :ipairs() method. (only ipairs(c)/c:ipairs() will be used to gain access to elements in the choices)
 --selector (of type Option) will be :Set() with a value from choices, when the user selects something in the Dropdown - it also supplies the Dropdown with the Object to display as text
@@ -118,7 +131,7 @@ end
 --if you do not want to display Text - just rewrite the :SetText(str) function.
 function MRF:applyDropdown(parent, choices, selector, translator, ...) 
 	
-	local handler = {data = choices, trans = translator or tostring, sel = selector, ipairs = choices.ipairs or ipairs}
+	local handler = {data = choices, trans = transToFunction(translator), sel = selector, ipairs = choices.ipairs or ipairs}
 	
 	handler.drop = self:LoadForm(FORM_DROPDOWN_TEMPLATE, parent, handler):FindChild("DropdownButton")
 	
