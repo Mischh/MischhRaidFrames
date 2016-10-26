@@ -236,7 +236,11 @@ do
 		end
 	})
 	
-	local modSources = {} --should contain the modKeys for every color returned by ipairs.
+	local modSources = setmetatable({}, {__index=function(t,k) --should contain the modKeys for every color returned by ipairs.
+		setmetatable(t, {}) --remove the metatable. to do this only once.
+		for _ in MRF:GetBarColors():ipairs() do	end --iterate over all of the bar-colors to insert all needed keys.
+		return t[k] --this does not end up in a stack overflow, because we removed the metatable (and most likely inserted a corresponding value)
+	end})
 	
 	local barColors = {
 		ipairs = function(self) --these locals....
