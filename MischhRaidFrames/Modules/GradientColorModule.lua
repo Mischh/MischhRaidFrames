@@ -185,11 +185,10 @@ function GradientMod:InitColorSettings(parent)
 	end
 	ModuleOptions:OnUpdate(function(opt) 
 		local i = selector:Get()
-		if not i or not opt[i] then
+		if not i or opt[i]~=selected:Get() then
 			local j = opt[1] and 1 or nil
-			if i~=j then --no moar stack overflow
-				selector:Set(j)
-			end
+			if not j and not i then return end
+			selector:Set(j)
 		end
 	end)
 	
