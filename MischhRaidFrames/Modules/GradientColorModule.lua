@@ -205,20 +205,22 @@ function GradientMod:InitColorSettings(parent)
 		
 		local curVal = nil
 		opt_sli:OnUpdate(function(newVal) 
-			if not self.switching and newVal~=curVal then
-				local sel = selected:Get()
-				if not sel then curVal = newVal; return end
-				sel.anchors[newVal] = sel.anchors[curVal]
-				sel.anchors[curVal] = nil
+			if newVal~=curVal then
+				if not self.switching then
+					local sel = selected:Get()
+					if not sel then curVal = newVal; return end
+					sel.anchors[newVal] = sel.anchors[curVal]
+					sel.anchors[curVal] = nil
+					selected:ForceUpdate()
+				end
 				
 				if index>1 then --adjust the slider of point above
 					self.sliders[index-1]:SetMinMax(nil,newVal-1)
 				end
-				if index<self.curNum then --adjust the slider of point below
+				if self.sliders[index+1] then --adjust the slider of point below
 					self.sliders[index+1]:SetMinMax(newVal+1)
 				end
 				
-				selected:ForceUpdate()
 			end
 			curVal = newVal
 		end)
