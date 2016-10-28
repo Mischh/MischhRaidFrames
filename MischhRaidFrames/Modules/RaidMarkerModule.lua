@@ -2,11 +2,11 @@
 
 local modKey = "Raid Markers"
 local MRF = Apollo.GetAddon("MischhRaidFrames")
-local MarkerMod, ModOptions = MRF:newModule(modKey , "icon", false)
+local MarkerMod, ModOptions = MRF:newModule(modKey , "icon", false, "color", false)
 
 local icons = MRF:GetModIcons(modKey)
 
-local activeOption = MRF:GetOption(ModOptions, "activated")
+local activeOption = MRF:GetOption(ModOptions, "activated") --activation of icon.
 
 local widthOpt = MRF:GetOption(ModOptions, "width")
 local heightOpt = MRF:GetOption(ModOptions, "height")
@@ -133,3 +133,102 @@ function MarkerMod:InitIconSettings(parent)
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
 end
 
+
+--############ COLOR ############
+
+local ref, refOpt = nil, MRF:GetOption(ModOptions, "colorReference")
+local colTblOpt = MRF:GetOption(ModOptions, "colorTable")
+
+local defaults = {
+	[0] = "FFFFFFFF",
+	"FFCC0003",				-- "Icon_Windows_UI_CRB_Marker_Bomb",
+	"FF00E5FF",				-- "Icon_Windows_UI_CRB_Marker_Ghost",
+	"FF14C800",				-- "Icon_Windows_UI_CRB_Marker_Mask",
+	"FF6600FF",				-- "Icon_Windows_UI_CRB_Marker_Octopus",
+	"FFFF86E1",				-- "Icon_Windows_UI_CRB_Marker_Pig",
+	"FFFFFF00",				-- "Icon_Windows_UI_CRB_Marker_Chicken",
+	"FF999999",				-- "Icon_Windows_UI_CRB_Marker_Toaster",
+	"FF0017E8",				-- "Icon_Windows_UI_CRB_Marker_UFO",
+}
+
+local colTbl = {
+	[0] = ApolloColor.new("FFFFFFFF"),
+	ApolloColor.new("FFCC0003"),				-- "Icon_Windows_UI_CRB_Marker_Bomb",
+	ApolloColor.new("FF00E5FF"),				-- "Icon_Windows_UI_CRB_Marker_Ghost",
+	ApolloColor.new("FF14C800"),				-- "Icon_Windows_UI_CRB_Marker_Mask",
+	ApolloColor.new("FF6600FF"),				-- "Icon_Windows_UI_CRB_Marker_Octopus",
+	ApolloColor.new("FFFF86E1"),				-- "Icon_Windows_UI_CRB_Marker_Pig",
+	ApolloColor.new("FFFFFF00"),				-- "Icon_Windows_UI_CRB_Marker_Chicken",
+	ApolloColor.new("FF999999"),				-- "Icon_Windows_UI_CRB_Marker_Toaster",
+	ApolloColor.new("FF0017E8"),				-- "Icon_Windows_UI_CRB_Marker_UFO",
+}
+
+local meta_ref = {
+	Get = function(_, unit)
+		local t = unit:GetTargetMarker()
+		return colTbl[t or 0]
+	end,
+	frequent = false,
+	name = "Raid Marker",
+} meta_ref.__index = meta_ref
+
+function MarkerMod:GetColorTable()
+	return {ref};
+end
+
+refOpt:OnUpdate(function(newRef)
+	if not newRef then
+		refOpt:Set({}) --will call this function again.
+	else
+		ref = setmetatable(newRef, meta_ref)
+	end
+end)
+
+for i=0,8,1 do
+	local opt = MRF:GetOption(colTblOpt, i)
+	opt:OnUpdate(function(colStr)
+		if not colStr then
+			opt:Set(defaults[i])
+		else
+			colTbl[i] = ApolloColor.new(colStr)
+		end
+	end)
+end
+
+function MarkerMod:InitColorSettings(parent)
+	local L = MRF:Localize({--English
+	}, {--German
+		["Not marked:"] = "Nicht markiert:",
+	}, {--French
+	})
+	
+	local icons = {
+		"Icon_Windows_UI_CRB_Marker_Bomb",
+		"Icon_Windows_UI_CRB_Marker_Ghost",
+		"Icon_Windows_UI_CRB_Marker_Mask",
+		"Icon_Windows_UI_CRB_Marker_Octopus",
+		"Icon_Windows_UI_CRB_Marker_Pig",
+		"Icon_Windows_UI_CRB_Marker_Chicken",
+		"Icon_Windows_UI_CRB_Marker_Toaster",
+		"Icon_Windows_UI_CRB_Marker_UFO",
+	}
+	
+	local rowDef = MRF:LoadForm("HalvedRow", parent)
+	rowDef:FindChild("Left"):SetText(L["Not marked:"])
+	MRF:applyColorbutton(rowDef:FindChild("Right"), MRF:GetOption(colTblOpt, 0))
+	
+	for i = 1, 8, 1 do
+		local row = MRF:LoadForm("HalvedRow", parent)
+		local icon = MRF:LoadForm("IconTemplate", row:FindChild("Left"))
+		icon:SetAnchorPoints(0.5, 0 , 0.5, 1)
+		icon:SetAnchorOffsets(-15, 0, 15, 0)
+		icon:SetSprite(icons[i])
+		MRF:applyColorbutton(row:FindChild("Right"), MRF:GetOption(colTblOpt, i))
+	end
+	
+	local anchor = {parent:GetAnchorOffsets()}
+	anchor[4] = anchor[2] + 9*30
+	parent:SetAnchorOffsets(unpack(anchor))
+	parent:ArrangeChildrenVert()
+	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+end
