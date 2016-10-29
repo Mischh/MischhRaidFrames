@@ -1210,8 +1210,6 @@ function MRF:InitGroupForm()
 	grpdHandler.parent = form:FindChild("Grouped:Items")
 	grouHandler.parent = form:FindChild("Groups:Items")
 	
-	local test = MRF:GetOption("Test")
-	
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Accept"), optAcc, L["Accept:"]).form:SetTooltip(L["ttAccept"])
 	MRF:applyDropdown(form:FindChild("SideTab:Dropdown_From"), {"lead", "assist", "all"}, optAccFrom, transAccept).drop:SetTooltip(L["ttFrom"])
