@@ -669,6 +669,14 @@ do --FastMenu
 			self:ShowMenuSlot(self.slotRanks, show)
 		end
 		
+		-- ### Open Masterloot ###
+		do
+			local loot = GameLib.GetMasterLoot()
+			local show = isRaid and loot and #loot>0 or true --false
+			self.btnMLoot:Enable(show)
+			self:ShowMenuSlot(self.slotMLoot, show)
+		end
+		
 		-- ### Disband Row ###
 		do
 			local show = isLead and noInst or false
@@ -734,6 +742,11 @@ do --FastMenu
 		self.frame:Show(false)
 	end
 	
+	function RClickHandler:ShowMasterloot( wndHandler, wndControl, eMouseButton )
+		if wndHandler ~= wndControl then return end
+		Event_FireGenericEvent("GenericEvent_ToggleGroupBag")
+	end
+	
 	function RClickHandler:ConvertToRaid( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		if GroupLib.AmILeader() then
@@ -779,6 +792,7 @@ do --FastMenu
 		self.btnReady = self.frame:FindChild("Button_Ready")
 		self.btnInstance = self.frame:FindChild("Button_Instance")
 		self.btnRanks = self.frame:FindChild("Button_Ranking")
+		self.btnMLoot = self.frame:FindChild("Button_Masterloot")
 		self.btnRaid = self.frame:FindChild("Button_2Raid")
 		self.btnDisband = self.frame:FindChild("Button_Disband")
 		
@@ -789,6 +803,7 @@ do --FastMenu
 		self.slotReady = self.frame:FindChild("Slot_Ready");		prep(self.slotReady)
 		self.slotSwitch = self.frame:FindChild("Slot_Switch");		prep(self.slotSwitch) 
 		self.slotRanks = self.frame:FindChild("Slot_Ranks");		prep(self.slotRanks)
+		self.slotMLoot = self.frame:FindChild("Slot_Masterloot");	prep(self.slotMLoot)
 		self.slotDisband = self.frame:FindChild("Slot_Disband");	prep(self.slotDisband)
 		self.slotLeave = self.frame:FindChild("Slot_Leave");		prep(self.slotLeave)
 		
