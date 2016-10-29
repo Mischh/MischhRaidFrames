@@ -12,7 +12,7 @@ do --all workarounds for :GetOption(...)
 	local update_suppess = false
 	
 	local function route(tbl, key1, key2, ...)
-		if key2 then
+		if key2~=nil then
 			if not tbl[key1] then tbl[key1] = {} end
 			return route(tbl[key1], key2, ...)
 		end
@@ -117,7 +117,7 @@ do --all workarounds for :GetOption(...)
 	end
 	
 	local function trackOption(option, childKey, ...)
-		if childKey then
+		if childKey~=nil then
 			option = getChild(option, childKey)
 			return trackOption(option, ...)
 		end
