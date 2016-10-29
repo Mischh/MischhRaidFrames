@@ -27,6 +27,7 @@ MRF:OnceDocLoaded(function()
 	Apollo.RegisterEventHandler("Group_MemberFlagsChanged", "GroupUpdate", UnitHandler)
 	Apollo.RegisterEventHandler("Group_SetMark", "GroupUpdate", UnitHandler)
 	Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", UnitHandler)
+	Apollo.RegisterEventHandler("UnitDestroyed", "OnUnitDestroyed", UnitHandler)
 	Apollo.RegisterEventHandler("NextFrame", "OnUpdate", UnitHandler)
 	unitTimer = ApolloTimer.Create(unittime, true, "CheckNextUnit", UnitHandler)
 	UnitHandler:GroupUpdate()
@@ -264,11 +265,17 @@ do
 	end
 	
 	function UnitHandler:OnUnitCreated(unit)
-		local name = unit:GetName()
-		local idx = groupIdx2Name[name or false]
+		local idx = groupIdx2Name[unit:GetName() or false]
 		if idx and units[idx] then
 			units[idx].unit = unit
 			MRF:PushUnitUpdateForFrameIndex(idx)
+		end
+	end
+	
+	function UnitHandler:OnUnitDestroyed(unit)
+		local idx = groupIdx2Name[unit:GetName() or false]
+		if idx and units[idx] then
+			self:UpdateUnit(idx)
 		end
 	end
 
