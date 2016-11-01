@@ -266,7 +266,7 @@ do
 	
 	function UnitHandler:OnUnitCreated(unit)
 		local idx = groupIdx2Name[unit:GetName() or false]
-		if idx and units[idx] then
+		if idx and units[idx] and not unit:IsMyGhost() then
 			units[idx].unit = unit
 			MRF:PushUnitUpdateForFrameIndex(idx)
 		end
