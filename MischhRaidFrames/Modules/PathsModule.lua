@@ -135,24 +135,23 @@ local colTbl = {
 	[PlayerPathLib.PlayerPathType_Explorer] 	= ApolloColor.new("FFFFFFFF"),
 }
 
-local meta_ref = {
-	Get = function(_, unit)
-		local t = unit:GetPlayerPathType()
-		return colTbl[t or false]
-	end,
-	frequent = false,
-	name = "Path",
-} meta_ref.__index = meta_ref
+local getColor = function(_, unit)
+	local t = unit:GetPlayerPathType()
+	return colTbl[t or false]
+end
 
 function PathMod:GetColorTable()
-	return {ref};
+	return {ref or {Get = getColor, frequent = false, name = "Path"}};
 end
 
 refOpt:OnUpdate(function(newRef)
 	if not newRef then
 		refOpt:Set({}) --will call this function again.
 	else
-		ref = setmetatable(newRef, meta_ref)
+		ref = newRef
+		ref.Get = getColor
+		ref.frequent = false
+		ref.name = "Path"
 	end
 end)
 

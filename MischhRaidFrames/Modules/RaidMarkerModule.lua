@@ -163,24 +163,23 @@ local colTbl = {
 	ApolloColor.new("FF0017E8"),				-- "Icon_Windows_UI_CRB_Marker_UFO",
 }
 
-local meta_ref = {
-	Get = function(_, unit)
-		local t = unit:GetTargetMarker()
-		return colTbl[t or 0]
-	end,
-	frequent = false,
-	name = "Raid Marker",
-} meta_ref.__index = meta_ref
+local getColor = function(_, unit)
+	local t = unit:GetTargetMarker()
+	return colTbl[t or 0]
+end
 
 function MarkerMod:GetColorTable()
-	return {ref};
+	return {ref or {Get = getColor, frequent = false, name = "Raid Marker"}};
 end
 
 refOpt:OnUpdate(function(newRef)
 	if not newRef then
 		refOpt:Set({}) --will call this function again.
 	else
-		ref = setmetatable(newRef, meta_ref)
+		ref = newRef
+		ref.Get = getColor
+		ref.frequent = false
+		ref.name = "Raid Marker"
 	end
 end)
 
