@@ -131,14 +131,14 @@ do --all workarounds for :GetOption(...)
 	function MRF:GetOption(parent, ...) --doing :GetOption(nil) returns you the whole profile. :Set() this to switch it.
 		-- build some sort of startpoint out of the parentOption.
 			-- nil -> option of option_parents[0]
-			-- string -> option of option_parents[string]
+			-- no table -> option of option_parents[string]
 			-- obj -> assume the obj is a option.
-		if type(parent) == "string" then
-			parent = getChild(master_option, parent)
-		elseif type(parent) ~= "table" then --default to [0]
+		if parent == nil then
 			parent = getChild(master_option, 0)
+		elseif type(parent) ~= "table" then
+			parent = getChild(master_option, parent)
 		end
-		
+			
 		--if neither of the above was true, we assume the table which was passed is a option.
 		return trackOption(parent, ...)
 	end
