@@ -5,6 +5,7 @@ local MRF = Apollo.GetAddon("MischhRaidFrames")
 Apollo.LinkAddon(MRF, FrameHandler)
 local Options = MRF:GetOption(nil, "Frame Handler")
 local dirOption = MRF:GetOption(Options, "direction")
+local ancOption = MRF:GetOption(Options, "anchorPosition")
 local lenOption = MRF:GetOption(Options, "length")
 local xOption = MRF:GetOption(Options, "xOffset")
 local yOption = MRF:GetOption(Options, "yOffset")
@@ -118,6 +119,9 @@ local vFrameSpace = 0
 local tHeaderSpace = 0
 local bHeaderSpace = 0
 
+local extendToRight = true --or false
+local extendToBottom = true --or false
+
 --stuff for :Reposition()
 local groups = nil; --gotten before first :Reposition (guaranteed)
 local groupFrames = {} --initialized in :InitGroupFrames
@@ -135,6 +139,19 @@ dirOption:OnUpdate(function(newVal)
 		dirOption:Set("col")
 	end
 end)
+
+do
+	local valid = {TL = true, TR = true, BL = true, BR = true}
+	ancOption:OnUpdate(function(sPos)
+		if type(sPos) ~= "string" or not valid[sPos] then
+			ancOption:Set("TL")
+		else
+			extendToBottom = sPos:sub(1,1) == "T" 	--if the anchor shall be positioned Top, we extend to bottom.
+			extendToRight = sPos:sub(2,2) == "L"	--if the anchor shall be positioned Left, we extend to right.
+			FrameHandler:Reposition()
+		end
+	end)
+end
 
 lenOption:OnUpdate(function(newVal) 
 	if type(newVal) == "number" and newVal > 0 then
@@ -276,28 +293,65 @@ local function calcCol_RowExtended()
 	return m
 end
 
-local function addFrames(uTbl, col, top, height, width)
+local function addFrames(uTbl, col, top, height, width, toRight) --toRight == start at 0 and move to the RIGHT
 	top = top + bHeaderSpace --space all Frames from the Header above
 
 	local bot = top+height
 	local i = 1
-	while true do
-		local left = 0
-		for c = 1, col, 1 do
-			if not uTbl[i] then
-				if c==1 then
-					return top + tHeaderSpace --space all Frames from the Header below
-				else
-					return bot + tHeaderSpace
+	if toRight then
+		while true do
+			local left = 0
+			for c = 1, col, 1 do
+				if not uTbl[i] then
+					if c==1 then
+						return top + tHeaderSpace --space all Frames from the Header below
+					else
+						return bot + tHeaderSpace
+					end
 				end
+				frames[uTbl[i]].frame:SetAnchorOffsets(left, top, left+width, bot)
+				left = left + width + hFrameSpace
+				i =  i+1
 			end
-			frames[uTbl[i]].frame:SetAnchorOffsets(left, top, left+width, bot)
-			left = left + width + hFrameSpace
-			i =  i+1
+			top = bot + vFrameSpace
+			bot = top+height
 		end
-		top = bot + vFrameSpace
-		bot = top+height
+	else
+		while true do
+			local right = 0
+			for c = 1, col, 1 do
+				if not uTbl[i] then
+					if c==1 then
+						return top + tHeaderSpace --space all Frames from the Header below
+					else
+						return bot + tHeaderSpace
+					end
+				end
+				frames[uTbl[i]].frame:SetAnchorOffsets(right-width, top, right, bot)
+				right = right - width - hFrameSpace
+				i =  i+1
+			end
+			top = bot+vFrameSpace
+			bot = top+height
+		end
 	end
+end
+
+local ceil = math.ceil
+local function totalHeight(sizFrame, sizHeader, columns)
+	if columns < 1 then return 0 end
+	
+	local rows = 0 --amount of rows that will be displayed
+	local grps = 0 --amount of groups using space.
+	for _, grp in ipairs(groups) do
+		if #grp>0 then
+			rows = rows + ceil(#grp/columns)
+			grps = grps + 1
+		end
+	end
+	
+	return 	( 	(grps-1)*tHeaderSpace + grps*(bHeaderSpace+sizHeader) 		--full space needed for headers
+			+ 	rows*sizFrame + (rows-grps)*vFrameSpace 				)	--full space needed for rows
 end
 
 function FrameHandler:Reposition()
@@ -306,24 +360,26 @@ function FrameHandler:Reposition()
 	FrameHandler:InitGroupFrames() --DO NOT CHANGE TO self - self WILL ALWAYS BE UnitHandler.
 	self.Reposition = function(self)
 		local col = (extendDir == "row" and calcCol_RowExtended or extendDir == "col" and calcCol_ColExtended)()
-		local top = 0
 		
 		local fHeight = frames[1].frame:GetHeight() --even if neither of both are created yet - they will be hidden on load.
 		local fWidth = frames[1].frame:GetWidth()
 		local hHeight = groupFrames.headers[1]:GetHeight()
-		
 		local totalWidth = col*fWidth + (col-1)*hFrameSpace
+		
+		local top = 	extendToBottom 	and 0 				or -totalHeight(fHeight, hHeight, col)
+		local left = 	extendToRight 	and 0 				or -totalWidth
+		local right = 	extendToRight 	and totalWidth 		or 0
 
 		for i, tbl in ipairs(groups) do
 			if tbl[1] then
 				--add header (i)
 				groupFrames.headers[i]:Show(true, false)
 				--configure header
-				groupFrames.headers[i]:SetAnchorOffsets(0, top, totalWidth, top+hHeight)
+				groupFrames.headers[i]:SetAnchorOffsets(left, top, right, top+hHeight)
 				groupFrames.headers[i]:FindChild("text"):SetText("("..#tbl..") "..tbl.name..":")
 				
 				--add all units
-				top = addFrames(tbl, col, top+hHeight, fHeight, fWidth)
+				top = addFrames(tbl, col, top+hHeight, fHeight, fWidth, extendToRight)
 			else
 				--hide Header
 				groupFrames.headers[i]:Show(false, false)
@@ -672,7 +728,7 @@ do --FastMenu
 		-- ### Open Masterloot ###
 		do
 			local loot = GameLib.GetMasterLoot()
-			local show = isRaid and loot and #loot>0 or true --false
+			local show = isRaid and loot and #loot>0 or false
 			self.btnMLoot:Enable(show)
 			self:ShowMenuSlot(self.slotMLoot, show)
 		end
@@ -921,6 +977,9 @@ end
 
 function FrameHandler:InitPositioningSettings(parent, name)
 	local L = MRF:Localize({--English
+		["qAnchorLoc"] = [[Choose which corner the Anchors location specifies.
+				'Top-Left' means the frames will grow to the Bottom Right of the Anchors position.]],
+	
 		["Anchor Left Offset:"] = "Anchor Left Offset:",
 		["Anchor Top Offset:"] = "Anchor Top Offset:",
 		["qOffset"] = [[These two sliders define where the top-left corner of the raid will be.]],
@@ -931,12 +990,22 @@ function FrameHandler:InitPositioningSettings(parent, name)
 		["qFill"] = [[These Options define which direction the addon should fill your raid first and how many its maximally allowed to display in that direction.
 				Note that if the addon is allowed to display less downside than there are groups(tanks, heals, dps), he will still display a row for each group.]],
 	}, {--German
+		["Anchor Location:"] = "Ankerpunkt:",
+		["Top-Left"] = "Oben-Links",
+		["Top-Right"] = "Oben-Rechts",
+		["Bottom-Left"] = "Unten-Links",
+		["Bottom-Right"] = "Unten-Rechts",
+		["qAnchorLoc"] = [[Wähle, welche Ecke vom Ankerpunkt festgelegt wird.
+				'Oben-Links' bedeutet, dass das Addon vom Ankerpunkt nach Rechts und Unten wachsen wird.]],
+	
 		["Anchor Left Offset:"] = "Ankerpunkt Links:",
 		["Anchor Top Offset:"] = "Ankerpunkt Oben:",
 		["qOffset"] = [[Diese Schieberegler ermöglichen es die obere linke Ecke des Raids zu verschieben.]],
 		["Fill-Direction:"] = "Füll-Richtung:",
-		["First right"] = "Rechts zuerst",
-		["First down"] = "Runter zuerst",
+		["First left"] = "Zuerst links",
+		["First right"] = "Zuerst rechts",
+		["First up"] = "Zuerst hoch",
+		["First down"] = "Zuerst runter",
 		["Fill-Until:"] = "Füllen, bis:",
 		["qFill"] = [[Diese Optionen definieren, in welche Richtung das Addon zunächst den Raid füllen soll und wieviele Frames es maximal in diese Richtung platzieren darf.]],
 	}, {--French
@@ -945,6 +1014,11 @@ function FrameHandler:InitPositioningSettings(parent, name)
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
+	
+	local aRow = MRF:LoadForm("HalvedRow", parent)
+	aRow:FindChild("Left"):SetText(L["Anchor Location:"])
+	MRF:applyDropdown(aRow:FindChild("Right"), {"TL", "TR", "BL", "BR"}, ancOption, {TL=L["Top-Left"], TR=L["Top-Right"], BL=L["Bottom-Left"], BR=L["Bottom-Right"]})
+	MRF:LoadForm("QuestionMark", aRow:FindChild("Left")):SetTooltip(L["qAnchorLoc"])
 	
 	local xRow = MRF:LoadForm("HalvedRow", parent)
 	xRow:FindChild("Left"):SetText(L["Anchor Left Offset:"])
@@ -957,13 +1031,27 @@ function FrameHandler:InitPositioningSettings(parent, name)
 	local aQuest = MRF:LoadForm("QuestionMark", xRow:FindChild("Left"))
 	aQuest:SetTooltip(L["qOffset"])
 	
+	local function transDir(x) 
+		if x == "row" then
+			if (ancOption:Get() or "TL"):sub(2,2) == "L" then
+				return L["First right"]
+			else
+				return L["First left"]
+			end
+		elseif x == "col" then
+			if (ancOption:Get() or "TL"):sub(1,1) == "T" then
+				return L["First down"]
+			else
+				return L["First up"]
+			end
+		else 
+			return "" 
+		end
+	end
+	
 	local dirRow = MRF:LoadForm("HalvedRow", parent)
 	dirRow:FindChild("Left"):SetText(L["Fill-Direction:"])
-	MRF:applyDropdown(dirRow:FindChild("Right"), {"row", "col"}, dirOption, function(x) 
-		if x == "row" then return L["First right"]
-		elseif x == "col" then return L["First down"]
-		else return "" end
-	end)
+	MRF:applyDropdown(dirRow:FindChild("Right"), {"row", "col"}, dirOption, transDir, ancOption) --update aswell, if ancOption changed (the anchor point switched, because the translation is different then)
 	
 	local lenRow = MRF:LoadForm("HalvedRow", parent)
 	lenRow:FindChild("Left"):SetText(L["Fill-Until:"])
