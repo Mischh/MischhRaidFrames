@@ -81,9 +81,9 @@ local function convert(tbl)
 	return copy
 end
 
-local function restoreConverted(orig)
+local function restoreConverted(orig, idx)
 	local cache = createCache(orig)
-	return restore(orig[orig[0]], cache)
+	return restore(orig[orig[idx]], cache)
 end
 
 function MRF:ToSaveData(tbl)
@@ -91,16 +91,43 @@ function MRF:ToSaveData(tbl)
 	return convert(tbl)
 end
 
+function MRF:CharToSaveData(charTbl, extra)
+	local data = self:ToSaveData(charTbl)
+	extra = extra or {}
+	data[-1] = keyTbl[tostring(extra)]
+	copyInto(data, data[-1], extra)
+	return data
+end
+
 function MRF:FromSaveData(tbl)
 	if not tbl or not tbl[0] or not tbl[tbl[0]] then return end
 	
-	return restoreConverted(tbl)
+	return restoreConverted(tbl, 0)
+end
+
+function MRF:CharFromSaveData(tbl)
+	if not tbl or not tbl[0] or not tbl[tbl[0]] then 
+		return 
+	end
+	
+	local data = restoreConverted(tbl, 0)
+	
+	if not tbl[-1] or not tbl[tbl[-1]] then
+		return data
+	end
+	
+	return data, restoreConverted(tbl, -1)
 end
 
 local saving = {[GameLib.CodeEnumAddonSaveLevel.Character] = true, 
 			[GameLib.CodeEnumAddonSaveLevel.Account] = true, 
 			[GameLib.CodeEnumAddonSaveLevel.General] = true,
 			[GameLib.CodeEnumAddonSaveLevel.Realm] = true}
+
+local nonProfile = {} --this is the place we store profile-independat settings
+local optCharSet = MRF:GetOption(true) --the option for all character-settings
+optCharSet:OnUpdate(function(val) nonProfile = val end)
+
 local profiles = {}
 local options = MRF:GetOption()
 local profile = MRF:GetOption("profile")
@@ -108,7 +135,9 @@ profile:OnUpdate(MRF, "SelectedProfile")
 
 function MRF:OnSave(eType)
 	if saving[eType] then
-		if profiles[eType] then
+		if eType == GameLib.CodeEnumAddonSaveLevel.Character then
+			return self:CharToSaveData(profiles[eType], nonProfile)
+		elseif profiles[eType] then
 			return self:ToSaveData(profiles[eType])
 		else
 			return nil
@@ -117,7 +146,9 @@ function MRF:OnSave(eType)
 end
 
 function MRF:OnRestore(eType, tbl)
-	if saving[eType] then
+	if eType == GameLib.CodeEnumAddonSaveLevel.Character then
+		profiles[eType], nonProfile = self:CharFromSaveData(tbl)
+	elseif saving[eType] then
 		profiles[eType] = self:FromSaveData(tbl)
 	end
 end
@@ -126,13 +157,13 @@ function MRF:LoadProfile(prof)
 	if not saving[prof] then return end
 	
 	--the character level is always loaded
-	profiles[GameLib.CodeEnumAddonSaveLevel.Character].profile = prof
 	
 	if not profiles[prof] then
 		profiles[prof] = self:GetDefaults()
 	end
 	
 	self.blockSwitch = true
+	profile:Set(prof)
 	
 	-- okay, this one is a little bit of a problem. We do not want to push updates on the
 	-- frame template, before all Color-Modules have been loaded. Else we risk a Error once
@@ -143,7 +174,6 @@ function MRF:LoadProfile(prof)
 	options:Set(profiles[prof])
 	frameOpt:UnblockUpdates() --this will do a :ForceUpdate()
 	
-	profile:Set(prof)
 	self.blockSwitch = false
 	
 	if self:CheckFrameTemplate(frameOpt:Get()) then
@@ -174,16 +204,83 @@ local oldLevel = nil
 function MRF:SelectedProfile(eLevel)
 	local err, traceback;
 	local succ, err = xpcall(function()
+		self:ApplyProfileToActionset(eLevel)
 		if self.blockSwitch or oldLevel == eLevel then oldLevel = eLevel; return end
 		oldLevel = eLevel
 		self:SwitchToProfile(eLevel)
 	end, function(err)
 		Print("Error while switching Profiles:")
-		Print(err)
-		Print(debug.traceback())
+		Print(debug.traceback(err))
 	end)	
 end
 
+do
+	local f = MRF.OnDocLoaded
+	function MRF:OnDocLoaded(...)
+		optCharSet:Set(nonProfile or {})
+		f(self,...)
+	end
+end
+
+local optProfiles = MRF:GetOption(optCharSet, "profiles")
+local optActCombine = MRF:GetOption(optProfiles, "combine")
+optActCombine:OnUpdate(function(val)
+	if val==nil then
+		optActCombine:Set(true)
+	else
+		MRF:GetOption(optProfiles, val and "all" or AbilityBook.GetCurrentSpec()):ForceUpdate()
+		
+		if val then
+			Apollo.RemoveEventHandler("SpecChanged", MRF)
+		else
+			Apollo.RegisterEventHandler("SpecChanged","OnActionsetChanged", MRF)
+		end
+	end
+end)
+
+function MRF:OnActionsetChanged(newSpecIndex, specError)
+	if specError ~= AbilityBook.CodeEnumSpecError.Ok and newSpecIndex then return end
+	profile:Set(MRF:GetOption(optProfiles, newSpecIndex):Get())
+end
+
+for idx = 1, 4, 1 do
+	local prof = MRF:GetOption(optProfiles, idx)
+	prof:OnUpdate(function(eLevel)
+		if not eLevel then
+			prof:Set(GameLib.CodeEnumAddonSaveLevel.Character)
+		elseif not optActCombine:Get() and AbilityBook.GetCurrentSpec() == idx then
+			if profile:Get() ~= eLevel then
+				profile:Set(eLevel)
+			end
+		end
+	end)
+end
+
+do idx = "all"
+	local prof = MRF:GetOption(optProfiles, idx)
+	prof:OnUpdate(function(eLevel)
+		if not eLevel then
+			prof:Set(GameLib.CodeEnumAddonSaveLevel.Character)
+		elseif optActCombine:Get() then
+			if profile:Get() ~= eLevel then
+				profile:Set(eLevel)
+			end
+		end
+	end)
+end
+
+function MRF:ApplyProfileToActionset(eLevel)
+	MRF:GetOption(optProfiles, "all"):Set(eLevel)
+	
+	if optActCombine:Get() then
+		MRF:GetOption(optProfiles, 1):Set(eLevel)
+		MRF:GetOption(optProfiles, 2):Set(eLevel)
+		MRF:GetOption(optProfiles, 3):Set(eLevel)
+		MRF:GetOption(optProfiles, 4):Set(eLevel)
+	else
+		MRF:GetOption(optProfiles, AbilityBook.GetCurrentSpec()):Set(eLevel)
+	end
+end
 
 -- We Assume 'to' is the currently displayed Profile, it will switch to it if not
 function MRF:CopyProfile(from, to) --both are of GameLib.CodeEnumAddonSaveLevel
@@ -340,28 +437,6 @@ function MRF:CheckFrameTemplate(frame)
 	end
 	return changed
 end
-
-do
-	local f = MRF.OnDocLoaded
-	function MRF:OnDocLoaded(...)
-		local char = GameLib.CodeEnumAddonSaveLevel.Character
-				
-		if not profiles[char] then
-			profiles[char] = self:GetDefaults()
-		end
-		
-		if not profiles[char].profile then
-			profiles[char].profile = char
-		end
-		
-		local new = profiles[char].profile
-	
-		profile:Set(new)
-	
-		f(self,...)
-	end
-end
-
 
 --CAREFUL FROM HERE ON, EVERYTHING MAGIC!
 
@@ -599,7 +674,13 @@ function ProfileTab:InitProfileTab(parent, name)
 		["ttTxImport"] = "Importiert das Profil aus der Textbox unten. Fehlerfreie Profile starten mit '<*zahl*|' und enden mit einem '>'. Es dürfen keine Leerstellen vor/nach dem Profil existieren. Die *zahl* ist abhängig von der Profilgröße, mit einer falschen *zahl* ist das Profil Fehlerhaft.",
 	}, {--French
 	})
+	
+	local form = MRF:LoadForm("SimpleTab", parent)
+	form:FindChild("Title"):SetText(name)
+	parent = form:FindChild("Space")
 
+	-- ########### Profile Management ############# --
+	
 	local invProf = {
 		[GameLib.CodeEnumAddonSaveLevel.Character] = "Character", 
 		[GameLib.CodeEnumAddonSaveLevel.Account] = "Account", 
@@ -631,15 +712,75 @@ function ProfileTab:InitProfileTab(parent, name)
 		end
 	end
 
-	local form = MRF:LoadForm("SimpleTab", parent)
-	form:FindChild("Title"):SetText(name)
-	parent = form:FindChild("Space")
-
+	local optProfiles = MRF:GetOption(true, "profiles")
+	
+	local actionsetRow = MRF:LoadForm("HalvedRow", parent)
+	MRF:applyCheckbox(actionsetRow, MRF:GetOption(optProfiles, "combine"), L["One profile for all Actionsets"])
 	local optProf = MRF:GetOption("profile")
-	local profRow = MRF:LoadForm("HalvedRow", parent)
-	MRF:LoadForm("QuestionMark", profRow:FindChild("Left")):SetTooltip(L["ttProfile"])
-	profRow:FindChild("Left"):SetText(L["Selected profile:"])
-	MRF:applyDropdown(profRow:FindChild("Right"), profiles, optProf, transProf)
+	optProf:OnUpdate(function(eLevel) 
+		actionsetRow:FindChild("Right"):SetText(L["Loaded Profile:"].." "..(eLevel and transProf(eLevel) or "-"))
+	end)
+	
+	
+	do --change upon changed actionset
+		local parent = MRF:LoadForm("Window", parent)
+		parent:SetAnchorPoints(0,0,1,0)
+		
+		local action1Row = MRF:LoadForm("HalvedRow", parent)
+		local action2Row = MRF:LoadForm("HalvedRow", parent)
+		local action3Row = MRF:LoadForm("HalvedRow", parent)
+		local action4Row = MRF:LoadForm("HalvedRow", parent)
+		action1Row:FindChild("Left"):SetText(L["Actionset 1:"])
+		action2Row:FindChild("Left"):SetText(L["Actionset 2:"])
+		action3Row:FindChild("Left"):SetText(L["Actionset 3:"])
+		action4Row:FindChild("Left"):SetText(L["Actionset 4:"])
+		MRF:applyDropdown(action1Row:FindChild("Right"), profiles, MRF:GetOption(optProfiles, 1), transProf)
+		MRF:applyDropdown(action2Row:FindChild("Right"), profiles, MRF:GetOption(optProfiles, 2), transProf)
+		MRF:applyDropdown(action3Row:FindChild("Right"), profiles, MRF:GetOption(optProfiles, 3), transProf)
+		MRF:applyDropdown(action4Row:FindChild("Right"), profiles, MRF:GetOption(optProfiles, 4), transProf)
+		
+		MRF:LoadForm("QuestionMark", action1Row:FindChild("Left")):SetTooltip(L["ttProfile"])
+		
+		parent:ArrangeChildrenVert()
+		local children = parent:GetChildren()
+		_TEST = children
+		local anchor = {parent:GetAnchorOffsets()}
+		local height = select(4, children[#children]:GetAnchorOffsets())
+		anchor[4] = height + anchor[2]
+		parent:SetAnchorOffsets(unpack(anchor))
+		parent:GetParent():RecalculateContentExtents()
+		
+		MRF:GetOption(optProfiles, "combine"):OnUpdate(function(comb)
+			local l, t, r, _ = parent:GetAnchorOffsets()
+			if comb then
+				parent:SetAnchorOffsets(l,t,r,t)
+			else
+				parent:SetAnchorOffsets(l,t,r,t+height)
+			end
+			ProfileTab:UpdateSize()
+		end)
+	end
+	
+	do --stay between all actionsets
+		local actionAllRow = MRF:LoadForm("HalvedRow", parent)
+		actionAllRow:FindChild("Left"):SetText(L["Selected profile:"])
+		MRF:applyDropdown(actionAllRow:FindChild("Right"), profiles, MRF:GetOption(optProfiles, "all"), transProf)
+		
+		MRF:LoadForm("QuestionMark", actionAllRow:FindChild("Left")):SetTooltip(L["ttProfile"])
+		
+		MRF:GetOption(optProfiles, "combine"):OnUpdate(function(comb)
+			local l, t, r, _ = actionAllRow:GetAnchorOffsets()
+			if comb then
+				actionAllRow:SetAnchorOffsets(l,t,r,t+30)
+			else
+				actionAllRow:SetAnchorOffsets(l,t,r,t)
+			end
+			ProfileTab:UpdateSize()
+		end)
+		
+	end
+	
+	-- ########### Copy ############# --
 	
 	MRF:LoadForm("HalvedRow", parent):SetText(L["Replace Profile:"])
 	
@@ -660,7 +801,7 @@ function ProfileTab:InitProfileTab(parent, name)
 		end
 	end)
 	
-	-- ########### ICOmm Lib ############# --
+	-- ########### ICComm Lib ############# --
 	MRF:LoadForm("HalvedRow", parent):SetText(L["Import/Export: ICComm Group"])
 	
 	local icprofile
@@ -856,14 +997,18 @@ function ProfileTab:InitProfileTab(parent, name)
 	MRF:LoadForm("QuestionMark", txexportRow:FindChild("Left")):SetTooltip(L["ttTxExport"])
 	MRF:LoadForm("QuestionMark", tximportRow:FindChild("Left")):SetTooltip(L["ttTxImport"])
 	
-	local children = parent:GetChildren()
-	local anchor = {parent:GetAnchorOffsets()}
-	anchor[4] = anchor[2] + #children*30 +150-- 150 from textbox (180-30) +5 for the looks.
-	parent:SetAnchorOffsets(unpack(anchor))
-	parent:ArrangeChildrenVert()
-	parent:GetParent():RecalculateContentExtents()
+	function ProfileTab:UpdateSize()
+		parent:ArrangeChildrenVert()
+		local children = parent:GetChildren()
+		local anchor = {parent:GetAnchorOffsets()}
+		anchor[4] = select(4, children[#children]:GetRect()) + anchor[2]
+		parent:SetAnchorOffsets(unpack(anchor))
+		parent:GetParent():RecalculateContentExtents()
+	end
+	ProfileTab:UpdateSize()
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
 	
+	optProfiles:ForceUpdate()
 	optProf:ForceUpdate() --this is not a child of Options!
 	Options:ForceUpdate()
 end
