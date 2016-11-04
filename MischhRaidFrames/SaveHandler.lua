@@ -627,7 +627,13 @@ function ProfileTab:InitProfileTab(parent, name)
 		["ttProfile"] = "Hier kann das verwendete Profil gewählt werden. Diese Profile geben auch ihre Sichtbarkeit an. So ist das Profil 'Charakter' nur für diesen Charakter sichtbar, 'Realm' hingegen kann von jedem Charakter dieses Accounts auf diesem Realm auf diesem Computer genutzt werden.",
 		["ttCopy"] = "Ersetzt den Inhalt des momentanen Profils mit dem Ausgewählten. Achtung! Wählen eines Profils wird das momentane SOFORT ersetzen.",
 	
+		["One profile for all Actionsets"] = "Ein Profil für alle Aktionssets",
+		["Loaded Profile:"] = "Aktives Profil:",
 		["Selected profile:"] = "Ausgewähltes Profil:",
+		["Actionset 1:"] = "Aktionsset 1:",
+		["Actionset 2:"] = "Aktionsset 2:",
+		["Actionset 3:"] = "Aktionsset 3:",
+		["Actionset 4:"] = "Aktionsset 4:",
 		["Replace Profile:"] = "Profil ersetzten:",
 		["Copy profile from:"] = "Kopiere dieses Profil:",
 		
@@ -725,6 +731,7 @@ function ProfileTab:InitProfileTab(parent, name)
 	do --change upon changed actionset
 		local parent = MRF:LoadForm("Window", parent)
 		parent:SetAnchorPoints(0,0,1,0)
+		parent:SetStyle("NoClip", false)
 		
 		local action1Row = MRF:LoadForm("HalvedRow", parent)
 		local action2Row = MRF:LoadForm("HalvedRow", parent)
