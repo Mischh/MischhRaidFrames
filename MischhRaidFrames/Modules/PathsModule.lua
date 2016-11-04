@@ -121,18 +121,18 @@ local paths = {
 
 local defaults = {
 	[false] = "FFFFFFFF",
-	[PlayerPathLib.PlayerPathType_Soldier] 		= "FFFFFFFF",
-	[PlayerPathLib.PlayerPathType_Settler] 		= "FFFFFFFF",
-	[PlayerPathLib.PlayerPathType_Scientist] 	= "FFFFFFFF",
-	[PlayerPathLib.PlayerPathType_Explorer] 	= "FFFFFFFF",
+	[PlayerPathLib.PlayerPathType_Soldier] 		= "FFBF0003",
+	[PlayerPathLib.PlayerPathType_Settler] 		= "FFFF9900",
+	[PlayerPathLib.PlayerPathType_Scientist] 	= "FF00F9FF",
+	[PlayerPathLib.PlayerPathType_Explorer] 	= "FF00C814",
 }
 
 local colTbl = {
 	[false] = ApolloColor.new("FFFFFFFF"),
-	[PlayerPathLib.PlayerPathType_Soldier] 		= ApolloColor.new("FFFFFFFF"),
-	[PlayerPathLib.PlayerPathType_Settler] 		= ApolloColor.new("FFFFFFFF"),
-	[PlayerPathLib.PlayerPathType_Scientist] 	= ApolloColor.new("FFFFFFFF"),
-	[PlayerPathLib.PlayerPathType_Explorer] 	= ApolloColor.new("FFFFFFFF"),
+	[PlayerPathLib.PlayerPathType_Soldier] 		= ApolloColor.new("FFBF0003"),
+	[PlayerPathLib.PlayerPathType_Settler] 		= ApolloColor.new("FFFF9900"),
+	[PlayerPathLib.PlayerPathType_Scientist] 	= ApolloColor.new("FF00F9FF"),
+	[PlayerPathLib.PlayerPathType_Explorer] 	= ApolloColor.new("FF00C814"),
 }
 
 local getColor = function(_, unit)
