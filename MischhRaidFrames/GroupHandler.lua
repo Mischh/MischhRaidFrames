@@ -8,15 +8,29 @@ local groups = {} --applied in GetGroupHandlersRegroup
 local units = {} --applied in GetGroupHandlersRegroup
 local tinsert = table.insert
 
+local function deprecated(opt, ...)
+	for _, key in ipairs({...}) do
+		local opt = MRF:GetOption(opt, key)
+		opt:OnUpdate(function(val)
+			if val == nil then return end
+			opt:Set(nil)
+		end)
+	end
+end
+
 local Options = MRF:GetOption(nil, "Group Handler")
+local CharOpt = MRF:GetOption(true, "Groupings")
+deprecated(Options, "cache", "saved", "use", "accept", "lead", "publish", "republish") --all of these are deprecated and not anymore in use.
+--Possibly remove this with upcoming updates ? What are the chances of somebody still having values, and even if, its 'only' dead data ^^
+local optSavedDef = MRF:GetOption(CharOpt, "cache")
+local optPermSave = MRF:GetOption(CharOpt, "saved")
+local optUse = MRF:GetOption(CharOpt, "use")
+local optAcc = MRF:GetOption(CharOpt, "accept")
+local optAccFrom = MRF:GetOption(CharOpt, "acceptFrom")
+local optPublish = MRF:GetOption(CharOpt, "publish")
+local optRepublish = MRF:GetOption(CharOpt, "republish")
+
 local optResort = MRF:GetOption(Options, "resort")
-local optSavedDef = MRF:GetOption(Options, "cache")
-local optPermSave = MRF:GetOption(Options, "saved")
-local optUse = MRF:GetOption(Options, "use")
-local optAcc = MRF:GetOption(Options, "accept")
-local optAccFrom = MRF:GetOption(Options, "lead")
-local optPublish = MRF:GetOption(Options, "publish")
-local optRepublish = MRF:GetOption(Options, "republish")
 local optActAcc = MRF:GetOption(Options, "activationAccept")
 local optDeactGrp = MRF:GetOption(Options, "decativationGroup")
 MRF:AddMainTab("Group Handler", GroupHandler, "InitSettings")
@@ -1287,6 +1301,7 @@ function MRF:InitGroupForm()
 	
 	grOptions:ForceUpdate()
 	Options:ForceUpdate()
+	CharOpt:ForceUpdate()
 	handler:Update()
 end
 
