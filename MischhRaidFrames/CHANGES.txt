@@ -1,3 +1,18 @@
+<p><strong>Release v1.11:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Bars: Now have orientations. (Left-&gt;Right, Top-&gt;Bottom etc.)</li>
+<li>RaidMarkers: Now supports a color aswell.</li>
+<li>FastMenu: Now has a 'Master Loot' Button to open the Master-Loot Bag.</li>
+<li>Paths: Added Icons and a Color for paths.</li>
+<li>Positioning: You can now choose, which corner the Anchor defines.</li>
+<li>Profile-Independant Settings: Added Settings, which are completely Character dependant: Profile-Selection and Groupings (Both Settings will be reset with this Update - The Profile itself will not be lost)</li>
+<li>Profiles:&nbsp;Can now be&nbsp;applied to different Actionsets.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Gradient Colors: Some Updating-Problems within the Settings.</li>
+</ul>
 <p><strong>Release v1.10a:</strong></p>
 <p>Added:</p>
 <ul>
