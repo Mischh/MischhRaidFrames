@@ -72,7 +72,7 @@ buildColorObj = function(colorObj)
 	local lastTbl = nil
 	for val, colorTbl in orderedPairs(colorObj.anchors, 0, 100) do
 		if not lastVal then
-			for i = 0, val, 100 do --apply the color of the first to all positions before the first color.
+			for i = 0, val, 1 do --apply the color of the first to all positions before the first color.
 				c[i] = ApolloColor.new(colorTbl)
 				end
 		else
@@ -348,6 +348,36 @@ function GradientMod:InitColorSettings(parent)
 		self.switching = false
 	end
 	
+	local previewHandler = {}
+	local floor, ceil = math.floor, math.ceil
+	function previewHandler:Apply(parent, option)
+		local width = parent:GetWidth()
+		for i = 0, 100, 1 do
+			self[i] = MRF:LoadForm("Window", parent)
+			self[i]:SetAnchorPoints(0,0.25,0,0.75)
+			self[i]:SetAnchorOffsets(width*(i+1)/103,0,(width*(i+2)/103),1)
+			self[i]:SetSprite("WhiteFill")
+			self[i]:SetTooltip(tostring(i).."%")
+		end
+		
+		
+		
+		option:OnUpdate(function(val)
+			if not previewHandler.timer then
+				previewHandler.timer = ApolloTimer.Create(0, false, "Update", previewHandler)
+			end
+			self.color = val
+		end)
+	end
+	
+	function previewHandler:Update()
+		self.timer = nil
+		if not self.color then return end
+		for i = 0, 100, 1 do
+			self[i]:SetBGColor(self.color:Get(nil, i/100))
+		end
+	end
+	
 	local rowRemove = MRF:LoadForm("HalvedRow", parent)
 	rowRemove:FindChild("Left"):SetText(L["Remove this Color:"])
 	MRF:applyDropdown(rowRemove:FindChild("Right"), colors, removeOpt, removeTrans)
@@ -356,7 +386,9 @@ function GradientMod:InitColorSettings(parent)
 	rowAdd:FindChild("Left"):SetText(L["Add a new Color:"])
 	MRF:LoadForm("Button",rowAdd:FindChild("Right"), addCHandler):SetText(L["Add"])
 	
-	MRF:LoadForm("HalvedRow", parent) --just to make some Space.
+	local previewRow = MRF:LoadForm("PreviewSlot", parent)
+	previewRow:SetAnchorOffsets(0,0,0,30)
+	previewHandler:Apply(previewRow, selected)
 	
 	local selectRow = MRF:LoadForm("HalvedRow", parent)
 	selectRow:FindChild("Left"):SetText(L["Select a color to be reworked:"])
