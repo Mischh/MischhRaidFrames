@@ -29,6 +29,7 @@ local optAcc = MRF:GetOption(CharOpt, "accept")
 local optAccFrom = MRF:GetOption(CharOpt, "acceptFrom")
 local optPublish = MRF:GetOption(CharOpt, "publish")
 local optRepublish = MRF:GetOption(CharOpt, "republish")
+local optSortUI = MRF:GetOption(CharOpt, "sortGroupUI")
 
 local optResort = MRF:GetOption(Options, "resort")
 local optActAcc = MRF:GetOption(Options, "activationAccept")
@@ -128,7 +129,7 @@ function GroupHandler:Regroup_User()
 	groups[unI] = {name = L["Ungrouped"]}
 	
 	for i, unit in ipairs(units) do
-		local n = unit:GetName()
+		local n = unit:GetMemberName()
 		local grI = userdef[n] or unI --group = the user-defenition, or ungrouped
 		local gr = groups[grI] or groups[unI]
 		gr[#gr+1] = i
@@ -274,7 +275,7 @@ function GroupHandler:GetNameIdTable() --VinceRaidFrames (adapted)
 	local memberNames = {}
 	local memberNameToId = {}
 	for _, unit in ipairs(units) do
-		tinsert(memberNames, unit:GetName())
+		tinsert(memberNames, unit:GetMemberName())
 	end
 	-- Sorted member names for short unique ids across clients!
 	table.sort(memberNames)
@@ -421,7 +422,7 @@ function GroupHandler:ICCommShareVersion()
 		if acceptFrom == "lead" then --if we only accept messages from our leader -> send him private message.
 			local leader = self:GetLead()
 			if not leader then return end
-			local leadName = leader:GetName()
+			local leadName = leader:GetMemberName()
 			if not leadName then return end
 			--we are compatible with this version of VRF, dont use any other.
 			self.channel:SendPrivateMessage(leadName, self:VRFSerialize({version = "0.17.2"}))
@@ -601,12 +602,12 @@ end
 function GroupHandler:IsLead(name)
 	for _, unit in ipairs(units) do
 		if unit:IsLeader() then
-			if unit:GetName() == name then
+			if unit:GetMemberName() == name then
 				return true --is leader and has name.
 			else
 				return false --is leader, but hasnt name.
 			end
-		elseif unit:GetName() == name then
+		elseif unit:GetMemberName() == name then
 			return false --isnt leader, but has name.
 		end
 	end
@@ -615,7 +616,7 @@ end
 
 function GroupHandler:IsLeadOrAssist(name)
 	for _, unit in ipairs(units) do
-		if unit:GetName() == name then
+		if unit:GetMemberName() == name then
 			if unit:IsRaidAssistant() then
 				return true
 			elseif unit:IsLeader() then
@@ -715,7 +716,7 @@ function GroupHandler:Resort_Name()
 	for gidx, group in ipairs(groups) do
 		local name2id = {}
 		for i, idx in ipairs(group) do
-			group[i] = units[idx]:GetName()
+			group[i] = units[idx]:GetMemberName()
 			name2id[group[i]] = idx
 		end
 		table.sort(group) -- sort alphabetically
@@ -785,10 +786,12 @@ optGrName:OnUpdate(handler, "UpdateGrName")
 optGrIdx:OnUpdate(handler, "UpdateGroupIndex")
 optLoad:OnUpdate(handler, "LoadIndex")
 optRemove:OnUpdate(handler, "RemoveIndex")
+optSortUI:OnUpdate(handler, "UpdateSortUI")
 
 local classColor = unpack(MRF:HasModule("Class Colors"):GetColorTable())
 local name2color = {}
 local name2text = {}
+local sortedNames = {}
 local nocolor = ApolloColor.new("FF666666")
 
 function handler:Update(onlyUI)
@@ -810,7 +813,7 @@ function GroupHandler:DistantUpdate()
 	name2color = {}
 	name2text = {}
 	for i, unit in ipairs(units) do
-		local n = unit:GetName()
+		local n = unit:GetMemberName()
 		local pre = (unit:IsTank() and "T" or unit:IsHeal() and "H" or "D")..": "
 		local c = classColor:Get(unit)
 		
@@ -818,7 +821,77 @@ function GroupHandler:DistantUpdate()
 		name2text[n] = pre..n
 	end
 	
+	self:SortUINames()
+	
 	handler:Update(true)
+end
+
+local tinsert = table.insert
+function GroupHandler:SortUINames()
+	if not units then return end
+	
+	local sort = optSortUI:Get()
+	if sort == "Name" then
+		local tbl = {}
+		for _, unit in ipairs(units) do
+			tinsert(tbl, unit:GetMemberName())
+		end
+		for idx in pairs(userdef) do
+			if type(idx) == "string" and not name2text[idx] then
+				tinsert(tbl, idx)
+			end
+		end
+		table.sort(tbl)
+		
+		sortedNames = tbl
+		return tbl
+	elseif sort == "Class" then
+		local t = {[GameLib.CodeEnumClass.Warrior] = {}, [GameLib.CodeEnumClass.Engineer] = {}, [GameLib.CodeEnumClass.Esper] = {}, [GameLib.CodeEnumClass.Medic] = {}, [GameLib.CodeEnumClass.Stalker] = {}, [GameLib.CodeEnumClass.Spellslinger] = {}}
+		for _, unit in ipairs(units) do
+			local id = unit:GetClassId()
+			tinsert(t[id], unit:GetMemberName())
+		end
+		
+		local noclass = {}
+		for idx in pairs(userdef) do
+			if type(idx) == "string" and not name2text[idx] then
+				tinsert(noclass, idx)
+			end
+		end
+		
+		sortedNames = append(t[GameLib.CodeEnumClass.Warrior], t[GameLib.CodeEnumClass.Engineer], 
+							t[GameLib.CodeEnumClass.Esper], t[GameLib.CodeEnumClass.Medic], 
+							t[GameLib.CodeEnumClass.Stalker], t[GameLib.CodeEnumClass.Spellslinger], noclass)
+		return sortedNames
+	elseif sort == "Role" then
+		local tanks , heals, dps = {},{},{}
+		for _, unit in ipairs(units) do
+			tinsert(unit:IsTank() and tanks or unit:IsHeal() and heals or dps, unit:GetMemberName())
+		end
+		
+		local norole = {}
+		for idx in pairs(userdef) do
+			if type(idx) == "string" and not name2text[idx] then
+				tinsert(norole, idx)
+			end
+		end
+		sortedNames = append(tanks, heals, dps, norole)
+		return sortedNames
+	else
+		local tbl = {}
+		for _, unit in ipairs(units) do
+			tinsert(tbl, unit:GetMemberName())
+		end
+		for idx in pairs(userdef) do
+			if type(idx) == "string" and not name2text[idx] then
+				tinsert(tbl, idx)
+			end
+		end
+		
+		sortedNames = tbl
+		return sortedNames
+	end
+
 end
 
 function handler:ReselectGroup()
@@ -885,8 +958,7 @@ end
 function handler:MoveToGroup() --Pressed '-->'
 	local idx = optGrIdx:Get()
 	if idx then
-		for i, unit in ipairs(units) do
-			local n = unit:GetName()
+		for i, n in ipairs(sortedNames) do
 			userdef[n] = userdef[n] or idx
 		end
 	end
@@ -1024,6 +1096,11 @@ function handler:RemoveIndex(idx)
 	end
 end
 
+function handler:UpdateSortUI()
+	GroupHandler:SortUINames()
+	handler:Update(true)
+end
+
 function grouHandler:GetText(idx)
 	local num = 0
 	for i, v in pairs(userdef) do
@@ -1066,12 +1143,14 @@ function grpdHandler:Redraw()
 	local idx = optGrIdx:Get()
 	
 	local i = 0
-	for name, grIndex in pairs(userdef) do
-		if grIndex == idx then
-			i = i+1
-			self[i]:SetText(self:GetText(name))
-			self[i]:SetTextColor(self:GetTextColor(name))
-			self[i]:SetData(name)
+	if idx then
+		for _, name in ipairs(sortedNames) do
+			if userdef[name] == idx then
+				i = i+1
+				self[i]:SetText(self:GetText(name))
+				self[i]:SetTextColor(self:GetTextColor(name))
+				self[i]:SetData(name)
+			end
 		end
 	end
 	
@@ -1089,31 +1168,23 @@ function grpdHandler:UnitSelected(button)
 	GroupHandler:ChangedGroupLayout()
 end
 
-function ungrHandler:GetText(unit)
-	local n = unit:GetName()
-	
-	if not name2text[n] then
-		unit:UpdateUnit() --I'm not actually sure why this breaks so badly, that we need this, but...
-		n = unit:GetName()
-	end
-	
+function ungrHandler:GetText(n)
 	return name2text[n] or n
 end
 
-function ungrHandler:GetTextColor(unit)
-	local n = unit:GetName()
+function ungrHandler:GetTextColor(n)
 	return name2color[n] or nocolor
 end 
 
 function ungrHandler:Redraw()
 	local i = 0
-	for _, unit in ipairs(units) do
-		local n = unit:GetName()
-		if not userdef[n] then
+	
+	for _, name in ipairs(sortedNames) do
+		if not userdef[name] then
 			i = i+1
-			self[i]:SetText(self:GetText(unit))
-			self[i]:SetTextColor(self:GetTextColor(unit))
-			self[i]:SetData(unit)
+			self[i]:SetText(self:GetText(name))
+			self[i]:SetTextColor(self:GetTextColor(name))
+			self[i]:SetData(name)
 		end
 	end
 	
@@ -1126,8 +1197,7 @@ function ungrHandler:UnitSelected(button)
 	local idx = optGrIdx:Get()
 	if not idx then return end
 	
-	local unit = button:GetData()
-	local n = unit:GetName()
+	local n = button:GetData()
 	
 	userdef[n] = idx
 	
@@ -1139,6 +1209,7 @@ end
 function MRF:InitGroupForm()
 	if form then return form:Show(true, false) end
 	
+	local _L = L
 	local L = MRF:Localize({--English
 		["Title"] = "MRF: Grouping",
 		["SaveTitle"] = "Save and Load",
@@ -1213,6 +1284,7 @@ function MRF:InitGroupForm()
 		["lead"] = "Leiter",
 		["assist"] = "Assistenten",
 		["all"] = "allen",
+		["Sort Grouping Frame:"] = "Gruppierungsfenster sortieren:",
 	}, {--French
 	})
 	
@@ -1235,6 +1307,7 @@ function MRF:InitGroupForm()
 	form:FindChild("Title"):SetText(L["Title"])
 	form:FindChild("lblUngrouped"):SetText(L["Ungrouped:"])
 	form:FindChild("lblGroups"):SetText(L["Groups:"])
+	form:FindChild("lblSorting"):SetText(L["Sort Grouping Frame:"])
 	form:FindChild("Group_Add"):SetText(L["Add"])
 	form:FindChild("Group_Remove"):SetText(L["Rem."])
 	form:FindChild("Group_Reset"):SetText(L["Reset All"])
@@ -1296,8 +1369,20 @@ function MRF:InitGroupForm()
 	end
 	MRF:applyDropdown(form:FindChild("SavesFrame:Dropdown_Load"), permRef, optLoad, trans)
 	MRF:applyDropdown(form:FindChild("SavesFrame:Dropdown_Remove"), permRef, optRemove, trans)
+
+	local optSort = MRF:GetOption(grOptions, "sortUI")
+	optSort:OnUpdate(function(val)
+		if val ~= "" then
+			optSort:Set("")
+			if val ~= nil then
+				optSortUI:Set(val)
+			end
+		end
+	end)
 	
 	
+	MRF:applyDropdown(form:FindChild("Dropdown_Sorting"), {false, "Role", "Class", "Name"}, optSort, 
+		{[false]=_L["None"], ["Role"]=_L["Role"], ["Class"]=_L["Class"], ["Name"]=_L["Name"], [""]=""})
 	
 	grOptions:ForceUpdate()
 	Options:ForceUpdate()

@@ -182,6 +182,7 @@ function FakePrototype:GetMemberIdx() return self.tbl.nMemberIdx or 1 end
 function FakePrototype:GetTargetMarker() return self.tbl.nMarkerId end
 function FakePrototype:GetClassId() return self.tbl.eClassId end
 function FakePrototype:GetName() return self.tbl.strCharacterName end
+function FakePrototype:GetMemberName() return self.tbl.strCharacterName end
 function FakePrototype:GetAbsorptionMax() return self.tbl.nAbsorbtionMax end
 function FakePrototype:GetAbsorptionValue() return self.tbl.nAbsorbtion end
 function FakePrototype:GetInterruptArmorMax() return self.tbl.nInterruptArmorMax end
@@ -266,9 +267,13 @@ do
 	
 	function UnitHandler:OnUnitCreated(unit)
 		local idx = groupIdx2Name[unit:GetName() or false]
-		if idx and units[idx] and not unit:IsMyGhost() then
-			units[idx].unit = unit
-			MRF:PushUnitUpdateForFrameIndex(idx)
+		if idx and units[idx] then
+			if unit:IsMyGhost() then
+				self:UpdateUnit(idx)
+			else
+				units[idx].unit = unit
+				MRF:PushUnitUpdateForFrameIndex(idx)
+			end
 		end
 	end
 	
