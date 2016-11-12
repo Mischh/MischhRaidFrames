@@ -1,3 +1,14 @@
+<p><strong>Release v1.11a:</strong></p>
+<p>Added:</p>
+<ul>
+<li>API-Bump to API 14</li>
+<li>GradientColors: Added a Preview</li>
+<li>GroupHandler: Added a Dropdown to sort the Groupings-UI</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>SaveHandler: On Startup the Addon always loaded the Profile associated with the first Spec.</li>
+</ul>
 <p><strong>Release v1.11:</strong></p>
 <p>Added:</p>
 <ul>
