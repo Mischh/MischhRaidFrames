@@ -215,11 +215,25 @@ function MRF:SelectedProfile(eLevel)
 end
 
 do
+	local initialSpec = nil
+	local timer = nil --you need to save this, because its getting garbage-collected if you dont.
+
 	local f = MRF.OnDocLoaded
 	function MRF:OnDocLoaded(...)
+		initialSpec = AbilityBook.GetCurrentSpec()
 		optCharSet:Set(nonProfile or {})
 		f(self,...)
+		timer = ApolloTimer.Create(3, false, "Timer_CheckInitalSpec", self)
 	end
+	
+	function MRF:Timer_CheckInitalSpec()
+		timer = nil
+		local spec = AbilityBook.GetCurrentSpec()
+		if spec ~= initialSpec then
+			self:OnActionsetChanged(spec, AbilityBook.CodeEnumSpecError.Ok)
+		end
+	end
+	
 end
 
 local optProfiles = MRF:GetOption(optCharSet, "profiles")
@@ -239,7 +253,7 @@ optActCombine:OnUpdate(function(val)
 end)
 
 function MRF:OnActionsetChanged(newSpecIndex, specError)
-	if specError ~= AbilityBook.CodeEnumSpecError.Ok and newSpecIndex then return end
+	if not optActCombine:Get() and specError ~= AbilityBook.CodeEnumSpecError.Ok and newSpecIndex then return end
 	profile:Set(MRF:GetOption(optProfiles, newSpecIndex):Get())
 end
 
