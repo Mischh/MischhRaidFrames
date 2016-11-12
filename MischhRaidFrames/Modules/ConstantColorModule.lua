@@ -143,7 +143,7 @@ function CColMod:InitColorSettings(parent)
 				if col == newVal then 
 					table.remove(ModuleOptions:Get(), i)
 					ModuleOptions:ForceUpdate()
-					MRF:RemovedColor(col)
+					MRF:GetOption("Event_RemovedColor"):Set(col)
 					break;
 				end
 			end

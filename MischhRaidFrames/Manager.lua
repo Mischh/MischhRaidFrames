@@ -371,6 +371,7 @@ do
 	end
 end
 
+MRF:GetOption("Event_RemovedColor"):OnUpdate(MRF, "RemovedColor")
 function MRF:RemovedColor(color)
 	local default = self:GetDefaultColor()
 	local frame = frameOptions:Get()
