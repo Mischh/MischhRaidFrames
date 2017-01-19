@@ -1086,6 +1086,7 @@ function handler:LoadIndex(idx)
 		optSName:Set(name)
 		optLoad:Set(nil)
 		self:Update()
+		GroupHandler:ChangedGroupLayout()
 	end
 end
 
@@ -1129,6 +1130,42 @@ end
 function grouHandler:GroupSelected(button)
 	if switching then return end
 	optGrIdx:Set(button:GetData())
+end
+
+function grouHandler:GroupUp(wndControl, wndHandler)
+	if wndControl ~= wndHandler then return end
+	local src = wndControl:GetParent():GetData() --the index the group is at right now.
+	local tar = src-1; if tar<1 then tar=#userdef end
+	
+	userdef[src], userdef[tar] = userdef[tar], userdef[src] --switch the names
+	for i,v in pairs(userdef) do
+		if v == src then
+			userdef[i] = tar
+		elseif v == tar then
+			userdef[i] = src
+		end
+	end
+	
+	handler:Update()
+	GroupHandler:ChangedGroupLayout()
+end
+
+function grouHandler:GroupDown(wndControl, wndHandler)
+	if wndControl ~= wndHandler then return end
+	local src = wndControl:GetParent():GetData() --the index the group is at right now.
+	local tar = src+1; if tar>#userdef then tar=1 end
+	
+	userdef[src], userdef[tar] = userdef[tar], userdef[src] --switch the names
+	for i,v in pairs(userdef) do
+		if v == src then
+			userdef[i] = tar
+		elseif v == tar then
+			userdef[i] = src
+		end
+	end
+	
+	handler:Update()
+	GroupHandler:ChangedGroupLayout()
 end
 
 function grpdHandler:GetText(name)
