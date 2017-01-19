@@ -451,6 +451,7 @@ do
 			["Bottom to Top"] = "Unten nach Oben",
 			["Top to Bottom"] = "Oben nach Unten",
 			["Orientation:"] = "Orientierung:",
+			["Text Font:"] = "Schriftart:"
 		}, {--French
 		})
 		local cBarChoices, cTrans = MRF:GetBarColors()
@@ -474,6 +475,7 @@ do
 		local vTextPos = MRF:GetOption("Manager:Bar", "vTextPos")
 		local txtSource = MRF:GetOption("Manager:Bar", "textSrc")
 		local txtColor = MRF:GetOption("Manager:Bar", "textColor")
+		local txtFont = MRF:GetOption("Manager:Bar", "textFont")
 								
 		local switchingTab = false
 		
@@ -577,6 +579,7 @@ do
 		vTextPos:OnUpdate(barHandler, "SwitchedVTextPos")
 		txtSource:OnUpdate(barHandler, "SwitchedTextSource")
 		txtColor:OnUpdate(barHandler, "SwitchedTextColor")
+		txtFont:OnUpdate(barHandler, "SwitchedTextFont")
 		
 		function barHandler:SwitchedTab(pnl) 
 			local mod = pnl2ModKey[pnl]
@@ -609,12 +612,14 @@ do
 				lTexture:Set(bar.lTexture); rTexture:Set(bar.rTexture);
 				hTextPos:Set(bar.hTextPos); vTextPos:Set(bar.vTextPos);
 				txtSource:Set(bar.textSource); txtColor:Set(bar.textColor);
+				txtFont:Set(bar.textFont);
 			else
 				barLayer:Set(nil); barOrien:Set(nil);
 				lColor:Set(nil); rColor:Set(nil);
 				lTexture:Set(nil); rTexture:Set(nil);
 				hTextPos:Set(nil); vTextPos:Set(nil);
 				txtSource:Set(nil); txtColor:Set(nil);
+				txtFont:Set(nil);
 			end
 			
 			switchingTab = false
@@ -650,7 +655,7 @@ do
 					
 				elseif oldMode == "Not Shown" then
 					local c = MRF:GetDefaultColor()
-					bar = { size=1, modKey=mod, lColor=c, rColor=c, lTexture="WhiteFill", rTexture="WhiteFill", barOrientation="R"}
+					bar = { size=1, modKey=mod, lColor=c, rColor=c, lTexture="WhiteFill", rTexture="WhiteFill", barOrientation="R", textFont="Nameplates"}
 				else
 					--just set the old pos to nil
 					frameTmp[pos] = nil
@@ -934,6 +939,21 @@ do
 			end
 		end
 		
+		local oldTFont = nil;
+		function barHandler:SwitchedTextFont(newFont)
+			if switchingTab or oldTFont == newFont then oldTFont = newFont; return end
+			
+			local pnl = shownTab:Get()
+			local mod = pnl2ModKey[pnl]
+			local bar = modKey2Bar[mod]
+			
+			oldTFont = newFont
+			if bar then 
+				bar.textFont = newFont
+				frameOptions:Set(frameTmp)
+			end
+		end
+		
 		function barHandler:GetPosMode(pos)
 			if type(pos) == "table" then 
 				return pos[0] and "Offset" or "Fixed" 
@@ -965,6 +985,7 @@ do
 			form:FindChild("Window_Bartexture:lblBarTextureR"):SetText(L["Missing Bartexture:"])
 			form:FindChild("Window_Text:lblTextSource"):SetText(L["Text Source:"])
 			form:FindChild("Window_Text:lblTextColor"):SetText(L["Text Color:"])
+			form:FindChild("Window_Text:lblTextFont"):SetText(L["Text Font:"])
 			form:FindChild("Window_Text:lblHorizontalPos"):SetText(L["Horizontal Text Position:"])
 			form:FindChild("Window_Text:lblVerticalPos"):SetText(L["Vertical Text Position:"])
 			
@@ -993,7 +1014,8 @@ do
 			MRF:applyDropdown(form:FindChild("Window_Bartexture:BarTextureLeft"), textureChoices, lTexture, transTexChoices)
 			MRF:applyDropdown(form:FindChild("Window_Bartexture:BarTextureRight"), textureChoices, rTexture, transTexChoices)
 			MRF:applyDropdown(form:FindChild("Window_Text:TextSource"), txtChoices, txtSource, txtTrans ) 
-			MRF:applyDropdown(form:FindChild("Window_Text:TextColor"), cTxtChoices, txtColor, cTrans )
+			MRF:applyDropdown(form:FindChild("Window_Text:TextColor"), cTxtChoices, txtColor, cTrans ) 
+			MRF:applyFontbox(form:FindChild("Window_Text:TextFont"), txtFont)
 			MRF:applyDropdown(form:FindChild("Window_Text:HorizontalPos"), {'l', 'c', 'r'}, hTextPos, transTextPos)
 			MRF:applyDropdown(form:FindChild("Window_Text:VerticalPos"), {'t', 'c', 'b'}, vTextPos, transTextPos)
 			

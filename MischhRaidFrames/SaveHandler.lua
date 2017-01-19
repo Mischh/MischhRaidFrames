@@ -447,6 +447,12 @@ function MRF:CheckFrameTemplate(frame)
 					changed = true
 				end
 			end
+			
+			if not bar.textFont then
+				Print("Found a bar("..tostring(bar.modKey)..") without a font - default to 'Nameplates'")
+				bar.textFont = "Nameplates"
+				changed = true
+			end
 		end
 	end
 	return changed

@@ -166,6 +166,10 @@ do
 		end
 	end
 	
+	function Bar:SetTextFont(font)
+		self.leftBar:SetFont(font or "Nameplates")
+	end
+	
 	-- 'L' 'T' 'R' 'B' for the direction to which its increasing towards
 	local orientations = {
 		L = {false, true},
@@ -187,7 +191,7 @@ do
 		self.frame = self.frame:Destroy() or nil
 	end
 	
-	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture, hTextPos, vTextPos, orientation)
+	function MischhRaidFrames:newBar(parent, pos, lTexture, rTexture, hTextPos, vTextPos, orientation, font)
 		local handler = setmetatable({}, Bar)
 		handler.frame = Apollo.LoadForm(self.xmlDoc, "BarForm", parent, handler)
 		handler.leftBar = handler.frame:FindChild("LeftBar")
@@ -199,6 +203,8 @@ do
 		handler:SetTextPos(hTextPos, vTextPos)
 		
 		handler:SetOrientation(orientation or 'R')
+		
+		handler:SetTextFont(font)
 		
 		return handler
 	end
@@ -237,7 +243,10 @@ do
 			barHandler:SetTexture(leftTexture, rightTexture)
 		end,
 		textposition = function(handler, barHandler, hPos, vPos)
-			barhandler:SetTextPos(hPos, vPos)
+			barHandler:SetTextPos(hPos, vPos)
+		end,
+		textfont = function(handler, barHandler, font)
+			barHandler:SetTextFont(font)
 		end
 	}
 	
@@ -305,7 +314,7 @@ do
 		for i in ipairs( stacked ) do --the 'normally' placed bars
 			local tbl = options[i]
 			pos[4] = pos[2] + (tbl.size/total)
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 1], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 1], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation, tbl.textFont)
 			pos[2] = pos[4]
 		end
 		
@@ -313,12 +322,12 @@ do
 			local i = pos[0]
 			local tbl = options[pos]
 			pos = {0, i/total, 1, (tbl.size+i)/total}
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 2], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 2], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation, tbl.textFont)
 		end
 		
 		for _, pos in ipairs( fixed ) do --the fixed 'placed ontop' bars
 			local tbl = options[pos]
-			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 3], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation)
+			handler[tbl.modKey] = MischhRaidFrames:newBar(handler.layers[tbl.layer or 3], pos, tbl.lTexture, tbl.rTexture, tbl.hTextPos, tbl.vTextPos, tbl.barOrientation, tbl.textFont)
 		end
 	
 		handler.options = options
