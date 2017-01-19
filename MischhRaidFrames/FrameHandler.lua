@@ -486,6 +486,7 @@ function FrameHandler:InitGroupFrames()
 	groupFrames.headers = setmetatable({}, {__index = function(t,k) 
 		local h = MRF:LoadForm("GroupHeader", parentFrame, self)
 		rawset(t,k,h)
+		self:ApplyHeaderStyle(h)
 		return h
 	end})
 end
@@ -502,6 +503,77 @@ function FrameHandler:OnClickHeader(wndHandler, wndControl, eMouseButton)
 	if wndControl:GetName() == "GroupHeader" and eMouseButton == GameLib.CodeEnumInputMouse.Right then
 		MRF:ShowFastMenu(wndControl)
 	end
+end
+
+local optHeadColor = MRF:GetOption(Options, "headColor")
+local optHeadSize = MRF:GetOption(Options, "headSize")
+local optHeadFill = MRF:GetOption(Options, "headFill")
+local optTextColor = MRF:GetOption(Options, "headTextColor")
+local optTextFont = MRF:GetOption(Options, "headTextFont")
+do 
+	local hCol, hSiz, hFil, tCol, tFon = ApolloColor.new("FF000000"), 15, 0.5, ApolloColor.new("FFFFFFFF"), "Nameplates"
+	optHeadColor:OnUpdate(function(newCol) 
+		if newCol then
+			hCol = ApolloColor.new(newCol)
+			FrameHandler:ApplyHeaderStyle(nil)
+			FrameHandler:Reposition()
+		else
+			optHeadColor:Set("FF000000")
+		end 
+	end)
+	optHeadSize:OnUpdate(function(newSiz)
+		if newSiz then
+			hSiz = newSiz
+			FrameHandler:ApplyHeaderStyle(nil)
+			FrameHandler:Reposition()
+		else
+			optHeadSize:Set(15)
+		end 
+	end)
+	optHeadFill:OnUpdate(function(newFil)
+		if newFil then
+			hFil = 1-newFil
+			FrameHandler:ApplyHeaderStyle(nil)
+			FrameHandler:Reposition()
+		else
+			optHeadFill:Set(0.5)
+		end
+	end)
+	optTextColor:OnUpdate(function(newCol)
+		if newCol then
+			tCol = ApolloColor.new(newCol)
+			FrameHandler:ApplyHeaderStyle(nil)
+			FrameHandler:Reposition()
+		else
+			optTextColor:Set("FFFFFFFF")
+		end
+	end)
+	optTextFont:OnUpdate(function(newFont)
+		if newFont then
+			tFon = newFont
+			FrameHandler:ApplyHeaderStyle(nil)
+			FrameHandler:Reposition()
+		else
+			optTextFont:Set("Nameplates")
+		end
+	end)
+	
+	function FrameHandler:ApplyHeaderStyle(header)
+		if not header then --assume to do it to all of them.
+			for i, head in ipairs(groupFrames.headers or {}) do
+				self:ApplyHeaderStyle(head)
+			end
+		else
+			local txt = header:FindChild("text")
+			local line = header:FindChild("line")
+			
+			line:SetBGColor(hCol)
+			header:SetAnchorOffsets(0, 0, 200, hSiz)
+			line:SetAnchorPoints(0, hFil, 1, 1)
+			txt:SetTextColor(tCol)
+			txt:SetFont(tFon)
+		end
+	end 
 end
 
 do --FastMenu
@@ -963,6 +1035,29 @@ function FrameHandler:InitGeneralSettings(parent, name)
 	local bRow = MRF:LoadForm("HalvedRow", parent)
 	bRow:FindChild("Left"):SetText(L["Background Color:"])
 	MRF:applyColorbutton(bRow:FindChild("Right"), bOpt)
+	
+	local spacer = MRF:LoadForm("HalvedRow", parent)
+	spacer:SetText(L["Headers:"])
+	
+	local headHRow = MRF:LoadForm("HalvedRow", parent)
+	headHRow:FindChild("Left"):SetText(L["Header Height:"])
+	MRF:applySlider(headHRow:FindChild("Right"), optHeadSize, 1, 50, 1, false, false, true) --textbox: no pos limit
+	
+	local headFRow = MRF:LoadForm("HalvedRow", parent)
+	headFRow:FindChild("Left"):SetText(L["Filled Portion:"])
+	MRF:applySlider(headFRow:FindChild("Right"), optHeadFill, 0, 1, 0.05, true, false, false) --nosteps
+	
+	local headCRow = MRF:LoadForm("HalvedRow", parent)
+	headCRow:FindChild("Left"):SetText(L["Filling Color:"])
+	MRF:applyColorbutton(headCRow:FindChild("Right"), optHeadColor)
+	
+	local hTxtFRow = MRF:LoadForm("HalvedRow", parent)
+	hTxtFRow:FindChild("Left"):SetText(L["Font:"])
+	MRF:applyFontbox(hTxtFRow:FindChild("Right"), optTextFont)
+	
+	local hTxtCRow = MRF:LoadForm("HalvedRow", parent)
+	hTxtCRow:FindChild("Left"):SetText(L["Text Color:"])
+	MRF:applyColorbutton(hTxtCRow:FindChild("Right"), optTextColor)
 	
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
