@@ -8,7 +8,7 @@ local MRF = Apollo.GetAddon("MischhRaidFrames")
 do --all workarounds for :GetOption(...)
 	local option_parents = {};
 	local master_option = {route = {}, children = {}}; --this is only a fake Option for :GetOption(); the children may change (and will)
-	local template_option = {};
+	local template_option = {}; template_option.__index = template_option
 	local update_suppess = false
 	
 	local function route(tbl, key1, key2, ...)
@@ -104,9 +104,8 @@ do --all workarounds for :GetOption(...)
 			updating = {},
 		}
 		
-		for i,v in pairs(template_option) do --apply the template for :Get, :Set, :OnUpdate & :ForceUpdate
-			option[i] = v
-		end
+		setmetatable(option, template_option)
+		
 		
 		return option
 	end
