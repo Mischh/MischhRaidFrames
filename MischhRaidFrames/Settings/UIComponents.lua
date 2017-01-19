@@ -7,6 +7,7 @@ local FORM_CHECKBOX_TEMPLATE = "Checkbox"
 local FORM_TEXTBOX_TEMPLATE = "TextBox"
 local FORM_COLORPICKER_TEMPLATE = "ColorPicker"
 local FORM_COLORBUTTON_TEMPLATE = "ColorButton"
+local FORM_FONTBOX_TEMPLATE = "FontBox"
 
 local settingsForm = nil;
 
@@ -678,6 +679,266 @@ do
 		MRF:LoadForm("QuestionMark", parent):SetTooltip(L["ttPreview"])
 		
 		handler:ButtonClick(btn) --Redraw or initially draw the Preview
+	end
+end
+
+do--[[#####  Fontbox #####]] --:applyFontbox(parent, selector)
+	local Fontbox = {}; Fontbox.__index = Fontbox
+	local trans = setmetatable({
+		["_I"] = "I",
+		["_O"] = "O",
+		["_BO"] = "BO",
+		["_BBO"] = "BBO",
+		["_BB"] = "BB",
+		["_B"] = "B",
+		["_Huge"] = "Huge",
+		["_Small"] = "Small",
+		["CRB_Dialog_Heading"] = "Dialog Heading",
+	},{__index = function(t, k)
+		if k:sub(1,4) == "CRB_" then
+			t[k] = k:sub(5,-1)
+		else
+			t[k] = k
+		end
+		return t[k]
+	end})
+
+	local none = {"",[0] = 1}
+	local none2 = {"", [""] = none, [0] = 1}
+	local NoAndO = {"", "_O", [0] = 1}
+	local NoAndI = {"", "_I", [0] = 1}
+	local alot = {"", "_B", "_BB", "_BBO", "_BO", "_I", "_O", [0] = 1}
+
+	local fonts = {
+		[0] = 14, --0 is always the default
+		"Courier", "CRB_Alien", "CRB_Button", "CRB_ButtonHeader", "CRB_Dialog",
+		"CRB_Dialog_Heading", "CRB_Floater", "CRB_Header", "CRB_Interface", "CRB_Pixel",
+		"CRB_ResourceOnly", "Default", "DefaultButton",	"Nameplates",
+		Subtitle = none2,
+		Thick = none2,
+		Courier = none2,
+		CRB_Alien = {
+			[0] = 3,
+			"Huge", "Large", "Medium", "Small",
+			["Huge"] = none,
+			["Large"] = none,
+			["Medium"] = none,
+			["Small"] = none,
+		}, CRB_Button = none2,
+		CRB_ButtonHeader = none2,
+		CRB_Dialog = {
+			"",
+			[""] = NoAndI,
+			[0] = 1,
+		}, CRB_Dialog_Heading = {
+			"", "_Huge", "_Small",
+			[""] = none,
+			["_Huge"] = none,
+			["_Small"] = none,
+			[0] = 1,
+		}, CRB_Floater = {
+			"Small", "Medium", "Large", "Huge", "Gigantic",
+			Small = none,
+			Medium = none,
+			Large = none,
+			Huge = NoAndO,
+			Gigantic = NoAndO,
+			[0] = 2,
+		}, CRB_Header = {
+			"Tiny", "Small", "Medium", "Large", "Huge", "Huger", "Gigantic",
+			"9", "10", "11", "12", "13", "14", "16", "18", "20", "24",
+			["Tiny"] = NoAndO, ["Small"] = NoAndO, ["Medium"] = NoAndO,
+			["Large"] = NoAndO, ["Huge"] = NoAndO, ["Huger"] = NoAndO,
+			["Gigantic"] = NoAndO, ["9"] = NoAndO, ["10"] = NoAndO, ["11"] = NoAndO,
+			["12"] = NoAndO, ["13"] = NoAndO, ["14"] = {"", "_O", "NoDrop", [0] = 1},
+			["16"] = NoAndO, ["18"] = NoAndO, ["20"] = NoAndO, ["24"] = NoAndO,
+			[0] = 3,
+		}, CRB_Interface = {
+			"Tiny", "Small", "Medium", "Large", "7", "9", "10", "11", "12", "14", "16",
+			["7"] = {"_BB",[0] = 1}, ["Tiny"] = {"_BB",[0] = 1},
+			["Small"] = {"", "_B", "_BB", "_I", "_O", [0] = 1,},
+			["Medium"] = alot, ["Large"] = alot, ["9"] = alot,
+			["10"] = alot, ["11"] = alot, ["12"] = alot, ["14"] = alot,
+			["16"] = alot,
+			[0] = 3,
+		}, CRB_Pixel = {"", [""] = NoAndO, [0] = 1},
+		CRB_ResourceOnly = none2,
+		Default = none2,
+		DefaultButton = none2,
+		Nameplates = none2,
+		Subtitle = none2,
+		Thick = none2,
+	}
+	local defA, defB, defC = fonts[0], fonts[fonts[fonts[0]]][0], fonts[fonts[fonts[0]]][fonts[fonts[fonts[0]]][fonts[fonts[fonts[0]]][0]]][0]
+
+	local function getIndexes(x)
+		--searches through the fonts -> returns first second and thrid index inside 'fonts'
+		local y, z;
+
+		for a, s1 in ipairs(fonts) do
+			y = x:match("^"..s1.."(.*)$")
+			if y then
+				for b, s2 in ipairs(fonts[s1]) do
+					z = y:match("^"..s2.."(.*)$")
+					if z then
+						for c, s in ipairs(fonts[s1][s2]) do
+							if z == tostring(s) then
+								return a, b, c
+							end
+						end
+					end
+				end
+			end
+		end
+
+		return nil
+	end
+
+	local function concat(a, b, c) --combines the font suggested by the indexes a, b and c
+		a = fonts[a]
+		b = fonts[a][b]
+		c = fonts[a][b][c]
+		return a..b..c
+	end
+
+	function Fontbox:SetIndex(a, b, c)
+		--make sure a,b,c are given.
+		if a and not b then
+			local aIdx = fonts[a]
+			b = fonts[aIdx][0]
+			local bIdx = fonts[aIdx][b]
+			c = fonts[aIdx][bIdx][0]
+		elseif b and not c then
+			a = a or self.a or fonts[0]
+			local aIdx = fonts[a]
+			local bIdx = fonts[aIdx][b]
+			c = fonts[aIdx][bIdx][0]
+		elseif c then
+			a = a or self.a or fonts[0]
+			b = b or self.b or fonts[fonts[a]][0]
+		elseif not a and not b and not c then
+			a = fonts[0] --9
+			local aIdx = fonts[a] --'CRB_Interface'
+			b = fonts[aIdx][0] --3
+			local bIdx = fonts[aIdx][b]
+			c = fonts[aIdx][bIdx][0]
+		end
+
+		local strA = fonts[a]
+		local tblA = fonts[strA]
+		local strB = tblA[b]
+		local tblB = tblA[strB]
+		local strC = tblB[c]
+
+		self.txtName:SetText(trans[strA])
+		self.txtSize:SetText(trans[strB])
+		self.txtAttr:SetText(trans[strC])
+
+		self.a = a
+		self.b = b
+		self.c = c
+
+		self.btnLSize:Enable(#tblA > 1)
+		self.btnRSize:Enable(#tblA > 1)
+
+		self.btnLAttr:Enable(#tblB > 1)
+		self.btnRAttr:Enable(#tblB > 1)
+
+		if not self.block then
+			self.block = true
+			self.opt:Set(strA..strB..strC)
+			self.block = false
+		end
+	end
+
+	function Fontbox:OnUpdate(val)
+		if self.block then return end
+		self.block = true
+		local a,b,c;
+		if val and type(val) == "string" then
+			a, b, c = getIndexes(val)
+		end
+		if not a then --return to default!
+			a, b, c = defA, defB, defC
+		end
+
+		self:SetIndex(a,b,c)
+
+		self.block = false
+	end
+
+	function Fontbox:NameLeft(wndControl, wndHandler)
+		if wndControl ~= wndHandler then return end
+		local a = self.a-1
+		if a == 0 then
+			a = #fonts
+		end
+		self:SetIndex(a, nil, nil)
+	end
+	function Fontbox:NameRight(wndControl, wndHandler)
+		if wndControl ~= wndHandler then return end
+		local a = self.a+1
+		if a > #fonts then
+			a = 1
+		end
+		self:SetIndex(a, nil, nil)
+	end
+	function Fontbox:SizeLeft(wndControl, wndHandler)
+		if wndControl ~= wndHandler then return end
+		local b = self.b-1
+		if b == 0 then
+			local tbl = fonts[fonts[self.a]]
+			b = #tbl
+		end
+		self:SetIndex(nil, b, nil)
+	end
+	function Fontbox:SizeRight(wndControl, wndHandler)
+		if wndControl ~= wndHandler then return end
+		local b = self.b+1
+		local tbl = fonts[fonts[self.a]]
+		if b > #tbl then
+			b = 1
+		end
+		self:SetIndex(nil, b, nil)
+	end
+	function Fontbox:AttributeLeft(wndControl, wndHandler)
+		if wndControl ~= wndHandler then return end
+		local c = self.c-1
+		if c == 0 then
+			local tbl = fonts[fonts[self.a]][fonts[fonts[self.a]][self.b]]
+			c = #tbl
+		end
+		self:SetIndex(nil, nil, c)
+	end
+	function Fontbox:AttributeRight(wndControl, wndHandler)
+		if wndControl ~= wndHandler then return end
+		local c = self.c+1
+		local tbl = fonts[fonts[self.a]][fonts[fonts[self.a]][self.b]]
+		if c > #tbl then
+			c = 1
+		end
+		self:SetIndex(nil, nil, c)
+	end
+
+	function MRF:applyFontbox(parent, selector)
+		local handler = setmetatable({
+			opt = selector,
+			block = false,
+			a = defA,
+			b = defB,
+			c = defC,
+		}, Fontbox)
+		local form = MRF:LoadForm(FORM_FONTBOX_TEMPLATE, parent, handler)
+		handler.txtName = form:FindChild("BaseName:Text")
+		handler.txtSize = form:FindChild("Size:Text")
+		handler.txtAttr = form:FindChild("Attribute:Text")
+		handler.btnLSize = form:FindChild("Size:Left")
+		handler.btnRSize = form:FindChild("Size:Right")
+		handler.btnLAttr = form:FindChild("Attribute:Left")
+		handler.btnRAttr = form:FindChild("Attribute:Right")
+
+		selector:OnUpdate(handler, "OnUpdate")
+		return handler
 	end
 end
 
