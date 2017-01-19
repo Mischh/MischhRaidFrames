@@ -710,7 +710,7 @@ do--[[#####  Fontbox #####]] --:applyFontbox(parent, selector)
 	local alot = {"", "_B", "_BB", "_BBO", "_BO", "_I", "_O", [0] = 1}
 
 	local fonts = {
-		[0] = 14, --0 is always the default
+		[0] = 12, --0 is always the default
 		"Courier", "CRB_Alien", "CRB_Button", "CRB_ButtonHeader", "CRB_Dialog",
 		"CRB_Dialog_Heading", "CRB_Floater", "CRB_Header", "CRB_Interface", "CRB_Pixel",
 		"CRB_ResourceOnly", "Default", "DefaultButton",	"Nameplates",
@@ -817,11 +817,22 @@ do--[[#####  Fontbox #####]] --:applyFontbox(parent, selector)
 			a = a or self.a or fonts[0]
 			b = b or self.b or fonts[fonts[a]][0]
 		elseif not a and not b and not c then
-			a = fonts[0] --9
-			local aIdx = fonts[a] --'CRB_Interface'
-			b = fonts[aIdx][0] --3
-			local bIdx = fonts[aIdx][b]
-			c = fonts[aIdx][bIdx][0]
+			--if we get none of a,b,c we assume 'nil' got applied to the option.
+			-- -> disable all arrows, but the basename; show no text in none of the textboxes.
+			self.a = defA
+			self.b = defB
+			self.c = defC
+			
+			self.txtName:SetText("")
+			self.txtSize:SetText("")
+			self.txtAttr:SetText("")
+			
+			self.btnLSize:Enable(false)
+			self.btnRSize:Enable(false)
+	
+			self.btnLAttr:Enable(false)
+			self.btnRAttr:Enable(false)
+			return
 		end
 
 		local strA = fonts[a]
@@ -858,10 +869,7 @@ do--[[#####  Fontbox #####]] --:applyFontbox(parent, selector)
 		if val and type(val) == "string" then
 			a, b, c = getIndexes(val)
 		end
-		if not a then --return to default!
-			a, b, c = defA, defB, defC
-		end
-
+		
 		self:SetIndex(a,b,c)
 
 		self.block = false
