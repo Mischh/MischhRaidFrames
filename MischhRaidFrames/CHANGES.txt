@@ -1,3 +1,15 @@
+<p><strong>Release v1.12:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Grouping: Up-/Down-Buttons for Groups</li>
+<li>Bars: Added Option to select a Font</li>
+<li>Group headers are now configurable in height, color, font and textcolor</li>
+<li>Added FocusModule: Bars and Texts to track units focus</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>TestMode: Fixed all units being cramped into one spcae, before opening FrameHandlers Settings.</li>
+</ul>
 <p><strong>Release v1.11a:</strong></p>
 <p>Added:</p>
 <ul>
