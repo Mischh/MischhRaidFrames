@@ -1000,6 +1000,12 @@ function FrameHandler:InitGeneralSettings(parent, name)
 		["Frame Inset:"] = "Innenseitiger Abstand:",
 		["qInset"] = [[Diese Option erlaubt es die Bars weiter vom Rand des Frames zu entfernen.]],
 		["Background Color:"] = "Hintergrund Farbe:",
+		["Text Color:"] = "Text Farbe:",
+		["Font:"] = "Schriftart",
+		["Filling Color:"] = "Füll-Farbe:",
+		["Filled Portion:"] = "Gefüllter Anteil:",
+		["Header Height:"] = "Gesamthöhe:",
+		["Headers:"] = "Überschriften:",
 	}, {--French
 	})
 
