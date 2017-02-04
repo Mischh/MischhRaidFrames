@@ -176,16 +176,47 @@ LeaveMod["Focus Unit"] = function(self, handler, wndHandler)
 	oldFoc = nil
 end
 
-MouseMod["Dropdown Menu"] = function(self, handler,wndHandler)
-	local fakeUnit = frames[handler]
-	local unit = frames[handler]:GetRealUnit()
-	if unit then
-		Event_FireGenericEvent("GenericEvent_NewContextMenuPlayerDetailed", wndHandler, fakeUnit:GetName(), unit)
-	else
-		Event_FireGenericEvent("GenericEvent_NewContextMenuPlayer", wndHandler, fakeUnit:GetName())
+do --dropdown HACKS!
+	local wndRef = nil
+	local hacked = false
+	
+	--what does this hack do? as long as our dropdown is open, we do not allow target-changes to close it.
+	--it automatically 'unhacks', once its another dropdown, thats shown.
+	local function hack()
+		local menu = Apollo.GetAddon("ContextMenuPlayer")
+		if not hacked then
+			local empt = function() end
+			local x = menu.OnTargetUnitChanged
+			function menu:OnTargetUnitChanged(...)
+				if not (wndRef and wndRef:IsValid()) then
+					--unhack!
+					menu.OnTargetUnitChanged = nil
+					hacked = false
+					wndRef = nil
+					menu:OnTargetUnitChanged(...)
+				end
+				self.OnMainWindowClosed = empt
+				x(self, ...)
+				self.OnMainWindowClosed = nil
+			end
+			hacked = true
+		end
+		wndRef = menu.wndMain
 	end
+
+
+	MouseMod["Dropdown Menu"] = function(self, handler,wndHandler)
+		local fakeUnit = frames[handler]
+		local unit = frames[handler]:GetRealUnit()		
+		if unit then
+			Event_FireGenericEvent("GenericEvent_NewContextMenuPlayerDetailed", wndHandler, fakeUnit:GetName(), unit)
+		else
+			Event_FireGenericEvent("GenericEvent_NewContextMenuPlayer", wndHandler, fakeUnit:GetName())
+		end
+		hack()
+	end
+	EnterMod["Dropdown Menu"] = MouseMod["Dropdown Menu"]
 end
-EnterMod["Dropdown Menu"] = EnterMod["Dropdown Menu"]
 
 MouseMod["Show Hint Arrow"] = function(self, handler, ...)
 	local fakeUnit = frames[handler]
@@ -194,7 +225,7 @@ MouseMod["Show Hint Arrow"] = function(self, handler, ...)
 		unit:ShowHintArrow()
 	end
 end
-EnterMod["Show Hint Arrow"] = EnterMod["Show Hint Arrow"]
+EnterMod["Show Hint Arrow"] = MouseMod["Show Hint Arrow"]
 
 -- HANDLE THE REGISTERED EVENTS
 
