@@ -96,6 +96,18 @@ do --Frame Updating
 	local freqIcon = {}
 	local unitIcon = {}
 	
+	--this will call :miscUpdate(frame, unit) on the requested frequency
+	function MRF:RequestUpdates(bFrequent, handler)
+		local targetTbl = bFrequent and freqMisc or unitMisc
+		targetTbl[handler] = handler
+	end
+	
+	--removes this handler from updates on this frequency
+	function MRF:RemoveUpdates(bFrequent, handler)
+		local targetTbl = bFrequent and freqMisc or unitMisc
+		targetTbl[handler] = nil
+	end
+	
 	function MRF:RegisterMiscMod(modKey, frequent)
 		local targetTbl = frequent and freqMisc or unitMisc
 		local function updateActive(active)
