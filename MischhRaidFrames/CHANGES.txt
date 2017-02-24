@@ -1,7 +1,7 @@
 <p><strong>Release v1.12a:</strong></p>
 <p>Added:</p>
 <ul>
-<li>A very small tool to help with external Mdoules</li>
+<li>A very small tool to help with external Modules</li>
 </ul>
 <p>Fixes:</p>
 <ul>
