@@ -286,6 +286,8 @@ do
 		--size
 		if options.size then
 			handler.frame:SetAnchorOffsets(unpack(options.size))
+			--there is something 'inside' the frame, which is a second layer inside the margin. With the same color, alpha etc. 
+			handler.frame:SetInnerMargin(Vector2.New(options.size[3]-options.size[1],options.size[4]-options.size[2]))
 		end
 		
 		--inset
