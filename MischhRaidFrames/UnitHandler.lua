@@ -236,10 +236,12 @@ function UnitHandler:newUnit(groupMemberTbl, unit)
 end
 
 local groups = {} --these groups are accessible within the FrameHandler&GroupHandler - we pass it into them.
+MRF:GetOption("UnitHandler_Groups"):Set(groups)
 function UnitHandler:Reposition()
 	--the first time we pass all informative stuff to the FrameHandler and Apply the real Funtion.
-	self.Reposition = MRF:GetFrameHandlersReposition(groups) --defined in FrameHandler
-	return self:Reposition()
+	MRF.FrameHandler:EnableRepositioning()
+	MRF.FrameHandler:Reposition()
+	self.Reposition = MRF.FrameHandler.Reposition--defined in FrameHandler
 end
 
 function UnitHandler:Regroup()

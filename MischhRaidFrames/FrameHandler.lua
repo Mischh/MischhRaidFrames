@@ -2,6 +2,7 @@
 
 local FrameHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
+MRF.FrameHandler = FrameHandler
 Apollo.LinkAddon(MRF, FrameHandler)
 local Options = MRF:GetOption(nil, "Frame Handler")
 local dirOption = MRF:GetOption(Options, "direction")
@@ -354,11 +355,17 @@ local function totalHeight(sizFrame, sizHeader, columns)
 			+ 	rows*sizFrame + (rows-grps)*vFrameSpace 				)	--full space needed for rows
 end
 
+local preventRepos = true
+function FrameHandler:EnableRepositioning() --called from inside UnitHandler
+	preventRepos = false
+end
+
 function FrameHandler:Reposition()
-	if not groups then return end --just ignore any reposition-request, when never have gotten any groupings.
+	if preventRepos then return end --just ignore any reposition-request, when never have gotten any groupings.
 
 	FrameHandler:InitGroupFrames() --DO NOT CHANGE TO self - self WILL ALWAYS BE UnitHandler.
 	self.Reposition = function(self)
+		-- if true then return end
 		local col = (extendDir == "row" and calcCol_RowExtended or extendDir == "col" and calcCol_ColExtended)()
 		
 		local fHeight = frames[1].frame:GetHeight() --even if neither of both are created yet - they will be hidden on load.
@@ -394,11 +401,10 @@ function FrameHandler:Reposition()
 	return self:Reposition()
 end
 
-function MRF:GetFrameHandlersReposition(unithandler_groups)
-	groups = unithandler_groups
-	--we need these groups to do all the stuff in :Reposition()
-	return FrameHandler.Reposition
-end
+MRF:GetOption("UnitHandler_Groups"):OnUpdate(function(grp)
+	groups = grp
+end)
+groups = MRF:GetOption("UnitHandler_Groups"):Get()
 
 function MRF:GetFrameTable()
 	return frames;
@@ -489,6 +495,8 @@ function FrameHandler:InitGroupFrames()
 		self:ApplyHeaderStyle(h)
 		return h
 	end})
+	groupFrames.parentFrame = parentFrame
+	MRF:GetOption("FrameHandler_GroupFrames"):Set(groupFrames)
 end
 
 function FrameHandler:CreateNewFrame()

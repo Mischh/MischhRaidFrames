@@ -3,6 +3,7 @@ require "ICComm"
 
 local GroupHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
+MRF.GroupHandler = GroupHandler
 Apollo.LinkAddon(MRF, GroupHandler)
 local groups = {} --applied in GetGroupHandlersRegroup
 local units = {} --applied in GetGroupHandlersRegroup
@@ -933,6 +934,7 @@ local function findUniqueName(i)
 	end
 	return n;
 end
+GroupHandler.GetUniqueGroupName = findUniqueName
 
 function handler:AddGroup() --Pressed 'Add'
 	userdef[#userdef+1] = findUniqueName()
