@@ -46,6 +46,7 @@
 	<Script Name="FrameHandler.lua" />
 	<Script Name="GroupHandler.lua" />
 	<Script Name="UnitHandler.lua" />
+	<Script Name="DragDrop.lua" />
 	
 	<Script Name="Defaults.lua" />
 	<Script Name="SaveHandler.lua" />

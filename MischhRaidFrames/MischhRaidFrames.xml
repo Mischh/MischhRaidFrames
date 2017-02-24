@@ -458,4 +458,11 @@
             <Control Class="EditBox" LAnchorPoint="0" LAnchorOffset="13" TAnchorPoint="0.5" TAnchorOffset="-12" RAnchorPoint="1" RAnchorOffset="-13" BAnchorPoint="0.5" BAnchorOffset="12" RelativeToClient="1" Font="Nameplates" Text="TEST" BGColor="UI_WindowBGDefault" TextColor="UI_TextHoloBodyCyan" Template="Default" TooltipType="OnCursor" Name="Text" TooltipColor="" Sprite="CRB_Basekit:kitBase_HoloBlue_InsetSimple" TextId="" Picture="1" DT_CENTER="1" DT_VCENTER="1" LoseFocusOnExternalClick="1" NoSelectOnFocus="0" TabStop="0" ReadOnly="1" DefaultDisabled="1"/>
         </Control>
     </Form>
+    <Form Class="Window" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="0" RAnchorOffset="130" BAnchorPoint="0" BAnchorOffset="200" RelativeToClient="1" Font="Subtitle" Text="" BGColor="UI_AlphaPercent10" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="DragDown" Border="0" Picture="1" SwallowMouseClicks="1" Moveable="0" Escapable="1" Overlapped="1" TooltipColor="" Sprite="WhiteFill" Visible="0" IgnoreMouse="1">
+        <Event Name="DragDropClear" Function="DragDropClear"/>
+    </Form>
+    <Form Class="Button" Base="CRB_Basekit:kitBtn_List_Holo" Font="CRB_ButtonHeader" ButtonType="PushButton" RadioGroup="" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="1" RAnchorOffset="0" BAnchorPoint="0" BAnchorOffset="30" DT_VCENTER="1" DT_CENTER="1" BGColor="UI_BtnBGDefault" TextColor="UI_BtnTextDefault" NormalTextColor="UI_BtnTextBlueNormal" PressedTextColor="UI_BtnTextBluePressed" FlybyTextColor="UI_BtnTextBlueFlyby" PressedFlybyTextColor="UI_BtnTextBluePressedFlyby" DisabledTextColor="UI_BtnTextBlueDisabled" TooltipType="OnCursor" Name="DragDownButton" Border="1" Picture="1" SwallowMouseClicks="1" Moveable="1" Escapable="1" Overlapped="1" TooltipColor="" FocusedTextColor="ffffffff">
+        <Event Name="QueryDragDrop" Function="QueryDragDrop"/>
+        <Event Name="DragDrop" Function="DragDrop"/>
+    </Form>
 </Forms>
