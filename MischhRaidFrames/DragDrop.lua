@@ -3,7 +3,11 @@ local DragDrop = {}
 MRF.DragDrop = DragDrop
 
 local units = MRF:GetUnits()
-local activated = true
+local activated = false
+local removing = false --remove groups, if empty after drag.
+local dragActIsInsert = true
+local dropActIsInsert = true
+local triggered = false --already initialized..
 local grpActOpt = MRF:GetOption(true, "Groupings", "use")
 local grpCurOpt = MRF:GetOption(true, "Groupings", "cache")
 
@@ -25,7 +29,9 @@ local L = MRF:Localize({
 --hook into frames and headers.
 --theoratically frames could exist before headers, but we assume we are only interested in those not associated with headers/groups
 MRF:GetOption("FrameHandler_GroupFrames"):OnUpdate(DragDrop, "TriggeredGroupFrames")
-function DragDrop:TriggeredGroupFrames()
+function DragDrop:TriggeredGroupFrames(val)
+	if not val or not activated or triggered then return end
+	triggered = true
 	--why do we do this? lets say it like this: its complicated. do not remove.
 	--short: this can be called mid-creation of frames[1], which meant the frame-hook didnt affect frames[1]
 	--		 this was the easiest way to solve it.
@@ -43,16 +49,26 @@ function DragDrop:OnGroupFrames()
 	function header_meta.__index(t,k)
 		local h = header_index(t,k)
 		h:AddEventHandler("QueryBeginDragDrop", "HeaderQueryBeginDragDrop", FrameHandler)
+		h:AddEventHandler("QueryDragDrop", "HeaderQueryDragDrop", FrameHandler)
+		h:AddEventHandler("DragDrop", "HeaderDragDrop", FrameHandler)
 		h:SetData(k)
 		return h
 	end
 	for k, h in ipairs(headers) do
 		h:AddEventHandler("QueryBeginDragDrop", "HeaderQueryBeginDragDrop", FrameHandler)
+		h:AddEventHandler("QueryDragDrop", "HeaderQueryDragDrop", FrameHandler)
+		h:AddEventHandler("DragDrop", "HeaderDragDrop", FrameHandler)
 		h:SetData(k)
 	end
 	
 	function FrameHandler:HeaderQueryBeginDragDrop(...)
-		DragDrop:HeaderQueryBeginDragDrop(...)
+		return DragDrop:HeaderQueryBeginDragDrop(...)
+	end
+	function FrameHandler:HeaderQueryDragDrop(...)
+		return DragDrop:HeaderQueryDragDrop(...)
+	end
+	function FrameHandler:HeaderDragDrop(...)
+		return DragDrop:HeaderDragDrop(...)
 	end
 	
 	local frames = MRF:GetFrameTable() --each item is the handler, with the actual frame at index 'frame'
@@ -91,11 +107,93 @@ function DragDrop:InitDragDown()
 	return self.dragDown
 end
 
+local function decrease(min, val, ...)
+	if not min then
+		return val, ...
+	end
+	if val then
+		local new = min ~= val and val or nil
+		if min == val then val = nil 
+		elseif min < val then val = val-1 end
+		
+		if select("#", ...) == 0 then
+			return val
+		else
+			return val, decrease(min, ...)
+		end
+	else
+		if select("#", ...) == 0 then
+			return nil
+		else
+			return nil, decrease(min, ...)
+		end
+	end
+end
+function DragDrop:CheckEmptyGroup(data, grpIdx, ...)
+	if not removing  then return end
+	local rmv = false
+	if grpIdx then
+		rmv = true
+		for i, v in pairs(data) do
+			if v == grpIdx then
+				rmv = false
+				break;
+			end
+		end
+		if rmv then
+			for i = grpIdx+1, #data, 1 do
+				data[i-1] = data[i]
+			end
+			data[#data] = nil
+			for i,v in pairs(data) do
+				if type(v) == "number" and v>grpIdx then
+					data[i] = v-1
+				end
+			end
+		end
+	end
+	if select("#", ...) > 0 then
+		if rmv then
+			self:CheckEmptyGroup(data, decrease(grpIdx, ...))
+			return true
+		else
+			return self:CheckEmptyGroup(data, ...)
+		end
+	else
+		return rmv
+	end
+end
+
+function DragDrop:SwitchGroups(data, grpIdx1, grpIdx2)
+	data[grpIdx1], data[grpIdx2] = data[grpIdx2], data[grpIdx1]
+	for n, i in pairs(data) do
+		if type(n) == "string" then
+			if i == grpIdx1 then
+				data[n] = grpIdx2
+			elseif i == grpIdx2 then
+				data[n] = grpIdx1
+			end
+		end
+	end
+end
+
+function DragDrop:InsertGroup(data, srcIdx, tarIdx)	
+	for n, i in pairs(data) do
+		if type(n) == "string" then
+			if i==srcIdx then
+				data[n] = tarIdx
+			end
+		end
+	end
+	self:CheckEmptyGroup(data, srcIdx)
+end
+
 function DragDrop:HeaderQueryBeginDragDrop(wndHandler, wndControl)
 	if not activated then return end
 	--self = handler = {frame = userdata}
 	local drag = DragDrop.dragDown or DragDrop:InitDragDown()
-	DragDrop:Populate("MischhGroup", wndHandler:GetData(), wndHandler)
+	local data = DragDrop:Populate("MischhGroup", wndHandler:GetData(), wndHandler)
+	drag:SetData(data)
 	Apollo.BeginDragDrop(drag, "MischhGroup", "IconSprites:Icon_Windows_UI_CRB_AccountInventory_AccountBound", 0)
 end
 
@@ -103,16 +201,73 @@ function DragDrop:FrameQueryBeginDragDrop(wndHandler, wndControl)
 	if not activated then return end
 	--self = FrameHandler
 	local drag = DragDrop.dragDown or DragDrop:InitDragDown()
-	DragDrop:Populate("MischhMember", wndHandler:GetData(), wndHandler)
+	local data = DragDrop:Populate("MischhMember", wndHandler:GetData(), wndHandler)
+	drag:SetData(data)
 	Apollo.BeginDragDrop(drag, "MischhMember", "IconSprites:Icon_Windows_UI_CRB_RezCaster", 0)
 end
+local validTypes = {MischhMember=true, MischhGroup=true}
+function DragDrop:HeaderQueryDragDrop(wndHandler, wndControl, nX, nY, wndDragDown, strType, nID)
+	if wndHandler ~= wndControl then return end
+	if not validTypes[strType] then return end
+	
+	local id, name = unpack(wndDragDown:GetData())
+	if id == "off" then return Apollo.DragDropQueryResult.Ignore end
+	return Apollo.DragDropQueryResult.Accept --all other situations are acceptible
+end
 
-local validTypes = {MischhGroup = Apollo.DragDropQueryResult.Accept, MischhMember = Apollo.DragDropQueryResult.Accept, [false] = Apollo.DragDropQueryResult.Ignore}
+function DragDrop:HeaderDragDrop(wndHandler, wndControl, nX, nY, wndDragDown, strType, nID)
+	if wndHandler ~= wndControl then return end
+	if not validTypes[strType] then return end
+	
+	local grouping = grpCurOpt:Get()
+	
+	local id, name = unpack(wndDragDown:GetData())
+	local tarID = wndHandler:GetData()
+	if tarID > #grouping then tarID = nil end --tarID = ungrouped
+	
+	if strType == "MischhMember" then
+		local lastGroup = grouping[name]
+		grouping[name] = tarID --assign the unit to the group
+		self:CheckEmptyGroup(grouping, lastGroup)
+		grpCurOpt:ForceUpdate()
+		MRF.GroupHandler:ChangedGroupLayout()
+	elseif id ~= "ungrp" then --MischhGroup (source)
+		if not (id and name and grouping[id] == name) then return end
+		if id == tarID then return end
+		
+		if dragActIsInsert then
+			self:InsertGroup(grouping, id, tarID)
+		else
+			self:SwitchGroups(grouping, id, tarID)
+		end
+		
+		grpCurOpt:ForceUpdate()
+		MRF.GroupHandler:ChangedGroupLayout()
+	else --ungrp MischhGroup (source)
+		if not tarID then return end --from ungrouped to ungrouped? rly?
+		--fill the target group from ungrouped.
+		
+		for i,unit in ipairs(units) do
+			local name = unit:GetName()
+			grouping[name] = grouping[name] or tarID
+		end
+		
+		grpCurOpt:ForceUpdate()
+		MRF.GroupHandler:ChangedGroupLayout()
+	end
+end
+
 function DragDrop:QueryDragDrop(wndHandler, wndControl, nX, nY, wndDragDown, strType, nID) 
-	return validTypes[strType] or validTypes[false]
+	if wndHandler ~= wndControl then return end
+	if not validTypes[strType] then return end
+	
+	local data = wndHandler:GetData()
+	
+	return data[strType] and Apollo.DragDropQueryResult.Accept or Apollo.DragDropQueryResult.Ignore
 end
 function DragDrop:DragDrop(wndHandler, wndControl, nX, nY, wndDragDrop, strType, nID)
 	if wndHandler ~= wndControl then return end
+	if not validTypes[strType] then return end
 	
 	local data = wndHandler:GetData()
 	if not data[strType] then return end
@@ -152,6 +307,7 @@ function DragDrop:Populate(typ, key, src)
 	local drag = self.dragDown
 	--guaranteed to be created.
 	
+	local data = nil; --used to carry information like {grpIdx, grpName}
 	local cPos = Apollo.GetMouse()
 	local wPos = src:GetMouse()
 	local x = 2+cPos.x-wPos.x+src:GetWidth()
@@ -173,7 +329,7 @@ function DragDrop:Populate(typ, key, src)
 		if typ == "MischhMember" then
 			local unit = units[key]
 			local name = unit:GetName()
-			
+			data = {key, name}
 			for i,v in ipairs(grouping) do
 				-- i = idx
 				-- v = GroupName
@@ -193,12 +349,12 @@ function DragDrop:Populate(typ, key, src)
 			end
 		elseif typ == "MischhGroup" and grouping[key] then
 			-- key = #group
-			
+			data = {key, grouping[key]}
 			for i,v in ipairs(grouping) do
 				if i~=key then
 					btn, numBtn = self:GetButton(numBtn)
-					btn:SetText(L["Switch: %s"]:format(v))
-					btn:SetData({key, grouping[key], i, v, MischhGroup = "SwitchGroup"})
+					btn:SetText((dropActIsInsert and L["All: %s"] or L["Switch: %s"]):format(v))
+					btn:SetData({key, grouping[key], i, v, dropActIsInsert, MischhGroup = "Group2Group"})
 				end
 			end
 			
@@ -210,6 +366,7 @@ function DragDrop:Populate(typ, key, src)
 			btn:SetText(L["Delete"])
 			btn:SetData({key, grouping[key], MischhGroup = "RemoveGroup"})
 		elseif typ == "MischhGroup" then --its the 'ungrouped'-Group
+			data = {"ungrp", nil}
 			for i,v in ipairs(grouping) do
 				btn, numBtn = self:GetButton(numBtn)
 				btn:SetText(L["All: %s"]:format(v))
@@ -220,6 +377,8 @@ function DragDrop:Populate(typ, key, src)
 			btn:SetText(L["All: %s"]:format(L["New Group..."]))
 			btn:SetData({"new", MischhGroup = "UngroupedTo"})
 		end
+	else
+		data = {"off", nil}
 	end
 	
 	
@@ -231,8 +390,8 @@ function DragDrop:Populate(typ, key, src)
 		btn:SetText(L["Activate"])
 	end
 	btn:SetData({grpActOpt:Get(), MischhGroup = "GroupingActivation", MischhMember = "GroupingActivation"})
-	
 	self:AlignButtons(numBtn)
+	return data
 end
 
 do
@@ -262,25 +421,27 @@ function DragDrop:GroupingActivation(wndBtn, bWasActive)
 end
 
 function DragDrop:MoveToGroup(wndBtn, unitName, grpIdx, grpName)
+	local grouping = grpCurOpt:Get()
+	local prevIdx = grouping[unitName]
 	if grpIdx == "new" then
-		local grouping = grpCurOpt:Get()
 		grouping[#grouping+1] = MRF.GroupHandler.GetUniqueGroupName()
 		grouping[unitName] = #grouping
+		self:CheckEmptyGroup(grouping, prevIdx)
 		grpCurOpt:ForceUpdate()
 		MRF.GroupHandler:ChangedGroupLayout()
 	elseif grpIdx == "ungrp" then
-		local grouping = grpCurOpt:Get()
 		if grouping[unitName] then
 			grouping[unitName] = nil
+			self:CheckEmptyGroup(grouping, prevIdx)
 			grpCurOpt:ForceUpdate()
 			MRF.GroupHandler:ChangedGroupLayout()
 		end
 	else
-		local grouping = grpCurOpt:Get()
 		--first check if such a group still exists -> rather do nothing, than doing weird stuff..
 		-- as such grpName is just a 'checksum'
 		if not (grpIdx and grpName and grouping[grpIdx] == grpName) then return end
 		grouping[unitName] = grpIdx
+		self:CheckEmptyGroup(grouping, prevIdx)
 		grpCurOpt:ForceUpdate()
 		MRF.GroupHandler:ChangedGroupLayout()
 	end
@@ -314,27 +475,23 @@ function DragDrop:RenameGroup(wndBtn, params)
 	self.textBox:SetData(params)
 end
 
-function DragDrop:SwitchGroup(wndBtn, srcIdx, srcName, tarIdx, tarName)
+function DragDrop:Group2Group(wndBtn, srcIdx, srcName, tarIdx, tarName, isInsert)
 	--again, names just as a checksum.
 	local grouping = grpCurOpt:Get()
 	if not (srcIdx and srcName and grouping[srcIdx] == srcName) then return end
 	if not (tarIdx and tarName and grouping[tarIdx] == tarName) then return end
-	
-	grouping[srcIdx] = tarName
-	grouping[tarIdx] = srcName
-	
-	for i,v in pairs(grouping) do
-		if v == srcIdx then
-			grouping[i] = tarIdx
-		elseif v == tarIdx then
-			grouping[i] = srcIdx
-		end
+
+	if isInsert then
+		self:InsertGroup(grouping, srcIdx, tarIdx)
+	else
+		self:SwitchGroups(grouping, srcIdx, tarIdx)
 	end
+
 	grpCurOpt:ForceUpdate()
 	MRF.GroupHandler:ChangedGroupLayout()
 end
 
-function DragDrop:UngroupedTo(wndButton, grpIdx, grpName) print(pcall(function()
+function DragDrop:UngroupedTo(wndButton, grpIdx, grpName)
 	--again, names just as a checksum.
 	local grouping = grpCurOpt:Get()
 	
@@ -352,5 +509,94 @@ function DragDrop:UngroupedTo(wndButton, grpIdx, grpName) print(pcall(function()
 	end
 	
 	grpCurOpt:ForceUpdate()
-	MRF.GroupHandler:ChangedGroupLayout() end))
+	MRF.GroupHandler:ChangedGroupLayout()
+end
+
+
+-- #############################----------------------####################################
+-- ##############--------------------- Settings ---------------------#####################
+-- #############################----------------------####################################
+do
+	local opts = MRF:GetOption(nil, "DragDrop")
+	local actOpt = MRF:GetOption(opts, "activated")
+	local remOpt = MRF:GetOption(opts, "removeEmpty")
+	local drgOpt = MRF:GetOption(opts, "dragAction")
+	local drpOpt = MRF:GetOption(opts, "dropAction")
+	actOpt:OnUpdate(function(val) 
+		if val == nil then
+			actOpt:Set(true)
+		else
+			activated = val
+			if val then
+				DragDrop:TriggeredGroupFrames(MRF:GetOption("FrameHandler_GroupFrames"):Get())
+			end
+		end
+	end)
+	remOpt:OnUpdate(function(val)
+		if val == nil then
+			remOpt:Set(true)
+		else
+			removing = val
+		end
+	end)
+	drgOpt:OnUpdate(function(val)
+		if val == nil then
+			drgOpt:Set("insert")
+		else
+			dragActIsInsert = val == "insert"
+		end
+	end)
+	drpOpt:OnUpdate(function(val)
+		if val == nil then
+			drpOpt:Set("switch")
+		else
+			dropActIsInsert = val == "insert"
+		end
+	end)
+
+	MRF:AddChildTab("Drag n' Drop", "Group Handler", DragDrop, "InitSettings")
+	function DragDrop:InitSettings(parent, name)
+		local L = MRF:Localize({
+		},{
+			["Activate"] = "Aktivieren",
+			["Remove emptied groups"] = "Entferne geleerte Gruppen",
+			["'Group -> Group' drag operation:"] = "'Gruppe -> Gruppe' per Ziehen:",
+			["'Group -> Group' dropdown operation:"] = "'Gruppe -> Gruppe' per Auswahlmenü:",
+			["Switch Groups"] = "Gruppen Tauschen",
+			["Insert all Members"] = "Alle Mitglieder Einfügen",
+		},{
+		})
+	
+		local form = MRF:LoadForm("SimpleTab", parent)
+		form:FindChild("Title"):SetText(name)
+		parent = form:FindChild("Space")
+		
+		local row;
+		local function newRow() row = MRF:LoadForm("HalvedRow", parent); return row end
+		local function left() return row:FindChild("Left") end
+		local function right() return row:FindChild("Right") end
+		
+		newRow()
+		MRF:applyCheckbox(right(), actOpt, L["Activate"])
+		
+		newRow()
+		MRF:applyCheckbox(right(), remOpt, L["Remove emptied groups"])
+		
+		newRow()
+		left():SetText(L["'Group -> Group' drag operation:"])
+		MRF:applyDropdown(right(), {"switch", "insert"}, drgOpt, {switch=L["Switch Groups"], insert=L["Insert all Members"]})
+		
+		newRow()
+		left():SetText(L["'Group -> Group' dropdown operation:"])
+		MRF:applyDropdown(right(), {"switch", "insert"}, drpOpt, {switch=L["Switch Groups"], insert=L["Insert all Members"]})		
+		
+		parent:ArrangeChildrenVert()
+		local children = parent:GetChildren()
+		local l, t, r = parent:GetAnchorOffsets()
+		local b = select(4,children[#children]:GetAnchorOffsets())
+		parent:SetAnchorOffsets(l, t, r, t+b)
+		parent:GetParent():RecalculateContentExtents()
+		parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+		opts:ForceUpdate()
+	end
 end
