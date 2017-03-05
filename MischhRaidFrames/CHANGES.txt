@@ -1,3 +1,12 @@
+<p><strong>Release v1.13:</strong></p>
+<p>Added:</p>
+<ul>
+<li>Drag n' Drop support for grouping.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>Test Mode: Resolve a small frame-duplication bug, if entering Test-Mode while not alone.</li>
+</ul>
 <p><strong>Release v1.12a:</strong></p>
 <p>Added:</p>
 <ul>
