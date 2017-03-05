@@ -1,4 +1,9 @@
 <p><strong>Release v1.13:</strong></p>
+<p>Fixes:</p>
+<ul>
+<li>MouseInteraction: Fixed non-Left-Clicks to be working again.</li>
+</ul>
+<p><strong>Release v1.13:</strong></p>
 <p>Added:</p>
 <ul>
 <li>Drag n' Drop support for grouping.</li>
