@@ -14,6 +14,7 @@
         <Event Name="MouseExit" Function="MouseExit"/>
         <Event Name="GenerateTooltip" Function="MouseOver"/>
         <Event Name="ButtonUp" Function="MouseButtonUp"/>
+        <Event Name="MouseButtonUp" Function="MouseButtonUp"/>
     </Form>
     <Form Class="Window" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="1" RAnchorOffset="0" BAnchorPoint="1" BAnchorOffset="0" RelativeToClient="1" Font="Default" Text="" BGColor="UI_WindowBGDefault" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="Raid-Container" Border="0" Picture="0" SwallowMouseClicks="1" Moveable="0" Escapable="0" Overlapped="0" TooltipColor="" LeftEdgeControlsAnchor="" TopEdgeControlsAnchor="" IgnoreMouse="1" Visible="1" Tooltip="" Sizable="0"/>
     <Form Class="Button" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="0" RAnchorOffset="381" BAnchorPoint="0" BAnchorOffset="15" RelativeToClient="1" Font="Nameplates" Text="" BGColor="UI_AlphaBlackPercent60" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="GroupHeader" Border="0" Picture="1" SwallowMouseClicks="1" Moveable="0" Escapable="0" Overlapped="1" TooltipColor="" TextId="" DT_RIGHT="0" DT_CENTER="1" DT_VCENTER="1" Sprite="" Visible="0" IgnoreMouse="0" Tooltip="" NoClip="1" NormalTextColor="ffffffff" PressedTextColor="ffffffff" FlybyTextColor="ffffffff" PressedFlybyTextColor="ffffffff" DisabledTextColor="ffffffff" FocusedTextColor="ffffffff">
