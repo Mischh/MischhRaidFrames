@@ -563,41 +563,60 @@ function MRF:GroupHandler_OnICCommMessageReceived(...)
 	GroupHandler:OnICCommMessageReceived(...)
 end
 
-function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?		
-	local message = self:VRFDeserialize(strMessage)
-	local playerName = GameLib.GetPlayerUnit():GetName()
-	if type(message) ~= "table" or message.source == playerName then
-		return
-	end
-	if type(message.rw) == "table" and #message.rw > 0 and self:IsLead(idMessage) then
-		--a RaidWarning? Well - okay.... Do whatever VRF defines xD
-		Event_FireGenericEvent("StoryPanelDialog_Show", GameLib.CodeEnumStoryPanel.Urgent, message.rw, 6)
-	end
-	
-	if message.version then
-		--we dont save the version, because i do not know what would change..
-		--but VRF shares its GroupLayout, whenever somebody shares his version with him.
-		if publishing and useUserDef then
-			self:ICCommShareGroup()
-		end
-		return
-	end
-	
-	if not accept then 
-		return 
-	end
-	
-	if message.layout then
-		self:RecievedGroupLayout(idMessage, message.layout)
-		if republishing and self:IsLead(playerName) then
-			self:ICCommShareGroup(idMessage)
-		end
-	elseif message.defaultGroups then
-		self:RecievedDeactRequest(idMessage)
-		if republishing and self:IsLead(playerName) then
-			self:ICCommShareDeact(idMessage)
+do
+	local delayTable = {} --table of all messages fired while unable to properly handle them.
+	function GroupHandler:OnICCommMessageDelayTimer()
+		self.ICCommmMessageDelayTimer = nil
+		local copy = delayTable
+		delayTable = {}
+		for _, t in ipairs(delayTable) do
+			self:OnICCommMessageReceived(t[1], t[2], t[3])
 		end
 	end
+	
+	function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?	
+		local player = GameLib.GetPlayerUnit()
+		if not player then
+			table.insert(delayTable, {channel, strMessage, idMessage})
+			self.ICCommmMessageDelayTimer = self.ICCommmMessageDelayTimer or ApolloTimer.Create(0.5, false, "OnICCommMessageDelayTimer", self)
+			return
+		end
+		local playerName = player:GetName()
+		local message = self:VRFDeserialize(strMessage)
+		if type(message) ~= "table" or message.source == playerName then
+			return
+		end
+		if type(message.rw) == "table" and #message.rw > 0 and self:IsLead(idMessage) then
+			--a RaidWarning? Well - okay.... Do whatever VRF defines xD
+			Event_FireGenericEvent("StoryPanelDialog_Show", GameLib.CodeEnumStoryPanel.Urgent, message.rw, 6)
+		end
+		
+		if message.version then
+			--we dont save the version, because i do not know what would change..
+			--but VRF shares its GroupLayout, whenever somebody shares his version with him.
+			if publishing and useUserDef then
+				self:ICCommShareGroup()
+			end
+			return
+		end
+		
+		if not accept then 
+			return 
+		end
+		
+		if message.layout then
+			self:RecievedGroupLayout(idMessage, message.layout)
+			if republishing and self:IsLead(playerName) then
+				self:ICCommShareGroup(idMessage)
+			end
+		elseif message.defaultGroups then
+			self:RecievedDeactRequest(idMessage)
+			if republishing and self:IsLead(playerName) then
+				self:ICCommShareDeact(idMessage)
+			end
+		end
+	end
+
 end
 
 function GroupHandler:IsLead(name)
