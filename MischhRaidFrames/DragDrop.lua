@@ -310,9 +310,22 @@ function DragDrop:Populate(typ, key, src)
 	local data = nil; --used to carry information like {grpIdx, grpName}
 	local cPos = Apollo.GetMouse()
 	local wPos = src:GetMouse()
-	local x = 2+cPos.x-wPos.x+src:GetWidth()
+	
+	local l, r;
+	local srcLeftEdge = cPos.x-wPos.x
+	local srcRightEdge = srcLeftEdge+src:GetWidth()
+	if srcLeftEdge > select(3, src:GetParent():GetRect()) - srcRightEdge then
+		--show on left side of raidframes
+		r =-2 + srcLeftEdge
+		l = r - drag:GetWidth()
+	else
+		--show on right side of raidframes
+		l = 2 + srcRightEdge
+		r = l + drag:GetWidth()
+	end
+	
 	local y =   cPos.y-wPos.y
-	drag:SetAnchorOffsets(x, y, drag:GetWidth()+x, drag:GetHeight()+y)
+	drag:SetAnchorOffsets(l, y, r, drag:GetHeight()+y)
 	drag:ToFront()
 	drag:Show(true)
 	

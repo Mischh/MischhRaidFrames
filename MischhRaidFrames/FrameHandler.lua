@@ -961,8 +961,17 @@ do --FastMenu
 	function MRF:ShowFastMenu(...)
 		RClickHandler:InitFastMenu()
 		self.ShowFastMenu = function(self, parent)
-			local _, t, r, _ = parent:GetAnchorOffsets()
-			RClickHandler.spacer:SetAnchorOffsets(0,t,r,0) --only set top and right, the rest should be ignorable
+			local l, t, r, _ = parent:GetAnchorOffsets()
+			local L, _, R, _ = parent:GetParent():GetRect()
+			
+			local bLeft = L+l > R-L+r
+			
+			if bLeft then
+				local l = l-RClickHandler.frame:GetWidth()
+				RClickHandler.spacer:SetAnchorOffsets(l-100,t,l,0)
+			else
+				RClickHandler.spacer:SetAnchorOffsets(r-100,t,r,0) --only set top and right, the rest should be ignorable; r-100, because a window with 0 width (and 0 height) is hidden.
+			end
 			RClickHandler.spacer:Show(true, false)
 		end
 		return self:ShowFastMenu(...)
