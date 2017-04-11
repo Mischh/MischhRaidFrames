@@ -294,7 +294,7 @@ local function calcCol_RowExtended()
 	return m
 end
 
-local function addFrames(uTbl, col, top, height, width, toRight) --toRight == start at 0 and move to the RIGHT
+local function addFrames_Hori(uTbl, col, top, height, width, toRight) --toRight == start at 0 and move to the RIGHT
 	top = top + bHeaderSpace --space all Frames from the Header above
 
 	local bot = top+height
@@ -336,6 +336,43 @@ local function addFrames(uTbl, col, top, height, width, toRight) --toRight == st
 			bot = top+height
 		end
 	end
+end
+
+local function addFrames_Vert(uTbl, col, top, height, width, toRight)
+	if col <= 0 then return top end --can this happen? I hope not..
+
+	local origTop = top + bHeaderSpace --space all Frames from the Header above
+	local numUnits = #uTbl
+	local numRows = math.floor(numUnits/col)
+	local extraCols = numUnits%col
+	local totalRows = numRows + ((extraCols > 0) and 1 or 0)
+	local i = 0
+	
+	if toRight then
+		local left = 0
+		for c = 1, col, 1 do
+			local top = origTop
+			for r = 1, c>extraCols and numRows or totalRows, 1 do
+				i = i+1
+				frames[uTbl[i]].frame:SetAnchorOffsets(left, top, left+width, top+height)
+				top = top+height+vFrameSpace
+			end
+			left = left+width+hFrameSpace
+		end
+	else
+		local right = 0
+		for c = 1, col, 1 do
+			local top = origTop
+			for r = 1, c>extraCols and numRows or totalRows, 1 do
+				i = i+1
+				frames[uTbl[i]].frame:SetAnchorOffsets(right-width, top, right, top+height)
+				top = top+height+vFrameSpace
+			end
+			right = right-width-hFrameSpace
+		end
+	end
+	
+	return origTop + (totalRows * height) + ((totalRows-1) * hFrameSpace) + tHeaderSpace
 end
 
 local ceil = math.ceil
@@ -386,7 +423,11 @@ function FrameHandler:Reposition()
 				groupFrames.headers[i]:FindChild("text"):SetText("("..#tbl..") "..tbl.name..":")
 				
 				--add all units
-				top = addFrames(tbl, col, top+hHeight, fHeight, fWidth, extendToRight)
+				if extendDir == "row" then
+					top = addFrames_Hori(tbl, col, top+hHeight, fHeight, fWidth, extendToRight)
+				else
+					top = addFrames_Vert(tbl, col, top+hHeight, fHeight, fWidth, extendToRight)
+				end
 			else
 				--hide Header
 				groupFrames.headers[i]:Show(false, false)
