@@ -1,4 +1,15 @@
-<p><strong>Release v1.13:</strong></p>
+<p><strong>Release v1.13b:</strong></p>
+<p>Added:</p>
+<ul>
+<li>FastMenu and Drag n' Drop now show up on the side with more space.</li>
+</ul>
+<p>Fixes:</p>
+<ul>
+<li>FrameHandler: Frames are now ordered correctly according to the Fill-Direction.</li>
+<li>GroupHandler: Fix an Error, that could occur while switching Worlds in a Group.</li>
+<li>FastMenu: Now actually shows up, if Bottom-/Top-Right is selected as Anchor.</li>
+</ul>
+<p><strong>Release v1.13a:</strong></p>
 <p>Fixes:</p>
 <ul>
 <li>MouseInteraction: Fixed non-Left-Clicks to be working again.</li>
