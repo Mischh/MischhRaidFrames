@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Mischh X" APIVersion="14" Name="MischhRaidFrames" Description="">
+<Addon Author="Mischh X" APIVersion="15" Name="MischhRaidFrames" Description="">
     <ReplaceAddon Name="GroupDisplay"/>
 	<ReplaceAddon Name="RaidFrameBase"/>
-	
+
 	<Script Name="MischhRaidFrames.lua"/>
     <Form Name="MischhRaidFrames.xml"/>
 	<Script Name="Localization.lua"/>
-	
+
 	<Script Name="Options.lua" />
 	<Script Name="Settings\UIComponents.lua"/>
-	
+
 	<Script Name="Modules\IconFramework.lua" />
-	
+
 	<Script Name="Manager.lua" />
 	<Script Name="Modules\HealthModule.lua" />
 	<Script Name="Modules\ShieldModule.lua" />
@@ -41,18 +41,18 @@
 	<Script Name="Modules\BuffModule.lua" />
 	<Script Name="Modules\DebuffModule.lua" />
 	<Script Name="Modules\DirectiveArrowModule.lua" />
-	
-	
+
+
 	<Script Name="FrameHandler.lua" />
 	<Script Name="GroupHandler.lua" />
 	<Script Name="UnitHandler.lua" />
 	<Script Name="DragDrop.lua" />
-	
+
 	<Script Name="Defaults.lua" />
 	<Script Name="SaveHandler.lua" />
-	
+
 	<Script Name="TestMode.lua" />
-	
+
 	<Script Name="Compatability\GroupDisplay.lua"/>
 	<Form Name="Compatability\GroupDisplay.xml"/>
 </Addon>
