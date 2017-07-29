@@ -1,3 +1,9 @@
+<p><strong>Release v1.13c:</strong></p>
+  <p>Fixes:</p>
+  <ul>
+    <li>Version changed to API15</li>
+    <li>FastMenu now checks collision with top/bottom screen edge</li>
+  </ul>
 <p><strong>Release v1.13b:</strong></p>
 <p>Added:</p>
 <ul>
