@@ -63,7 +63,7 @@ local L = MRF:Localize({--[[English]]
 	["Switch Instance"] = "Switch Instance",
 	["To Raid"] = "To Raid",
 	["Disband"] = "Disband",
-	
+
 }, {--[[German]]
 	["sFirstTagger"] = "Erster",
 	["sRoundRobin"] = "Jeder",
@@ -154,7 +154,7 @@ do
 	end)
 end
 
-lenOption:OnUpdate(function(newVal) 
+lenOption:OnUpdate(function(newVal)
 	if type(newVal) == "number" and newVal > 0 then
 		extendLen = newVal
 		FrameHandler:Reposition()
@@ -168,7 +168,7 @@ xOption:OnUpdate(function(newVal)
 		xOption:Set(0)
 	elseif parentFrame then
 		local _, t = parentFrame:GetAnchorOffsets()
-		parentFrame:SetAnchorOffsets(newVal,t,0,0) 
+		parentFrame:SetAnchorOffsets(newVal,t,0,0)
 	end
 end)
 
@@ -177,7 +177,7 @@ yOption:OnUpdate(function(newVal)
 		yOption:Set(0)
 	elseif parentFrame then
 		local l, _ = parentFrame:GetAnchorOffsets()
-		parentFrame:SetAnchorOffsets(l,newVal,0,0) 
+		parentFrame:SetAnchorOffsets(l,newVal,0,0)
 	end
 end)
 
@@ -192,7 +192,7 @@ function FrameHandler:FrameHSpacing(newVal)
 end
 
 vSpFrOpt:OnUpdate(FrameHandler, "FrameVSpacing")
-function FrameHandler:FrameVSpacing(newVal) 
+function FrameHandler:FrameVSpacing(newVal)
 	if type(newVal) ~= "number" then
 		vSpFrOpt:Set(0)
 	elseif newVal ~= vFrameSpace then
@@ -202,7 +202,7 @@ function FrameHandler:FrameVSpacing(newVal)
 end
 
 tSpHeOpt:OnUpdate(FrameHandler, "HeaderTopSpacing")
-function FrameHandler:HeaderTopSpacing(newVal) 
+function FrameHandler:HeaderTopSpacing(newVal)
 	if type(newVal) ~= "number" then
 		tSpHeOpt:Set(0)
 	elseif newVal ~= tHeaderSpace then
@@ -212,7 +212,7 @@ function FrameHandler:HeaderTopSpacing(newVal)
 end
 
 bSpHeOpt:OnUpdate(FrameHandler, "HeaderBotSpacing")
-function FrameHandler:HeaderBotSpacing(newVal) 
+function FrameHandler:HeaderBotSpacing(newVal)
 	if type(newVal) ~= "number" then
 		bSpHeOpt:Set(0)
 	elseif newVal ~= bHeaderSpace then
@@ -257,20 +257,20 @@ end
 
 local function calcCol_ColExtended()
 	--local nH, nT, nD, total = #groups.heals, #groups.tanks, #groups.dps, #groups.heals+#groups.tanks+#groups.dps
-	
+
 	local nums, total = {}, 0;
 	for i, t in ipairs(groups) do
 		nums[i] = #t
 		total = total+#t
 	end
-	
+
 	local approx = ceil(total/extendLen)
-	
+
 	--if we support not enought rows to at least do a row of each to-be-displayed group, the for-loop would not be correct. Instead:
 	if extendLen <= numGreater0(nums) then
 		return max_tbl(nums)
 	end
-	
+
 	for col = approx, total, 1 do --the number of columns cant overgrow the total frames. very rarely this should do more than 2 iterations. Only for very low extendLen its possible
 		if divideCeilSum(nums, col) <= extendLen then --the number of actually needed rows, with this amount of columns
 			return col
@@ -283,14 +283,14 @@ local function calcCol_RowExtended()
 	local m = 0
 	for _, t in ipairs(groups) do
 		m = m<#t and #t or m
-		if m >= extendLen then 	--okay, this looks very bad in here - why not after the loop? 
+		if m >= extendLen then 	--okay, this looks very bad in here - why not after the loop?
 								-- because of the nature of Raidframes we assume, that there are many groups,
-								-- which are larger than the maximum of columns being set. Possibly the 
+								-- which are larger than the maximum of columns being set. Possibly the
 								-- first out of 10 groups. Think about it.
 			return extendLen
 		end
 	end
-	
+
 	return m
 end
 
@@ -347,7 +347,7 @@ local function addFrames_Vert(uTbl, col, top, height, width, toRight)
 	local extraCols = numUnits%col
 	local totalRows = numRows + ((extraCols > 0) and 1 or 0)
 	local i = 0
-	
+
 	if toRight then
 		local left = 0
 		for c = 1, col, 1 do
@@ -371,14 +371,14 @@ local function addFrames_Vert(uTbl, col, top, height, width, toRight)
 			right = right-width-hFrameSpace
 		end
 	end
-	
+
 	return origTop + (totalRows * height) + ((totalRows-1) * hFrameSpace) + tHeaderSpace
 end
 
 local ceil = math.ceil
 local function totalHeight(sizFrame, sizHeader, columns)
 	if columns < 1 then return 0 end
-	
+
 	local rows = 0 --amount of rows that will be displayed
 	local grps = 0 --amount of groups using space.
 	for _, grp in ipairs(groups) do
@@ -387,7 +387,7 @@ local function totalHeight(sizFrame, sizHeader, columns)
 			grps = grps + 1
 		end
 	end
-	
+
 	return 	( 	(grps-1)*tHeaderSpace + grps*(bHeaderSpace+sizHeader) 		--full space needed for headers
 			+ 	rows*sizFrame + (rows-grps)*vFrameSpace 				)	--full space needed for rows
 end
@@ -404,12 +404,12 @@ function FrameHandler:Reposition()
 	self.Reposition = function(self)
 		-- if true then return end
 		local col = (extendDir == "row" and calcCol_RowExtended or extendDir == "col" and calcCol_ColExtended)()
-		
+
 		local fHeight = frames[1].frame:GetHeight() --even if neither of both are created yet - they will be hidden on load.
 		local fWidth = frames[1].frame:GetWidth()
 		local hHeight = groupFrames.headers[1]:GetHeight()
 		local totalWidth = col*fWidth + (col-1)*hFrameSpace
-		
+
 		local top = 	extendToBottom 	and 0 				or -totalHeight(fHeight, hHeight, col)
 		local left = 	extendToRight 	and 0 				or -totalWidth
 		local right = 	extendToRight 	and totalWidth 		or 0
@@ -421,7 +421,7 @@ function FrameHandler:Reposition()
 				--configure header
 				groupFrames.headers[i]:SetAnchorOffsets(left, top, right, top+hHeight)
 				groupFrames.headers[i]:FindChild("text"):SetText("("..#tbl..") "..tbl.name..":")
-				
+
 				--add all units
 				if extendDir == "row" then
 					top = addFrames_Hori(tbl, col, top+hHeight, fHeight, fWidth, extendToRight)
@@ -433,7 +433,7 @@ function FrameHandler:Reposition()
 				groupFrames.headers[i]:Show(false, false)
 			end
 		end
-		
+
 		--hide all headers above #groups
 		for i = #groups+1, #groupFrames.headers, 1 do
 			groupFrames.headers[i]:Show(false, false)
@@ -455,11 +455,11 @@ local frameTmp = nil
 
 local frameOpt = MRF:GetOption(nil, "frame")
 MRF:GatherUpdates(frameOpt)
-frameOpt:OnUpdate( function(newTemplate) 
+frameOpt:OnUpdate( function(newTemplate)
 	frameTmp = newTemplate;
 	for i,frame in ipairs(frames) do
 		frame:UpdateOptions(newTemplate)
-		
+
 		--we could very ambiguosly try to make this function to be called last, or guaranteed early than most of the others,
 		--or just do it on the next frame:
 		ApolloTimer.Create(0, false, "UpdateAllFrames", FrameHandler)
@@ -470,16 +470,16 @@ end)
 local anchor = nil
 function MRF:ShowRaidAnchor()
 	if anchor then return end --already displayed.
-	
+
 	local L = self:Localize({
 		["Tooltip"] = "Rightclick to hide.",
 	},{
 		["Tooltip"] = "Rechtsklick: Ausblenden.",
 	},{
 	})
-	
+
 	local handler = {}
-	
+
 	anchor = self:LoadForm("IconTemplate", parentFrame, handler)
 	anchor:SetAnchorOffsets(-15,-15,15,15)
 	anchor:SetSprite("WhiteFill")
@@ -487,14 +487,14 @@ function MRF:ShowRaidAnchor()
 	local icon = self:LoadForm("IconTemplate", anchor)
 	icon:SetAnchorOffsets(-9,-7,9,10)
 	icon:SetAnchorPoints(0,0,1,1)
-	icon:SetSprite("CRB_MinimapSprites:sprMM_TargetShrunk")	
-	
+	icon:SetSprite("CRB_MinimapSprites:sprMM_TargetShrunk")
+
 	anchor:SetStyle("Moveable", true)
 	anchor:SetStyle("IgnoreMouse", false)
-	
+
 	anchor:AddEventHandler("MouseButtonDown", "ButtonClick", handler)
 	anchor:SetTooltip(L["Tooltip"])
-	
+
 	function handler:ButtonClick(wnd1, wnd2, button)
 		if wnd1 ~= wnd2 or button ~= 1 then return end
 		--HIDE THE BUTTON, STOP THE TIMER!
@@ -505,14 +505,14 @@ function MRF:ShowRaidAnchor()
 		icon = nil
 		anchor = nil
 	end
-	
+
 	function handler:OnTimer()
 		local l,t = anchor:GetAnchorOffsets()
 		anchor:SetAnchorOffsets(-15,-15,15,15)
 		xOption:Set(xOption:Get()+l+15)
 		yOption:Set(yOption:Get()+t+15)
 	end
-	
+
 	handler.timer = ApolloTimer.Create(0.1, true, "OnTimer", handler)
 end
 
@@ -524,13 +524,13 @@ end
 
 function FrameHandler:InitGroupFrames()
 	if parentFrame then return end --already done.
-	parentFrame =  MRF:LoadForm("Raid-Container", nil, self)	
-	
+	parentFrame =  MRF:LoadForm("Raid-Container", nil, self)
+
 	local l = xOption:Get() or 0
 	local t = yOption:Get() or 0
 	parentFrame:SetAnchorOffsets(l,t,0,0)
-	
-	groupFrames.headers = setmetatable({}, {__index = function(t,k) 
+
+	groupFrames.headers = setmetatable({}, {__index = function(t,k)
 		local h = MRF:LoadForm("GroupHeader", parentFrame, self)
 		rawset(t,k,h)
 		self:ApplyHeaderStyle(h)
@@ -542,7 +542,7 @@ end
 
 function FrameHandler:CreateNewFrame()
 	self:InitGroupFrames()--only wanna do this once.
-	self.CreateNewFrame = function() 
+	self.CreateNewFrame = function()
 		return MRF:newFrame(parentFrame, frameTmp)
 	end
 	return self:CreateNewFrame()
@@ -559,16 +559,16 @@ local optHeadSize = MRF:GetOption(Options, "headSize")
 local optHeadFill = MRF:GetOption(Options, "headFill")
 local optTextColor = MRF:GetOption(Options, "headTextColor")
 local optTextFont = MRF:GetOption(Options, "headTextFont")
-do 
+do
 	local hCol, hSiz, hFil, tCol, tFon = ApolloColor.new("FF000000"), 15, 0.5, ApolloColor.new("FFFFFFFF"), "Nameplates"
-	optHeadColor:OnUpdate(function(newCol) 
+	optHeadColor:OnUpdate(function(newCol)
 		if newCol then
 			hCol = ApolloColor.new(newCol)
 			FrameHandler:ApplyHeaderStyle(nil)
 			FrameHandler:Reposition()
 		else
 			optHeadColor:Set("FF000000")
-		end 
+		end
 	end)
 	optHeadSize:OnUpdate(function(newSiz)
 		if newSiz then
@@ -577,7 +577,7 @@ do
 			FrameHandler:Reposition()
 		else
 			optHeadSize:Set(15)
-		end 
+		end
 	end)
 	optHeadFill:OnUpdate(function(newFil)
 		if newFil then
@@ -606,7 +606,7 @@ do
 			optTextFont:Set("Nameplates")
 		end
 	end)
-	
+
 	function FrameHandler:ApplyHeaderStyle(header)
 		if not header then --assume to do it to all of them.
 			for i, head in ipairs(groupFrames.headers or {}) do
@@ -615,28 +615,28 @@ do
 		else
 			local txt = header:FindChild("text")
 			local line = header:FindChild("line")
-			
+
 			line:SetBGColor(hCol)
 			header:SetAnchorOffsets(0, 0, 200, hSiz)
 			line:SetAnchorPoints(0, hFil, 1, 1)
 			txt:SetTextColor(tCol)
 			txt:SetFont(tFon)
 		end
-	end 
+	end
 end
 
 do --FastMenu
 	local RClickHandler = {}
 	local Loot_Harvest = {"FirstTagger", "RoundRobin"}
-	local Inv_Harvest = {[GroupLib.HarvestLootRule.FirstTagger] = "FirstTagger", 
+	local Inv_Harvest = {[GroupLib.HarvestLootRule.FirstTagger] = "FirstTagger",
 		[GroupLib.HarvestLootRule.RoundRobin] = "RoundRobin"}
-		
+
 	local Loot_Rule = {"FreeForAll", "RoundRobin", "NeedBeforeGreed", "Master"}
 	local Inv_Rule = {[GroupLib.LootRule.FreeForAll] = "FreeForAll",
 		[GroupLib.LootRule.RoundRobin] = "RoundRobin",
 		[GroupLib.LootRule.NeedBeforeGreed] = "NeedBeforeGreed",
 		[GroupLib.LootRule.Master] = "Master"}
-		
+
 	local Loot_Threshold = {"Inferior", "Average", "Good", "Excellent", "Superb", "Legendary", "Artifact"}
 	local Inv_Threshold = {[GroupLib.LootThreshold.Inferior] = "Inferior",
 		[GroupLib.LootThreshold.Average] = "Average",
@@ -645,16 +645,16 @@ do --FastMenu
 		[GroupLib.LootThreshold.Superb] = "Superb",
 		[GroupLib.LootThreshold.Legendary] = "Legendary",
 		[GroupLib.LootThreshold.Artifact] = "Artifact"}
-	
-	local shorts = { FirstTagger = L["sFirstTagger"], RoundRobin = L["sRoundRobin"], FreeForAll = L["sFreeForAll"], 
-		NeedBeforeGreed = L["sNeedBeforeGreed"], Master = L["sMaster"], Average = L["sAverage"], Good = L["sGood"], 
-		Excellent = L["sExcellent"], Superb = L["sSuperb"], Legendary = L["sLegendary"], Artifact = L["sArtifact"], 
+
+	local shorts = { FirstTagger = L["sFirstTagger"], RoundRobin = L["sRoundRobin"], FreeForAll = L["sFreeForAll"],
+		NeedBeforeGreed = L["sNeedBeforeGreed"], Master = L["sMaster"], Average = L["sAverage"], Good = L["sGood"],
+		Excellent = L["sExcellent"], Superb = L["sSuperb"], Legendary = L["sLegendary"], Artifact = L["sArtifact"],
 		Inferior = L["sInferior"], Open = L["sOpen"], Neutral = L["sNeutral"], Closed = L["sClosed"], None = L["sNone"]}
-	local longer = { FirstTagger = L["lFirstTagger"], RoundRobin = L["lRoundRobin"], FreeForAll = L["lFreeForAll"], 
-		NeedBeforeGreed = L["lNeedBeforeGreed"], Master = L["lMaster"], Average = L["lAverage"], Good = L["lGood"], 
-		Excellent = L["lExcellent"], Superb = L["lSuperb"], Legendary = L["lLegendary"], Artifact = L["lArtifact"], 
+	local longer = { FirstTagger = L["lFirstTagger"], RoundRobin = L["lRoundRobin"], FreeForAll = L["lFreeForAll"],
+		NeedBeforeGreed = L["lNeedBeforeGreed"], Master = L["lMaster"], Average = L["lAverage"], Good = L["lGood"],
+		Excellent = L["lExcellent"], Superb = L["lSuperb"], Legendary = L["lLegendary"], Artifact = L["lArtifact"],
 		Inferior = L["lInferior"], Open = L["lOpen"], Neutral = L["lNeutral"], Closed = L["lClosed"], None = L["lNone"]}
-	
+
 	local Inv_Invite = {
 		[GroupLib.InvitationMethod.Open] = "Open",
 		[GroupLib.InvitationMethod.Neutral] = "Neutral",
@@ -662,7 +662,7 @@ do --FastMenu
 		[3] = "None", --this value you get, when not in Group.
 	}
 	local Rule_Invite = {"Open", "Neutral", "Closed"}
-		
+
 	local function trans(str)
 		if not str or not longer[str] then
 			return str or ""
@@ -672,27 +672,27 @@ do --FastMenu
 			return "" --not permanent value, dont even build a string.
 		end
 	end
-	
+
 	local oAbove = MRF:GetOption("FastMenu", "above")
 	local oBelow = MRF:GetOption("FastMenu", "below")
 	local oThreshold = MRF:GetOption("FastMenu", "threshold")
 	local oHarvest = MRF:GetOption("FastMenu", "harvest")
 	local oJoin = MRF:GetOption("FastMenu", "join")
 	local oRefer = MRF:GetOption("FastMenu", "referral")
-	
+
 	oAbove:OnUpdate(RClickHandler, "SetAbove")
 	oBelow:OnUpdate(RClickHandler, "SetBelow")
 	oThreshold:OnUpdate(RClickHandler, "SetThreshold")
 	oHarvest:OnUpdate(RClickHandler, "SetHarvest")
 	oJoin:OnUpdate(RClickHandler, "SetJoin")
 	oRefer:OnUpdate(RClickHandler, "SetReferral")
-	
+
 	local function applyLoot(above, thres, below, harvest)
 		local tbl = GroupLib.GetLootRules()
 		GroupLib.SetLootRules(below or tbl.eNormalRule, above or tbl.eThresholdRule,
 			thres or tbl.eThresholdQuality, harvest or tbl.eHarvestRule)
 	end
-	
+
 	function RClickHandler:SetAbove(val)
 		if type(val) == "number" then --only apply String
 			oAbove:Set(L["Above: "]..shorts[Inv_Rule[val]])
@@ -701,7 +701,7 @@ do --FastMenu
 			oAbove:Set(L["Above: "]..shorts[val])
 		end
 	end
-	
+
 	function RClickHandler:SetBelow(val)
 		if type(val) == "number" then --only apply String
 			oBelow:Set(L["Below: "]..shorts[Inv_Rule[val]])
@@ -710,7 +710,7 @@ do --FastMenu
 			oBelow:Set(L["Below: "]..shorts[val])
 		end
 	end
-	
+
 	function RClickHandler:SetThreshold(val)
 		if type(val) == "number" then --only apply String
 			oThreshold:Set(L["Threshold: "]..shorts[Inv_Threshold[val]])
@@ -719,7 +719,7 @@ do --FastMenu
 			oThreshold:Set(L["Threshold: "]..shorts[val])
 		end
 	end
-	
+
 	function RClickHandler:SetHarvest(val)
 		if type(val) == "number" then --only apply String
 			oHarvest:Set(L["Harvests: "]..shorts[Inv_Harvest[val]])
@@ -728,7 +728,7 @@ do --FastMenu
 			oHarvest:Set(L["Harvests: "]..shorts[val])
 		end
 	end
-	
+
 	function RClickHandler:SetJoin(val)
 		if type(val) == "number" then --only apply String
 			oJoin:Set(L["Joins: "]..shorts[Inv_Invite[val]])
@@ -737,7 +737,7 @@ do --FastMenu
 			oJoin:Set(L["Joins: "]..shorts[val])
 		end
 	end
-	
+
 	function RClickHandler:SetReferral(val)
 		if type(val) == "number" then --only apply String
 			oRefer:Set(L["Referrals: "]..shorts[Inv_Invite[val]])
@@ -746,18 +746,18 @@ do --FastMenu
 			oRefer:Set(L["Referrals: "]..shorts[val])
 		end
 	end
-	
+
 	function RClickHandler:OpenSettings(...)
 		MRF:InitSettings()
 	end
-	
+
 	function RClickHandler:OpenGroups()
 		MRF:InitGroupForm()
 	end
-	
+
 	function RClickHandler:SelectRoleTank( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
-		GroupLib.SetRoleTank(1, true) 
+		GroupLib.SetRoleTank(1, true)
 	end
 
 	function RClickHandler:SelectRoleHeal( wndHandler, wndControl, eMouseButton )
@@ -780,7 +780,7 @@ do --FastMenu
 			slot:SetAnchorOffsets(l,t,r,t)
 		end
 	end
-	
+
 	--this is not MRF:ShowFastMenu(), this is the OnShow of the FastMenu
 	function RClickHandler:ShowFastMenu( wndHandler, wndControl )
 		if wndHandler ~= wndControl then return end
@@ -788,7 +788,7 @@ do --FastMenu
 		local noInst = not GroupLib.InInstance()
 		local isRaid = GroupLib.InRaid()
 		local isLead = GroupLib.AmILeader() or false
-		
+
 		-- ### Roles ###
 		self.btnTank:SetCheck(unit.bTank == true)
 		self.btnHeal:SetCheck(unit.bHealer == true)
@@ -797,25 +797,25 @@ do --FastMenu
 		self.btnHeal:Enable(noInst or isRaid)
 		self.btnDps:Enable(noInst or isRaid)
 		--self.slotRole always shown.
-		
+
 		-- ### Dropdowns / Loot-Stuff ###
-		local tbl = GroupLib.GetLootRules()			
+		local tbl = GroupLib.GetLootRules()
 		oBelow:Set(tbl.eNormalRule)
 		oAbove:Set(tbl.eThresholdRule)
 		oThreshold:Set(tbl.eThresholdQuality)
 		oHarvest:Set(tbl.eHarvestRule)
-		
+
 		if isLead and noInst then
 			self.dropAbove:Enable(true);  self.dropThres:Enable(true);  self.dropBelow:Enable(true);  self.dropHarvest:Enable(true);
 		else
 			self.dropAbove:Enable(false); self.dropThres:Enable(false); self.dropBelow:Enable(false); self.dropHarvest:Enable(false);
 		end
 		--self.slotLoot always show.
-		
+
 		-- ### Dropdowns / Invitations ###
 		oJoin:Set(GroupLib.GetJoinRequestMethod())
 		oRefer:Set(GroupLib.GetReferralMethod())
-		
+
 		if isLead and noInst then
 			self.dropJoin:Enable(true);  self.dropRefer:Enable(true)
 			self:ShowMenuSlot(self.slotRequest, true)
@@ -823,21 +823,21 @@ do --FastMenu
 			self.dropJoin:Enable(false); self.dropRefer:Enable(false)
 			self:ShowMenuSlot(self.slotRequest, false)
 		end
-		
+
 		-- ### Readycheck ###
 		do
 			local show = isRaid and unit.bCanMark or noInst and isLead or false
 			self.btnReady:Enable(show)
 			self:ShowMenuSlot(self.slotReady, show)
 		end
-		
+
 		-- ### Switch Instance ###
 		do
 			local show = GroupLib.CanGotoGroupInstance()
 			self.btnInstance:Enable(show)
 			self:ShowMenuSlot(self.slotSwitch, show)
 		end
-		
+
 		-- ### Rank Management ###
 		do
 			local manager = Apollo.GetAddon("RaidFrameLeaderOptions") --we only show this button, if this Addon is loaded.
@@ -845,7 +845,7 @@ do --FastMenu
 			self.btnRanks:Enable(show)
 			self:ShowMenuSlot(self.slotRanks, show)
 		end
-		
+
 		-- ### Open Masterloot ###
 		do
 			local loot = GameLib.GetMasterLoot()
@@ -853,7 +853,7 @@ do --FastMenu
 			self.btnMLoot:Enable(show)
 			self:ShowMenuSlot(self.slotMLoot, show)
 		end
-		
+
 		-- ### Disband Row ###
 		do
 			local show = isLead and noInst or false
@@ -861,40 +861,47 @@ do --FastMenu
 			self.btnDisband:Enable(show)
 			self:ShowMenuSlot(self.slotDisband, show)
 		end
-		
+
 		-- ### Leave Row ###
 		do
 			self:ShowMenuSlot(self.slotLeave, true)
 		end
-		
-		local l, t, r = self.frame:GetAnchorOffsets()
+
+		local l, t, r = self.frame:GetOriginalLocation():GetOffsets()
 		local b = select(4, self.slotLeave:GetRect())+7
+
+		--collision-detection with bottom edge:
+		local availableHeight = self.spacer:GetHeight()
+		if b-t > availableHeight then
+			t = availableHeight-(b-t)
+			b = availableHeight
+		end
 		self.frame:SetAnchorOffsets(l, t, r, b)
 	end
-	
+
 	function RClickHandler:SwitchInstance( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		if GroupLib.CanGotoGroupInstance() then
 			GroupLib.GotoGroupInstance()
 		end
-		
+
 		self.frame:Show(false)
 	end
-	
+
 	function RClickHandler:Readycheck( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		if not GroupLib.IsReadyCheckOnCooldown() then
 			GroupLib.ReadyCheck()
 		end
-		
+
 		self.frame:Show(false)
 	end
-	
+
 	function RClickHandler:EditRanks( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		local manager = Apollo.GetAddon("RaidFrameLeaderOptions")
 		if not manager then return end
-		
+
 		-- Initialize the Manager (special treatment for positioning)
 		local _LoadForm = Apollo.LoadForm
 		Apollo.LoadForm = function(xml, name, parent, handler, ...)
@@ -905,60 +912,60 @@ do --FastMenu
 		end
 		manager:Initialize(true) --this should create manager.wndMain.
 		Apollo.LoadForm = _LoadForm --reapply old function
-		
-		if manager.wndMain and manager.wndMain:IsValid() then  
+
+		if manager.wndMain and manager.wndMain:IsValid() then
 			--reposition to have the Fastmenu Top-Left be on the same point, as the managers Top-Left
-			
+
 			local _, menuT, menuL = self.spacer:GetRect() --top right of the spacer is the topleft of menu.
 			local manaL, manaT = manager.wndMain:GetRect()
 			local offH, offV = menuL-manaL+3, menuT-manaT+3 -- +3, because else its fucking close to the frames.
 			local l,t,r,b = manager.wndMain:GetAnchorOffsets()
 			manager.wndMain:SetAnchorOffsets(l+offH, t+offV, r+offH, b+offV)
 		end
-		
+
 		self.frame:Show(false)
 	end
-	
+
 	function RClickHandler:ShowMasterloot( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		Event_FireGenericEvent("GenericEvent_ToggleGroupBag")
 	end
-	
+
 	function RClickHandler:ConvertToRaid( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		if GroupLib.AmILeader() then
 			GroupLib.ConvertToRaid()
 		end
-		
+
 		self.frame:Show(false)
 	end
-	
+
 	function RClickHandler:Disband( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		if GroupLib.AmILeader() then
 			GroupLib.DisbandGroup()
 		end
-		
+
 		self.frame:Show(false)
 	end
-	
+
 	function RClickHandler:LeaveGroup( wndHandler, wndControl, eMouseButton )
 		if wndHandler ~= wndControl then return end
 		GroupLib.LeaveGroup()
-		
+
 		self.frame:Show(false)
 	end
-	
+
 	function RClickHandler:OnHideMenu( wndHandler, wndControl )
 		if wndHandler ~= wndControl then return end
 		self.spacer:Show(false, false)
 	end
-	
+
 	function RClickHandler:OnShowSpacer( wndHandler, wndControl )
 		if wndHandler ~= wndControl then return end
 		self.frame:Show(true, false)
 	end
-	
+
 	function RClickHandler:InitFastMenu()
 		FrameHandler:InitGroupFrames() --to be sure parentFrame exists - should not be needed.
 		self.spacer = MRF:LoadForm("FastMenuTemplate", parentFrame, self)
@@ -972,41 +979,43 @@ do --FastMenu
 		self.btnMLoot = self.frame:FindChild("Button_Masterloot")
 		self.btnRaid = self.frame:FindChild("Button_2Raid")
 		self.btnDisband = self.frame:FindChild("Button_Disband")
-		
+
 		local function prep(wnd) wnd:SetData(wnd:GetHeight()) end
 		self.slotRole = self.frame:FindChild("Slot_Role");			prep(self.slotRole)
 		self.slotLoot = self.frame:FindChild("Slot_Loot");			prep(self.slotLoot)
 		self.slotRequest = self.frame:FindChild("Slot_Request");	prep(self.slotRequest)
 		self.slotReady = self.frame:FindChild("Slot_Ready");		prep(self.slotReady)
-		self.slotSwitch = self.frame:FindChild("Slot_Switch");		prep(self.slotSwitch) 
+		self.slotSwitch = self.frame:FindChild("Slot_Switch");		prep(self.slotSwitch)
 		self.slotRanks = self.frame:FindChild("Slot_Ranks");		prep(self.slotRanks)
 		self.slotMLoot = self.frame:FindChild("Slot_Masterloot");	prep(self.slotMLoot)
 		self.slotDisband = self.frame:FindChild("Slot_Disband");	prep(self.slotDisband)
 		self.slotLeave = self.frame:FindChild("Slot_Leave");		prep(self.slotLeave)
-		
+
 		self.btnInstance:SetText(L["Switch Instance"])
 		self.btnReady:SetText(L["Readycheck"])
 		self.btnRanks:SetText(L["Raid Manager"])
 		self.btnRaid:SetText(L["To Raid"])
 		self.btnDisband:SetText(L["Disband"])
-		
+
 		self.dropAbove = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Above"), Loot_Rule, oAbove, trans).drop:FindChild("DropdownButton")
 		self.dropThres = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Threshold"), Loot_Threshold, oThreshold, trans).drop:FindChild("DropdownButton")
 		self.dropBelow = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Below"), Loot_Rule, oBelow, trans).drop:FindChild("DropdownButton")
 		self.dropHarvest = MRF:applyDropdown(self.slotLoot:FindChild("Loot_Harvest"), Loot_Harvest, oHarvest, trans).drop:FindChild("DropdownButton")
-		
+
 		self.dropJoin = MRF:applyDropdown(self.slotRequest:FindChild("Request_Join"), Rule_Invite, oJoin, trans).drop:FindChild("DropdownButton")
-		self.dropRefer = MRF:applyDropdown(self.slotRequest:FindChild("Request_Referral"), Rule_Invite, oRefer, trans).drop:FindChild("DropdownButton")		
+		self.dropRefer = MRF:applyDropdown(self.slotRequest:FindChild("Request_Referral"), Rule_Invite, oRefer, trans).drop:FindChild("DropdownButton")
 	end
-	
+
 	function MRF:ShowFastMenu(...)
 		RClickHandler:InitFastMenu()
 		self.ShowFastMenu = function(self, parent)
 			local l, t, r, _ = parent:GetAnchorOffsets()
-			local L, _, R, _ = parent:GetParent():GetRect()
-			
+			local L, T, R, _ = parent:GetParent():GetRect()
+
 			local bLeft = L+l > R-L+r
-			
+
+			if T<0 then t = t-T end --collision with top edge
+
 			if bLeft then
 				local l = l-RClickHandler.frame:GetWidth()
 				RClickHandler.spacer:SetAnchorOffsets(l-100,t,l,0)
@@ -1028,16 +1037,16 @@ local function check(self)
 		self:SetMinMax(l,r)
 		self.slider:SetValue(x)
 		return true
-		
+
 	else
 		return false
 	end
 end
 
-function FrameHandler:BuildLimitlessSlider(slider)	
+function FrameHandler:BuildLimitlessSlider(slider)
 	slider.CheckDraggingThumb = check
-	
-	slider.opt:OnUpdate(function(newVal) 
+
+	slider.opt:OnUpdate(function(newVal)
 		if not slider:CheckDraggingThumb() then
 			Apollo.RegisterEventHandler("NextFrame", "CheckDraggingThumb", slider)
 		end
@@ -1070,59 +1079,59 @@ function FrameHandler:InitGeneralSettings(parent, name)
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
-	
+
 	local prev = MRF:LoadForm("PreviewSlot", parent)
 	MRF:applyPreview(prev, false, "none")
-	
+
 	local wOpt = MRF:GetOption(frameOpt, "size", 3)
 	local wRow = MRF:LoadForm("HalvedRow", parent)
 	wRow:FindChild("Left"):SetText(L["Frame Width:"])
 	self:BuildLimitlessSlider(MRF:applySlider(wRow:FindChild("Right"), wOpt, 0, 100, 1, false, true))--textbox: use steps, ignore limits
-		
+
 	local hOpt = MRF:GetOption(frameOpt, "size", 4)
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	hRow:FindChild("Left"):SetText(L["Frame Height:"])
 	self:BuildLimitlessSlider(MRF:applySlider(hRow:FindChild("Right"), hOpt, 0, 100, 1, false, true))
-	
+
 	local whQuest = MRF:LoadForm("QuestionMark", wRow:FindChild("Left"))
 	whQuest:SetTooltip(L["qSize"])
-	
+
 	local iOpt = MRF:GetOption(frameOpt, "inset")
 	local iRow = MRF:LoadForm("HalvedRow", parent)
 	iRow:FindChild("Left"):SetText(L["Frame Inset:"])
 	MRF:applySlider(iRow:FindChild("Right"), iOpt, 0, 20, 1, false, false, true) --textbox: no pos limit
-	
+
 	local iQuest = MRF:LoadForm("QuestionMark", iRow:FindChild("Left"))
 	iQuest:SetTooltip(L["qInset"])
-	
+
 	local bOpt = MRF:GetOption(frameOpt, "backcolor")
 	local bRow = MRF:LoadForm("HalvedRow", parent)
 	bRow:FindChild("Left"):SetText(L["Background Color:"])
 	MRF:applyColorbutton(bRow:FindChild("Right"), bOpt)
-	
+
 	local spacer = MRF:LoadForm("HalvedRow", parent)
 	spacer:SetText(L["Headers:"])
-	
+
 	local headHRow = MRF:LoadForm("HalvedRow", parent)
 	headHRow:FindChild("Left"):SetText(L["Header Height:"])
 	MRF:applySlider(headHRow:FindChild("Right"), optHeadSize, 1, 50, 1, false, false, true) --textbox: no pos limit
-	
+
 	local headFRow = MRF:LoadForm("HalvedRow", parent)
 	headFRow:FindChild("Left"):SetText(L["Filled Portion:"])
 	MRF:applySlider(headFRow:FindChild("Right"), optHeadFill, 0, 1, 0.05, true, false, false) --nosteps
-	
+
 	local headCRow = MRF:LoadForm("HalvedRow", parent)
 	headCRow:FindChild("Left"):SetText(L["Filling Color:"])
 	MRF:applyColorbutton(headCRow:FindChild("Right"), optHeadColor)
-	
+
 	local hTxtFRow = MRF:LoadForm("HalvedRow", parent)
 	hTxtFRow:FindChild("Left"):SetText(L["Font:"])
 	MRF:applyFontbox(hTxtFRow:FindChild("Right"), optTextFont)
-	
+
 	local hTxtCRow = MRF:LoadForm("HalvedRow", parent)
 	hTxtCRow:FindChild("Left"):SetText(L["Text Color:"])
 	MRF:applyColorbutton(hTxtCRow:FindChild("Right"), optTextColor)
-	
+
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + #children*30+50
@@ -1138,7 +1147,7 @@ function FrameHandler:InitPositioningSettings(parent, name)
 	local L = MRF:Localize({--English
 		["qAnchorLoc"] = [[Choose which corner the Anchors location specifies.
 				'Top-Left' means the frames will grow to the Bottom Right of the Anchors position.]],
-	
+
 		["Anchor Left Offset:"] = "Anchor Left Offset:",
 		["Anchor Top Offset:"] = "Anchor Top Offset:",
 		["qOffset"] = [[These two sliders define where the top-left corner of the raid will be.]],
@@ -1156,7 +1165,7 @@ function FrameHandler:InitPositioningSettings(parent, name)
 		["Bottom-Right"] = "Unten-Rechts",
 		["qAnchorLoc"] = [[Wähle, welche Ecke vom Ankerpunkt festgelegt wird.
 				'Oben-Links' bedeutet, dass das Addon vom Ankerpunkt nach Rechts und Unten wachsen wird.]],
-	
+
 		["Anchor Left Offset:"] = "Ankerpunkt Links:",
 		["Anchor Top Offset:"] = "Ankerpunkt Oben:",
 		["qOffset"] = [[Diese Schieberegler ermöglichen es die obere linke Ecke des Raids zu verschieben.]],
@@ -1169,28 +1178,28 @@ function FrameHandler:InitPositioningSettings(parent, name)
 		["qFill"] = [[Diese Optionen definieren, in welche Richtung das Addon zunächst den Raid füllen soll und wieviele Frames es maximal in diese Richtung platzieren darf.]],
 	}, {--French
 	})
-	
+
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
-	
+
 	local aRow = MRF:LoadForm("HalvedRow", parent)
 	aRow:FindChild("Left"):SetText(L["Anchor Location:"])
 	MRF:applyDropdown(aRow:FindChild("Right"), {"TL", "TR", "BL", "BR"}, ancOption, {TL=L["Top-Left"], TR=L["Top-Right"], BL=L["Bottom-Left"], BR=L["Bottom-Right"]})
 	MRF:LoadForm("QuestionMark", aRow:FindChild("Left")):SetTooltip(L["qAnchorLoc"])
-	
+
 	local xRow = MRF:LoadForm("HalvedRow", parent)
 	xRow:FindChild("Left"):SetText(L["Anchor Left Offset:"])
 	self:BuildLimitlessSlider(MRF:applySlider(xRow:FindChild("Right"), xOption, 0, 100, 1, false, true))
-	
+
 	local yRow = MRF:LoadForm("HalvedRow", parent)
 	yRow:FindChild("Left"):SetText(L["Anchor Top Offset:"])
 	self:BuildLimitlessSlider(MRF:applySlider(yRow:FindChild("Right"), yOption, 0, 100, 1, false, true))
-	
+
 	local aQuest = MRF:LoadForm("QuestionMark", xRow:FindChild("Left"))
 	aQuest:SetTooltip(L["qOffset"])
-	
-	local function transDir(x) 
+
+	local function transDir(x)
 		if x == "row" then
 			if (ancOption:Get() or "TL"):sub(2,2) == "L" then
 				return L["First right"]
@@ -1203,22 +1212,22 @@ function FrameHandler:InitPositioningSettings(parent, name)
 			else
 				return L["First up"]
 			end
-		else 
-			return "" 
+		else
+			return ""
 		end
 	end
-	
+
 	local dirRow = MRF:LoadForm("HalvedRow", parent)
 	dirRow:FindChild("Left"):SetText(L["Fill-Direction:"])
 	MRF:applyDropdown(dirRow:FindChild("Right"), {"row", "col"}, dirOption, transDir, ancOption) --update aswell, if ancOption changed (the anchor point switched, because the translation is different then)
-	
+
 	local lenRow = MRF:LoadForm("HalvedRow", parent)
 	lenRow:FindChild("Left"):SetText(L["Fill-Until:"])
 	MRF:applySlider(lenRow:FindChild("Right"), lenOption, 1, 40, 1)
-	
+
 	local fQuest = MRF:LoadForm("QuestionMark", dirRow:FindChild("Left"))
 	fQuest:SetTooltip(L["qFill"])
-	
+
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + #children*30
@@ -1257,36 +1266,36 @@ function FrameHandler:InitSpacingSettings(parent, name)
 		["qHSpace"] = [[Hier kann mehr Platz über/unter den Gruppen-Überschriften geschaffen werden.]],
 	}, {--French
 	})
-	
+
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
-	
+
 	local prev = self:PreviewSpacing(parent)
 	MRF:LoadForm("QuestionMark", prev):SetTooltip(L["qPreview"])
-	
+
 	local hRow = MRF:LoadForm("HalvedRow", parent)
 	hRow:FindChild("Left"):SetText(L["Frame Spaces - Horizontal:"])
 	MRF:applySlider(hRow:FindChild("Right"), hSpFrOpt, -20, 80, 1)
-	
+
 	local vRow = MRF:LoadForm("HalvedRow", parent)
 	vRow:FindChild("Left"):SetText(L["Frame Spaces - Vertical:"])
 	MRF:applySlider(vRow:FindChild("Right"), vSpFrOpt, -20, 80, 1)
-	
+
 	local sfQuest = MRF:LoadForm("QuestionMark", hRow:FindChild("Left"))
 	sfQuest:SetTooltip(L["qFSpace"])
-	
+
 	local tRow = MRF:LoadForm("HalvedRow", parent)
 	tRow:FindChild("Left"):SetText(L["Header Spaces - Top:"])
 	MRF:applySlider(tRow:FindChild("Right"), tSpHeOpt, -20, 80, 1)
-	
+
 	local bRow = MRF:LoadForm("HalvedRow", parent)
 	bRow:FindChild("Left"):SetText(L["Header Spaces - Bottom:"])
 	MRF:applySlider(bRow:FindChild("Right"), bSpHeOpt, -20, 80, 1)
-	
+
 	local shQuest = MRF:LoadForm("QuestionMark", tRow:FindChild("Left"))
 	shQuest:SetTooltip(L["qHSpace"])
-	
+
 	local children = parent:GetChildren()
 	local anchor = {parent:GetAnchorOffsets()}
 	anchor[4] = anchor[2] + #children*30+200
@@ -1303,17 +1312,17 @@ function FrameHandler:PreviewSpacing(parent)
 	local cBlue = ApolloColor.new("A000A0FF")
 	local cGreen = ApolloColor.new("A000FF00")
 	local cRed = ApolloColor.new("A0FF0000")
-	
+
 	local tl, tr, bl, br, th, bh; --top-left, ..., bottom-right, top-header, bottom-header
-	
+
 	local templateOpt = MRF:GetOption(nil, "frame")
 	local template = templateOpt:Get();
-	
+
 	local hFSpace = hFrameSpace
 	local vFSpace = vFrameSpace
 	local tHSpace = tHeaderSpace
 	local bHSpace = bHeaderSpace
-	
+
 	local function recolor(frame)
 		frame:SetVar("backcolor", nil, cBlue)
 		for _, modKey in ipairs(frame.oldTemp) do
@@ -1321,72 +1330,72 @@ function FrameHandler:PreviewSpacing(parent)
 			frame:SetVar("barcolor", modKey, cRed, cRed)
 		end
 	end
-	
-	local function reposition()		
+
+	local function reposition()
 		--from above:
 		--local hFrameSpace = 0
 		--local vFrameSpace = 0
 		--local tHeaderSpace = 0
 		--local bHeaderSpace = 0
-		
+
 		local width = tl.frame:GetWidth()
 		local height = tl.frame:GetHeight()
 		local heightHead = th:GetHeight()
-		
+
 		local leftStart = -floor(hFSpace/2)
 		local rightStart = ceil(hFSpace/2)
 		local leftEnd = leftStart - width
 		local rightEnd = rightStart + width
-		
+
 		local topFrameStart = -floor(vFSpace/2)
 		local botFrameStart = ceil(vFSpace/2)
 		local topFrameEnd = topFrameStart - height
 		local botFrameEnd = botFrameStart + height
-		
+
 		local topHeaderStart = topFrameEnd - bHSpace
 		local botHeaderStart = botFrameEnd + tHSpace
 		local topHeaderEnd = topHeaderStart - heightHead
 		local botHeaderEnd = botHeaderStart + heightHead
-		
+
 		--lleft,top,right,bottom
 		tl.frame:SetAnchorOffsets(leftEnd, topFrameEnd, leftStart, topFrameStart)
 		tr.frame:SetAnchorOffsets(rightStart, topFrameEnd, rightEnd, topFrameStart)
 		bl.frame:SetAnchorOffsets(leftEnd, botFrameStart, leftStart, botFrameEnd)
 		br.frame:SetAnchorOffsets(rightStart, botFrameStart, rightEnd, botFrameEnd)
-		
+
 		th:SetAnchorOffsets(leftEnd, topHeaderEnd, rightEnd, topHeaderStart)
 		bh:SetAnchorOffsets(leftEnd, botHeaderStart, rightEnd, botHeaderEnd)
 	end
-	
+
 	templateOpt:OnUpdate(function(newTemplate)
 		template = newTemplate;
-		
+
 		tl:UpdateOptions(newTemplate); tl.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
 		tr:UpdateOptions(newTemplate); tr.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
 		bl:UpdateOptions(newTemplate); bl.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
 		br:UpdateOptions(newTemplate); br.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
 		--reposition all frames.
-		
+
 		recolor(tl); recolor(tr); recolor(bl); recolor(br);
 		reposition()
 	end)
-	
+
 	hSpFrOpt:OnUpdate(function(val) hFSpace= val or 0; reposition() end);
 	vSpFrOpt:OnUpdate(function(val) vFSpace= val or 0; reposition() end);
 	tSpHeOpt:OnUpdate(function(val) tHSpace= val or 0; reposition() end);
 	bSpHeOpt:OnUpdate(function(val) bHSpace= val or 0; reposition() end);
-	
+
 	local parent = MRF:LoadForm("PreviewSlot", parent)
 	parent:SetAnchorOffsets(0,0,0,230)
-	
+
 	tl, tr, bl, br = MRF:newFrame(parent, template), MRF:newFrame(parent, template), MRF:newFrame(parent, template), MRF:newFrame(parent, template)
 	th, bh = MRF:LoadForm("GroupHeader", parent), MRF:LoadForm("GroupHeader", parent)
-	
+
 	recolor(tl); recolor(tr); recolor(bl); recolor(br);
 	th:FindChild("line"):SetBGColor(cGreen); bh:FindChild("line"):SetBGColor(cGreen);
 	th:FindChild("text"):SetText("Text"); bh:FindChild("text"):SetText("Text")
 	th:SetAnchorPoints(0.5,0.5,0.5,0.5); bh:SetAnchorPoints(0.5,0.5,0.5,0.5)
 	th:Show(true); bh:Show(true);
-	
+
 	return parent
 end

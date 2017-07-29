@@ -1,5 +1,6 @@
 --[[]]
 require "ICComm"
+require "ICCommLib"
 
 local GroupHandler = {}
 local MRF = Apollo.GetAddon("MischhRaidFrames")
@@ -50,7 +51,7 @@ local L = MRF:Localize({--English
 	["New Group"] = "New Group",
 	["Activate grouping on accept from chat"] = "Activate grouping on accept from chat",
 	["Deactivate grouping on new group"] = "Deactivate grouping on new group",
-	["ttActAccept"] = [[Tick this to make the Addon activate the custom grouping whenever it has recieved a grouping from chat. 
+	["ttActAccept"] = [[Tick this to make the Addon activate the custom grouping whenever it has recieved a grouping from chat.
 		This respects the options 'Accept' and 'Only Leader' options from within the groupings options!]],
 	["ttDeactGrp"] = "Choose this to make the addon decativate custom grouping automatically whenever you join (or create) a group.",
 }, {--German
@@ -128,7 +129,7 @@ function GroupHandler:Regroup_User()
 	end
 	local unI = #userdef+1 --ungrouped Index
 	groups[unI] = {name = L["Ungrouped"]}
-	
+
 	for i, unit in ipairs(units) do
 		local n = unit:GetMemberName()
 		local grI = userdef[n] or unI --group = the user-defenition, or ungrouped
@@ -142,7 +143,7 @@ function GroupHandler:Regroup_Default()
 	groups[1] = {name = L["Tanks"]}
 	groups[2] = {name = L["Heals"]}
 	groups[3] = {name = L["DPS"]}
-	
+
 	for i,unit in ipairs(units) do
 		if unit:IsTank() then
 			groups[1][#groups[1]+1] = i;
@@ -170,7 +171,7 @@ function GroupHandler:NewSavedDef(new)
 	else
 		userdef = new
 		self:Regroup()
-		self:Reposition() 
+		self:Reposition()
 		self:DistantUpdate()
 	end
 end
@@ -269,7 +270,7 @@ function GroupHandler:VRFDeserialize(str)
 	end
 	setfenv(func, {}) --not sure about this one... might not be needed.
 	local success, value = pcall(func)
-	return value	
+	return value
 end
 
 function GroupHandler:GetNameIdTable() --VinceRaidFrames (adapted)
@@ -283,13 +284,13 @@ function GroupHandler:GetNameIdTable() --VinceRaidFrames (adapted)
 	for i, name in ipairs(memberNames) do --this is just a array -> map method.
 		memberNameToId[name] = i
 	end
-	
+
 	return memberNameToId, memberNames
 end
 
 function GroupHandler:GetVRFLayout()
 	local idTbl = self:GetNameIdTable()
-	
+
 	local groups = setmetatable({}, {__index = function(t,k) t[k] = {}; return t[k] end})
 	for i, v in pairs(userdef) do --group all members into their groups.
 		if type(i) == "number" then
@@ -298,7 +299,7 @@ function GroupHandler:GetVRFLayout()
 			tinsert(groups[v], i)
 		end
 	end
-	
+
 	local layout = {}
 	for _, grp in ipairs(groups) do --add the groups in the correct order into the layout - replace the names with IDs.
 		if grp[0] then --if the Group has a name, we will publish it.
@@ -310,7 +311,7 @@ function GroupHandler:GetVRFLayout()
 			end
 		end
 	end
-	
+
 	return layout
 end
 
@@ -324,17 +325,17 @@ end
 function GroupHandler:PublishReadable()
 	local _, idTbl = self:GetNameIdTable()
 	local channel = ChatSystemLib.GetChannels()[ChatSystemLib.ChatChannel_Party]
-	
+
 	local layout = self:GetVRFLayout()
 	--this layout looks like this:
 	--	{"GroupName", 5, 3, 7, "GroupName2", "GroupName3", 1}
 	--where the numbers are IDs translating to names.
-	
+
 	--We want to output: (continuing Example, each Comment is a line.)
 		-- 'GroupName: MembrName5, MembrName3, MembrName7.'
 		-- 'GorupName3: MembrName1.
 	--as you see: 'GroupName2' was not output.
-	
+
 	--Split the layout, leaving a table with all Members of the next published Group.
 	--Once we find a new GroupName, we push out the last Group. (if it wasnt empty)
 	local grpName = nil
@@ -351,7 +352,7 @@ function GroupHandler:PublishReadable()
 			grpName = v
 		end
 	end
-	
+
 	--the last group was not pushed, if its not empty -> do so.
 	if #grp>0 and grpName then
 		channel:Send(grpName..": "..table.concat(grp, ", ")..".")
@@ -394,7 +395,7 @@ do
 			end
 		end
 	end
-	
+
 	function GroupHandler:OnShareTimer()
 		shareTimer = nil
 		if shareRequested then
@@ -407,18 +408,18 @@ do
 			end
 		end
 	end
-	
-	optPublish:OnUpdate(function(publish) 
+
+	optPublish:OnUpdate(function(publish)
 		if shareTimer and not publish then
 			shareTimer:Stop()
 			GroupHandler:OnShareTimer()
-		end	
+		end
 	end)
 end
 
 function GroupHandler:ICCommShareVersion()
 	self.addonVersionAnnounceTimer = nil
-	
+
 	if self.channel and accept then --only ask for stuff, if we actually accept stuff, duh?
 		if acceptFrom == "lead" then --if we only accept messages from our leader -> send him private message.
 			local leader = self:GetLead()
@@ -434,12 +435,12 @@ function GroupHandler:ICCommShareVersion()
 end
 
 -- tbl = {"GroupName1", idOfMemberInGroup1, "GroupName2", idOfMemberInGroup2, idOfMemberInGroup2, ...}
-function GroupHandler:ImportGroup(tbl) 
+function GroupHandler:ImportGroup(tbl)
 	local _, idTbl = self:GetNameIdTable()
 	wipe(userdef)
-	
+
 	local grId = 0
-	
+
 	for _, v in ipairs(tbl) do
 		if type(v) == "string" then
 			grId = grId+1
@@ -458,11 +459,11 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	if not accept then
 		return
 	end
-	
+
 	if channelSource:GetType() ~= ChatSystemLib.ChatChannel_Party then
 		return
 	end
-	
+
 	local msg = {}
 	for i, segment in ipairs(tMessageInfo.arMessageSegments) do
 		tinsert(msg, segment.strText)
@@ -472,28 +473,28 @@ function GroupHandler:OnChatMessage(channelSource, tMessageInfo)
 	if not strMsg then
 		return
 	end
-	
+
 	local layout = self:VRFDeserialize(strMsg)
-	
+
 	self:RecievedGroupLayout(tMessageInfo.strSender, layout)
 end
 
 function GroupHandler:RecievedGroupLayout(srcName, layout)
 	if not self:CheckAccepting(srcName) then
 		return
-	end	
+	end
 
 	local old = publishing
 	publishing = false --prevent the addon from re-publishing at this point (done seperate)
-	
+
 	self:ImportGroup(layout)
-	
+
 	if useUserDef then
 		self:Regroup()
 		self:Reposition()
 		self:DistantUpdate()
 	elseif activateAccept then
-		optUse:Set(true) 
+		optUse:Set(true)
 		--[[contains:
 			useUserDef = true
 			self:DistantUpdate()
@@ -503,7 +504,7 @@ function GroupHandler:RecievedGroupLayout(srcName, layout)
 	else
 		self:DistantUpdate() --at least update GroupDisplay
 	end
-	
+
 	publishing = old
 end
 
@@ -511,9 +512,9 @@ function GroupHandler:RecievedDeactRequest(srcName)
 	if activateAccept and self:CheckAccepting(srcName) then
 		local old = publishing
 		publishing = false --prevent the addon from re-publishing at this point (done seperate)
-	
+
 		optUse:Set(false)
-		
+
 		publishing = old
 	end
 end
@@ -547,14 +548,14 @@ function GroupHandler:JoinICCommChannel()
 	--we want to sync with VRF
 	self.channel = ICCommLib.JoinChannel("VinceRF", ICCommLib.CodeEnumICCommChannelType.Group)
 	self.channel:SetJoinResultFunction("GroupHandler_OnICCommJoin", MRF)
-	
+
 	if not self.channel:IsReady() then
 		self.timerJoinICCommChannel = ApolloTimer.Create(3, false, "JoinICCommChannel", self)
 	else
 		self.channel:SetReceivedMessageFunction("GroupHandler_OnICCommMessageReceived", MRF)
 		self.channel:SetSendMessageResultFunction("GroupHandler_OnICCommSendMessageResult", MRF)
 		self.channel:SetThrottledFunction("GroupHandler_OnICCommThrottled", MRF)
-		
+
 		self.addonVersionAnnounceTimer = ApolloTimer.Create(2, false, "ICCommShareVersion", self)
 	end
 end
@@ -573,8 +574,8 @@ do
 			self:OnICCommMessageReceived(t[1], t[2], t[3])
 		end
 	end
-	
-	function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?	
+
+	function GroupHandler:OnICCommMessageReceived(channel, strMessage, idMessage) --idMessage a Name?
 		local player = GameLib.GetPlayerUnit()
 		if not player then
 			table.insert(delayTable, {channel, strMessage, idMessage})
@@ -590,7 +591,7 @@ do
 			--a RaidWarning? Well - okay.... Do whatever VRF defines xD
 			Event_FireGenericEvent("StoryPanelDialog_Show", GameLib.CodeEnumStoryPanel.Urgent, message.rw, 6)
 		end
-		
+
 		if message.version then
 			--we dont save the version, because i do not know what would change..
 			--but VRF shares its GroupLayout, whenever somebody shares his version with him.
@@ -599,11 +600,11 @@ do
 			end
 			return
 		end
-		
-		if not accept then 
-			return 
+
+		if not accept then
+			return
 		end
-		
+
 		if message.layout then
 			self:RecievedGroupLayout(idMessage, message.layout)
 			if republishing and self:IsLead(playerName) then
@@ -671,11 +672,11 @@ end
 function MRF:GetGroupHandlersRegroup(unithandler_groups, unithandler_units, UnitHandler)
 	groups = unithandler_groups
 	units = unithandler_units
-	
+
 	function GroupHandler:Reposition(...)
 		return UnitHandler:Reposition(...)
 	end
-	
+
 	return GroupHandler.Regroup
 end
 
@@ -725,8 +726,8 @@ function GroupHandler:Resort_Class()
 			local id = units[idx]:GetClassId()
 			tinsert(t[id], idx)
 		end
-		groups[gidx] = append(t[GameLib.CodeEnumClass.Warrior], t[GameLib.CodeEnumClass.Engineer], 
-							t[GameLib.CodeEnumClass.Esper], t[GameLib.CodeEnumClass.Medic], 
+		groups[gidx] = append(t[GameLib.CodeEnumClass.Warrior], t[GameLib.CodeEnumClass.Engineer],
+							t[GameLib.CodeEnumClass.Esper], t[GameLib.CodeEnumClass.Medic],
 							t[GameLib.CodeEnumClass.Stalker], t[GameLib.CodeEnumClass.Spellslinger])
 		groups[gidx].name = group.name
 	end
@@ -753,26 +754,26 @@ function GroupHandler:InitSettings(parent, name)
 	local form = MRF:LoadForm("SimpleTab", parent)
 	form:FindChild("Title"):SetText(name)
 	parent = form:FindChild("Space")
-	
+
 	local function trans(x)
-		if not x then 
+		if not x then
 			return L["None"]
 		else
 			return L[x]
 		end
 	end
-	
+
 	local sortRow = MRF:LoadForm("HalvedRow", parent)
 	sortRow:FindChild("Left"):SetText(L["Sort-method for groups:"])
 	MRF:applyDropdown(sortRow:FindChild("Right"), {false, "Role", "Class", "Name"}, optResort, trans)
-	
+
 	MRF:LoadForm("HalvedRow", parent) --spacing
-	
+
 	local actRow = MRF:LoadForm("HalvedRow", parent)
 	MRF:applyCheckbox(actRow:FindChild("Right"), optActAcc, L["Activate grouping on accept from chat"])
 	local deaRow = MRF:LoadForm("HalvedRow", parent)
 	MRF:applyCheckbox(deaRow:FindChild("Right"), optDeactGrp, L["Deactivate grouping on new group"])
-	
+
 	MRF:LoadForm("QuestionMark", actRow:FindChild("Left")):SetTooltip(L["ttActAccept"])
 	MRF:LoadForm("QuestionMark", deaRow:FindChild("Left")):SetTooltip(L["ttDeactGrp"])
 
@@ -815,41 +816,41 @@ local sortedNames = {}
 local nocolor = ApolloColor.new("FF666666")
 
 function handler:Update(onlyUI)
-	if not onlyUI then 
+	if not onlyUI then
 		GroupHandler:Regroup()
 		GroupHandler:Reposition()
 	end
-	
+
 	if not form then return end
-	
+
 	self:ReselectGroup() --this will end up in redrawing the selected Group & the Groups List.
-	
+
 	ungrHandler:Redraw() --redraw the Ungrouped ppl aswell.
 end
 
 function GroupHandler:DistantUpdate()
 	if not units then return end
-	
+
 	name2color = {}
 	name2text = {}
 	for i, unit in ipairs(units) do
 		local n = unit:GetMemberName()
 		local pre = (unit:IsTank() and "T" or unit:IsHeal() and "H" or "D")..": "
 		local c = classColor:Get(unit)
-		
+
 		name2color[n] = c
 		name2text[n] = pre..n
 	end
-	
+
 	self:SortUINames()
-	
+
 	handler:Update(true)
 end
 
 local tinsert = table.insert
 function GroupHandler:SortUINames()
 	if not units then return end
-	
+
 	local sort = optSortUI:Get()
 	if sort == "Name" then
 		local tbl = {}
@@ -862,7 +863,7 @@ function GroupHandler:SortUINames()
 			end
 		end
 		table.sort(tbl)
-		
+
 		sortedNames = tbl
 		return tbl
 	elseif sort == "Class" then
@@ -871,16 +872,16 @@ function GroupHandler:SortUINames()
 			local id = unit:GetClassId()
 			tinsert(t[id], unit:GetMemberName())
 		end
-		
+
 		local noclass = {}
 		for idx in pairs(userdef) do
 			if type(idx) == "string" and not name2text[idx] then
 				tinsert(noclass, idx)
 			end
 		end
-		
-		sortedNames = append(t[GameLib.CodeEnumClass.Warrior], t[GameLib.CodeEnumClass.Engineer], 
-							t[GameLib.CodeEnumClass.Esper], t[GameLib.CodeEnumClass.Medic], 
+
+		sortedNames = append(t[GameLib.CodeEnumClass.Warrior], t[GameLib.CodeEnumClass.Engineer],
+							t[GameLib.CodeEnumClass.Esper], t[GameLib.CodeEnumClass.Medic],
 							t[GameLib.CodeEnumClass.Stalker], t[GameLib.CodeEnumClass.Spellslinger], noclass)
 		return sortedNames
 	elseif sort == "Role" then
@@ -888,7 +889,7 @@ function GroupHandler:SortUINames()
 		for _, unit in ipairs(units) do
 			tinsert(unit:IsTank() and tanks or unit:IsHeal() and heals or dps, unit:GetMemberName())
 		end
-		
+
 		local norole = {}
 		for idx in pairs(userdef) do
 			if type(idx) == "string" and not name2text[idx] then
@@ -907,7 +908,7 @@ function GroupHandler:SortUINames()
 				tinsert(tbl, idx)
 			end
 		end
-		
+
 		sortedNames = tbl
 		return sortedNames
 	end
@@ -925,7 +926,7 @@ function handler:ReselectGroup()
 			end
 		end
 	end
-	
+
 	if userdef[1] then
 		return optGrIdx:Set(1)
 	else
@@ -963,7 +964,7 @@ end
 
 function handler:RemoveGroup() --Pressed 'Remove'
 	local idx = optGrIdx:Get()
-	if idx then 
+	if idx then
 		handler:MoveFromGroup()
 		table.remove(userdef, idx)
 	end
@@ -994,7 +995,7 @@ function handler:MoveFromGroup() --Pressed '<--'
 			if i == idx then
 				userdef[k] = nil
 			end
-		end 
+		end
 	end
 	self:Update()
 	GroupHandler:ChangedGroupLayout()
@@ -1055,7 +1056,7 @@ function handler:UpdateGrName(name) -- called by optGrName:ForceUpdate()
 				return optGrName:Set(userdef[idx])
 			end
 		end
-		
+
 		userdef[idx] = name
 		grouHandler[idx]:SetText(grouHandler:GetText(idx))
 		self:Update()
@@ -1064,7 +1065,7 @@ function handler:UpdateGrName(name) -- called by optGrName:ForceUpdate()
 end
 
 function handler:UpdateGroupIndex(idx) -- called by optGrIdx:ForceUpdate()
-	switching = true 
+	switching = true
 	if idx then --set the groupName
 		optGrName:Set(userdef[idx])
 	else
@@ -1086,7 +1087,7 @@ end
 function handler:SaveThis(button)
 	local name = optSName:Get()
 	if not name or name:gsub("^%s+","") == "" then return end
-	
+
 	local idx = #permData+1
 	for i, t in ipairs(permData) do
 		if t.name == name then
@@ -1094,7 +1095,7 @@ function handler:SaveThis(button)
 			break;
 		end
 	end
-	
+
 	permData[idx] = permData[idx] or {["name"] = name}
 	permData[idx].data = copy(userdef)
 end
@@ -1128,7 +1129,7 @@ function grouHandler:GetText(idx)
 	for i, v in pairs(userdef) do
 		if v == idx then
 			num = num+1
-		end 
+		end
 	end
 	return userdef[idx].." ("..num..")"
 end
@@ -1141,7 +1142,7 @@ function grouHandler:Redraw()
 	self.parent:ArrangeChildrenVert()
 	self.parent:SetAnchorOffsets(0,0,0,#userdef * 25)
 	self.parent:GetParent():RecalculateContentExtents()
-	
+
 	local idx = optGrIdx:Get()
 	if idx then
 		self[idx]:SetCheck(true)
@@ -1157,7 +1158,7 @@ function grouHandler:GroupUp(wndControl, wndHandler)
 	if wndControl ~= wndHandler then return end
 	local src = wndControl:GetParent():GetData() --the index the group is at right now.
 	local tar = src-1; if tar<1 then tar=#userdef end
-	
+
 	userdef[src], userdef[tar] = userdef[tar], userdef[src] --switch the names
 	for i,v in pairs(userdef) do
 		if v == src then
@@ -1166,7 +1167,7 @@ function grouHandler:GroupUp(wndControl, wndHandler)
 			userdef[i] = src
 		end
 	end
-	
+
 	handler:Update()
 	GroupHandler:ChangedGroupLayout()
 end
@@ -1175,7 +1176,7 @@ function grouHandler:GroupDown(wndControl, wndHandler)
 	if wndControl ~= wndHandler then return end
 	local src = wndControl:GetParent():GetData() --the index the group is at right now.
 	local tar = src+1; if tar>#userdef then tar=1 end
-	
+
 	userdef[src], userdef[tar] = userdef[tar], userdef[src] --switch the names
 	for i,v in pairs(userdef) do
 		if v == src then
@@ -1184,7 +1185,7 @@ function grouHandler:GroupDown(wndControl, wndHandler)
 			userdef[i] = src
 		end
 	end
-	
+
 	handler:Update()
 	GroupHandler:ChangedGroupLayout()
 end
@@ -1195,11 +1196,11 @@ end
 
 function grpdHandler:GetTextColor(name)
 	return name2color[name] or nocolor
-end 
+end
 
 function grpdHandler:Redraw()
 	local idx = optGrIdx:Get()
-	
+
 	local i = 0
 	if idx then
 		for _, name in ipairs(sortedNames) do
@@ -1211,7 +1212,7 @@ function grpdHandler:Redraw()
 			end
 		end
 	end
-	
+
 	self.parent:ArrangeChildrenVert()
 	self.parent:SetAnchorOffsets(0,0,0, i*25)
 	self.parent:GetParent():RecalculateContentExtents()
@@ -1220,9 +1221,9 @@ end
 function grpdHandler:UnitSelected(button)
 	local name = button:GetData()
 	userdef[name] = nil
-	
+
 	handler:Update()
-	
+
 	GroupHandler:ChangedGroupLayout()
 end
 
@@ -1232,11 +1233,11 @@ end
 
 function ungrHandler:GetTextColor(n)
 	return name2color[n] or nocolor
-end 
+end
 
 function ungrHandler:Redraw()
 	local i = 0
-	
+
 	for _, name in ipairs(sortedNames) do
 		if not userdef[name] then
 			i = i+1
@@ -1245,7 +1246,7 @@ function ungrHandler:Redraw()
 			self[i]:SetData(name)
 		end
 	end
-	
+
 	self.parent:ArrangeChildrenVert()
 	self.parent:SetAnchorOffsets(0,0,0, i*25)
 	self.parent:GetParent():RecalculateContentExtents()
@@ -1254,19 +1255,19 @@ end
 function ungrHandler:UnitSelected(button)
 	local idx = optGrIdx:Get()
 	if not idx then return end
-	
+
 	local n = button:GetData()
-	
+
 	userdef[n] = idx
-	
+
 	handler:Update()
-	
+
 	GroupHandler:ChangedGroupLayout()
 end
 
 function MRF:InitGroupForm()
 	if form then return form:Show(true, false) end
-	
+
 	local _L = L
 	local L = MRF:Localize({--English
 		["Title"] = "MRF: Grouping",
@@ -1345,15 +1346,15 @@ function MRF:InitGroupForm()
 		["Sort Grouping Frame:"] = "Gruppierungsfenster sortieren:",
 	}, {--French
 	})
-	
+
 	local function transAccept(key) return L["from "]..(L[key or ""] or "").."." end
-	
+
 	form = self:LoadForm("GroupingForm", nil, handler)
 	handler.saveMenu = form:FindChild("SavesFrame")
 	ungrHandler.parent = form:FindChild("Ungrouped:Items")
 	grpdHandler.parent = form:FindChild("Grouped:Items")
 	grouHandler.parent = form:FindChild("Groups:Items")
-	
+
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Activated"), optUse, L["Activate"]).form:SetTooltip(L["ttActivated"])
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Accept"), optAcc, L["Accept:"]).form:SetTooltip(L["ttAccept"])
 	MRF:applyDropdown(form:FindChild("SideTab:Dropdown_From"), {"lead", "assist", "all"}, optAccFrom, transAccept).drop:SetTooltip(L["ttFrom"])
@@ -1361,7 +1362,7 @@ function MRF:InitGroupForm()
 	MRF:applyCheckbox(form:FindChild("SideTab:Checkbox_Republish"), optRepublish, L["Republish"]).form:SetTooltip(L["ttRepublish"])
 	MRF:applyTextbox(form:FindChild("Textbox_GroupName"), optGrName)
 	MRF:LoadForm("QuestionMark", form:FindChild("Textbox_GroupName")):SetTooltip(L["ttGroupName"])
-	
+
 	form:FindChild("Title"):SetText(L["Title"])
 	form:FindChild("lblUngrouped"):SetText(L["Ungrouped:"])
 	form:FindChild("lblGroups"):SetText(L["Groups:"])
@@ -1376,7 +1377,7 @@ function MRF:InitGroupForm()
 	form:FindChild("SavesFrame:lblRemove"):SetText(L["Remove this:"])
 	form:FindChild("SideTab:Group_Publish"):SetText(L["Publish in Chat"])
 	form:FindChild("SideTab:Group_Output"):SetText(L["Output Readable"])
-	
+
 	form:FindChild("All_ToGroup"):SetTooltip(L["ttToGroup"])
 	form:FindChild("All_FromGroup"):SetTooltip(L["ttFromGroup"])
 	form:FindChild("Group_Add"):SetTooltip(L["ttAdd"])
@@ -1384,25 +1385,25 @@ function MRF:InitGroupForm()
 	form:FindChild("Group_Reset"):SetTooltip(L["ttReset"])
 	form:FindChild("SideTab:Group_Publish"):SetTooltip(L["ttPubChat"])
 	form:FindChild("SideTab:Group_Output"):SetTooltip(L["ttOutput"])
-	
-	
-	ungrHandler = setmetatable(ungrHandler, {__index = function(t,k) 
+
+
+	ungrHandler = setmetatable(ungrHandler, {__index = function(t,k)
 		if type(k) == "number" then
 			local item = MRF:LoadForm("Groups_ListItemUnit", t.parent, t)
 			rawset(t,k,item)
 			return item
 		end
 	end})
-	
-	grpdHandler = setmetatable(grpdHandler, {__index = function(t,k) 
+
+	grpdHandler = setmetatable(grpdHandler, {__index = function(t,k)
 		if type(k) == "number" then
 			local item = MRF:LoadForm("Groups_ListItemUnit", t.parent, t)
 			rawset(t,k,item)
 			return item
 		end
 	end})
-	
-	grouHandler = setmetatable(grouHandler, {__index = function(t,k) 
+
+	grouHandler = setmetatable(grouHandler, {__index = function(t,k)
 		if type(k) == "number" then
 			local item = MRF:LoadForm("Groups_ListItemGroup", t.parent, t)
 			item:SetData(k) --this is the groups index.
@@ -1410,9 +1411,9 @@ function MRF:InitGroupForm()
 			return item
 		end
 	end})
-	
+
 	MRF:applyTextbox(form:FindChild("SavesFrame:Textbox_Name"),optSName)
- 
+
 	local permRef = {
 		ipairs = function()
 			local tbl = {ipairs(permData)}
@@ -1437,15 +1438,13 @@ function MRF:InitGroupForm()
 			end
 		end
 	end)
-	
-	
-	MRF:applyDropdown(form:FindChild("Dropdown_Sorting"), {false, "Role", "Class", "Name"}, optSort, 
+
+
+	MRF:applyDropdown(form:FindChild("Dropdown_Sorting"), {false, "Role", "Class", "Name"}, optSort,
 		{[false]=_L["None"], ["Role"]=_L["Role"], ["Class"]=_L["Class"], ["Name"]=_L["Name"], [""]=""})
-	
+
 	grOptions:ForceUpdate()
 	Options:ForceUpdate()
 	CharOpt:ForceUpdate()
 	handler:Update()
 end
-
-
