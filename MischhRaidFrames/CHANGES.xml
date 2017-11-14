@@ -1,3 +1,13 @@
+<p><strong>Release v1.14:</strong></p>
+  <p>Added:</p>
+  <ul>
+    <li>New Possibility to let the Addon automatically switch between Profiles for Raid and Party</li>
+    <li>Texts are not any longer tied to bars.</li>
+  </ul>
+  <p>Fixes:</p>
+  <ul>
+    <li>Version changed to API16</li>
+  </ul>
 <p><strong>Release v1.13c:</strong></p>
   <p>Fixes:</p>
   <ul>
