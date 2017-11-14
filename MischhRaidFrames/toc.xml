@@ -11,6 +11,7 @@
 	<Script Name="Settings\UIComponents.lua"/>
 
 	<Script Name="Modules\IconFramework.lua" />
+	<Script Name="Modules\TextFramework.lua" />
 
 	<Script Name="Manager.lua" />
 	<Script Name="Modules\HealthModule.lua" />

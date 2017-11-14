@@ -28,7 +28,7 @@ function HAbsorbMod:progressUpdate(frame, unit)
 	if not max or max<1 then max = 1 end
 
 	local val = cur/max
-	
+
 	return val
 end
 
@@ -42,7 +42,7 @@ local function shorten(num)	--stolen from ForgeUI
     elseif num >= 1000000 then
         tmp = string.sub(tmp, 1, string.len(tmp) - 6) .. "." .. string.sub(tmp, string.len(tmp) - 5, string.len(tmp) - 5) .. "M"
     elseif num >= 1000 then
-        tmp = string.sub(tmp, 1, string.len(tmp) - 3) .. "." .. string.sub(tmp, string.len(tmp) - 2, string.len(tmp) - 2) .. "k"    
+        tmp = string.sub(tmp, 1, string.len(tmp) - 3) .. "." .. string.sub(tmp, string.len(tmp) - 2, string.len(tmp) - 2) .. "k"
 	else
         tmp = num -- hundreds
     end
@@ -64,7 +64,7 @@ local tAbsorb = setmetatable({ --makes the text pattern easier & faster
 	_p = function(tbl) return floor(100* tbl.c / tbl.C); end,
 } , { __index = function(tbl, key)
 	--[[key = c C s S m n, while c&C will be set (and never get called) ]]
-	local f = rawget(tbl, "_"..key) -- see functions above. 
+	local f = rawget(tbl, "_"..key) -- see functions above.
 	if f then
 		return f(tbl)
 	else
@@ -78,12 +78,12 @@ function HAbsorbMod:textUpdate(frame, unit)
 	local cur = unit:GetHealingAbsorptionValue()
 	if not cur then cur = 0 end
 	if not max or max<1 then max = 1 end
-	
-	tHealth["C"] = max
-	tHealth["c"] = cur 
-		
+
+	tAbsorb["C"] = max
+	tAbsorb["c"] = cur
+
 	local val = pattern:gsub("%%(.)", tAbsorb) --replace any %* with the requested value.
-	
+
 	--frame:SetVar("text", modKey, val)
 	return val
 end
@@ -91,13 +91,13 @@ end
 function HAbsorbMod:InitTextSettings(parent)
 	local L = MRF:Localize({--English
 		["ttPattern"] = [[Within this pattern specific characters will be replaced:
-			%c = current value 
-			%s = shortened value 
+			%c = current value
+			%s = shortened value
 			%p = percent (floored)]],--i know this doesnt look like a string in houston, but it is. Love this Editor...
 	}, {--German
 		["Pattern:"] = "Schema:",
 		["ttPattern"] = [[Innerhalb dieses Schemas werden bestimmte Zeichenkombinationen ersetzt:
-			%c = jetziger Wert 
+			%c = jetziger Wert
 			%s = gekürzter Wert
 			%p = prozentual (abgerundet)]],
 	}, {--French
@@ -105,10 +105,10 @@ function HAbsorbMod:InitTextSettings(parent)
 
 	local row = MRF:LoadForm("HalvedRow", parent)
 	local question = MRF:LoadForm("QuestionMark", row:FindChild("Left"))
-	
+
 	row:FindChild("Left"):SetText(L["Pattern:"])
-	question:SetTooltip(L["ttPattern"]) 	
-	
+	question:SetTooltip(L["ttPattern"])
+
 	MRF:applyTextbox(row:FindChild("Right"), patternOpt)
 
 	local anchor = {parent:GetAnchorOffsets()}
@@ -117,5 +117,3 @@ function HAbsorbMod:InitTextSettings(parent)
 	parent:ArrangeChildrenVert()
 	parent:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
 end
-
-

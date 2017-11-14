@@ -392,10 +392,8 @@ end
 
 function MRF:CheckFrameTemplate(frame)
 	local default = self:GetDefaultColor()
-	local valHPos = {l = true, c = true, r = true}
-	local valVPos = {t = true, c = true, b = true}
 	local dupBar = {}
-	local dupTxt = {}
+	local barTexts = {}
 	local changed = false
 
 	if not frame.size then
@@ -434,12 +432,6 @@ function MRF:CheckFrameTemplate(frame)
 			elseif type(bar.rColor.Get) ~= "function" then
 				Print("Broken missing color on bar '"..tostring(bar.modKey).."' ("..bar.rColor.name..") - replaced with default.")
 				bar.rColor = default
-				changed = true
-			end
-
-			if bar.textColor and type(bar.textColor.Get) ~= "function" then
-				Print("Broken text color on bar '"..tostring(bar.modKey).."' ("..bar.textColor.name..") - replaced with default.")
-				bar.textColor = default
 				changed = true
 			end
 
@@ -491,42 +483,89 @@ function MRF:CheckFrameTemplate(frame)
 					local strErr = "Found a bar(%s) with a text(%s), which is not part of a Module. - removed the text"
 					Print(strErr:format(tostring(bar.modKey), tostring(bar.textSource)))
 					bar.textSource = nil
+					bar.textColor = nil
+					bar.textFont = nil
+					bar.hTextPos = nil
+					bar.vTextPos = nil
 					changed = true
-				elseif dupTxt[bar.textSource] then
+				elseif barTexts[bar.textSource] then
 					local strErr = "The frame-template had multiple instaces of the text '%s' - removed the last found instance."
 					Print(strErr:format(tostring(bar.textSource)))
 					bar.textSource = nil
+					bar.textColor = nil
+					bar.textFont = nil
+					bar.hTextPos = nil
+					bar.vTextPos = nil
 					changed = true
 				else
-					dupTxt[bar.textSource] = true
-				end
-				if bar.textSource and not bar.textColor then--check, if the bar has a text, but no textColor.
-					local strErr = "The bar %s had a text(%s) without a color - set to default."
-					Print(strErr:format(tostring(bar.modKey),tostring(bar.textSource)))
-					bar.textColor = default
-					changed = true
-				end
-				if bar.textSource and not valHPos[bar.hTextPos or ""] then
-					local strErr = "The bar %s had a text(%s) without a horizontal position - set to center."
-					Print(strErr:format(tostring(bar.modKey),tostring(bar.textSource)))
-					bar.hTextPos = 'c'
-					changed = true
-				end
-				if bar.textSource and not valVPos[bar.vTextPos or ""] then
-					local strErr = "The bar %s had a text(%s) without a vertical position - set to center."
-					Print(strErr:format(tostring(bar.modKey),tostring(bar.textSource)))
-					bar.vTextPos = 'c'
-					changed = true
-				end
-			end
+					local strErr = "There was a text (%s) found on a bar. Tried to copy the text to the newer version."
+					Print(strErr:format(tostring(bar.textSource)))
 
-			if not bar.textFont then
-				Print("Found a bar("..tostring(bar.modKey)..") without a font - default to 'Nameplates'")
-				bar.textFont = "Nameplates"
-				changed = true
+					local tSettings = {
+						strParent = bar.modKey,
+						strAnchor = (bar.vTextPos or "T"):upper() .. (bar.hTextPos or "L"):upper(),
+						strFont = bar.textFont or "Nameplates",
+						tColor = (bar.textColor and type(bar.textColor.Get) == "function" and bar.textColor) or default
+					}
+					barTexts[bar.textSource] = tSettings
+
+					--normalize the anchor (aka fix things like "CR" to be "R")
+					tSettings.strAnchor = tSettings.strAnchor:gsub("[^LTRB]", "")
+					if tSettings.strAnchor == "" then
+						tSettings.strAnchor = "C"
+					end
+
+					bar.textSource = nil
+					bar.textColor = nil
+					bar.textFont = nil
+					bar.hTextPos = nil
+					bar.vTextPos = nil
+					changed = true
+				end
 			end
 		end
 	end
+
+	if next(barTexts) then
+		local oModules =  MRF:GetOption(nil, "modules")
+		local tTestFrame = MRF:newFrame(nil, frame)
+
+		local tFrameRect = {0, 0, tTestFrame.panel:GetWidth(), tTestFrame.panel:GetHeight()}
+
+		for strTextKey, tSettings in pairs(barTexts) do
+
+			local wndOrigParent = tTestFrame[tSettings.strParent].frame
+			local tParentRect = {wndOrigParent:GetRect()}
+
+			local nXOffset;
+			if tSettings.strAnchor:find("L") then
+				nXOffset = tParentRect[1]-tFrameRect[1]
+			elseif tSettings.strAnchor:find("R") then
+				nXOffset = tParentRect[3]-tFrameRect[3]
+			else --Center
+				nXOffset = ((tParentRect[1]-tFrameRect[1])/2 + (tParentRect[3]-tFrameRect[3])/2)
+			end
+
+			local nYOffset;
+			if tSettings.strAnchor:find("T") then
+				nYOffset = tParentRect[2]-tFrameRect[2]
+			elseif tSettings.strAnchor:find("B") then
+				nYOffset = tParentRect[4]-tFrameRect[4]
+			else
+				nYOffset = math.floor((tParentRect[2]-tFrameRect[2])/2 + (tParentRect[4]-tFrameRect[4])/2)
+			end
+
+			MRF:GetOption(oModules, strTextKey, "bTextActive"):Set(true)
+			MRF:GetOption(oModules, strTextKey, "nTextX"):Set(nXOffset)
+			MRF:GetOption(oModules, strTextKey, "nTextY"):Set(nYOffset)
+			MRF:GetOption(oModules, strTextKey, "strTextAnchor"):Set(tSettings.strAnchor)
+			MRF:GetOption(oModules, strTextKey, "strTextFont"):Set(tSettings.strFont)
+			MRF:GetOption(oModules, strTextKey, "tTextColor"):Set(tSettings.tColor)
+		end
+		--destroy the tTestFrame; the rest should be garbage-collected
+		tTestFrame.frame:Destroy()
+	end
+
 	return changed
 end
 

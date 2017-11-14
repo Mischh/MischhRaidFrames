@@ -11,7 +11,7 @@ local FORM_FONTBOX_TEMPLATE = "FontBox"
 
 local settingsForm = nil;
 
- --[[#####  Dropdown  ######]]
+ --[[#####  Dropdown  ######]] --:applyDropdown(parent, choices, selector, translator, ...)
 local function toggleDropdown(self, wndHandler, wndControl)
 	if wndHandler ~= wndControl then
 		return
@@ -29,10 +29,10 @@ local function toggleDropdown(self, wndHandler, wndControl)
 	local choices = container:FindChild("Choices")
 	if wndControl:IsChecked() then
 		local frames = choices:GetChildren()
-		
+
 		local pre = #frames --number of previously created Frames
 		local num = 0 --number of items to be displayed
-		
+
 		--Fill Space:
 		for i, obj in self.ipairs(self.data) do
 			local text = self.trans(obj)
@@ -51,8 +51,8 @@ local function toggleDropdown(self, wndHandler, wndControl)
 		end
 
 		choices:ArrangeChildrenVert()
-		
-		
+
+
 		--Make Enought Space for the created Items:
 		local l,t,r,b = container:GetAnchorOffsets()
 		--32 = Size of a single Item
@@ -76,11 +76,11 @@ end
 
 local function clickChoice(self, btn)
 	local index, data, handler = unpack(btn:GetData())
-	
+
 	local container = btn:GetParent():GetParent()
-	
+
 	container:Close()
-	
+
 	setSelected(self, data, index)
 end
 
@@ -130,26 +130,26 @@ end
 --... are addtional Options, to provide more Updates. any recieved :OnUpdate() results in retexting the dropdown - nothing else.
 --The Text on the Dropdown will only change whenever the selector or one of the other options push an Update
 --if you do not want to display Text - just rewrite the :SetText(str) function.
-function MRF:applyDropdown(parent, choices, selector, translator, ...) 
-	
+function MRF:applyDropdown(parent, choices, selector, translator, ...)
+
 	local handler = {data = choices, trans = transToFunction(translator), sel = selector, ipairs = choices.ipairs or ipairs}
-	
+
 	handler.drop = self:LoadForm(FORM_DROPDOWN_TEMPLATE, parent, handler):FindChild("DropdownButton")
-	
+
 	handler.OnDropdownToggle = toggleDropdown
 	handler.OnContainerClosed = containerClosed
 	handler.OnItemSelected = clickChoice
-	
+
 	handler.OnSelectorUpdate = selectorUpdate
 	handler.OnDistantUpdate = distantUpdate
 	handler.SetSelectedIndex = setIndex
 	handler.SetSelectedValue = setSelected
 	handler.SetText = setText
-	
+
 	selector:OnUpdate(handler, "OnSelectorUpdate")
 	registerForDistantUpdates(handler, ...)
-	
-	
+
+
 	return handler
 end
 
@@ -177,7 +177,7 @@ local function setMinMax(handler, min, max, step)
 	handler.minimum = min or handler.minimum
 	handler.maximum = max or handler.maximum
 	handler.ticklen = step or handler.ticklen
-	
+
 	if handler.minimum > handler.maximum then --keep at least one value possible for the slider.
 		if min and not max then
 			handler.maximum = min
@@ -185,14 +185,14 @@ local function setMinMax(handler, min, max, step)
 			handler.minimum = max
 		end
 	end
-	
+
 	handler.slider:SetMinMax(handler.minimum, handler.maximum, handler.ticklen)
 end
 
 local function onText(self, wndHandler, wndControl, txt)
 	local value = tonumber(txt)
 	if not value then return end --non numeric values are not interesting.
-	
+
 	if self.tbLimited then
 		if value < self.minimum then
 			value = self.minimum
@@ -200,12 +200,12 @@ local function onText(self, wndHandler, wndControl, txt)
 			value = self.maximum
 		end
 	end
-	
+
 	if self.tbSteps then
 		local ticks = math.floor(((value-self.minimum)/self.ticklen)+0.5)
 		value = self.minimum + self.ticklen*ticks
 	end
-	
+
 	self.blockTxt = true
 	self.opt:Set(value)
 	self.blockTxt = false
@@ -220,7 +220,7 @@ function MRF:applySlider(parent, selector, min, max, steps, tbNoSteps, tbNoLimit
 	min = min or 0
 	max = max or min+1
 	steps = steps or 0.1
-	
+
 	local handler = {opt = selector, block = false, minimum = min, maximum = max, ticklen = steps,
 					tbSteps = not tbNoSteps, tbLimited = not tbNoLimit, tbPosLimit = not tbNoLimitPos}
 	handler.SliderChanged = sliderChanged
@@ -231,9 +231,9 @@ function MRF:applySlider(parent, selector, min, max, steps, tbNoSteps, tbNoLimit
 	handler.form = MRF:LoadForm(FORM_SLIDER_TEMPLATE, parent, handler)
 	handler.text = handler.form:FindChild("Label")
 	handler.slider = handler.form:FindChild("SliderBar")
-		
+
 	handler.slider:SetMinMax(min, max, steps)
-		
+
 	selector:OnUpdate(handler, "OnUpdate")
 	return handler
 end
@@ -261,15 +261,15 @@ end
 
 function MRF:applyCheckbox(parent, selector, text)
 	local handler = {
-		Check = onCheck, 
-		Uncheck = onUncheck, 
-		OnUpdate = updateCheck, 
+		Check = onCheck,
+		Uncheck = onUncheck,
+		OnUpdate = updateCheck,
 		block = false,
 		sel = selector,
 	}
 	handler.form = MRF:LoadForm(FORM_CHECKBOX_TEMPLATE, parent, handler)
 	handler.form:SetText(text)
-	
+
 	selector:OnUpdate(handler, "OnUpdate")
 	return handler
 end
@@ -291,13 +291,13 @@ end
 function MRF:applyTextbox(parent, selector)
 	local handler = {
 		OnTextChange = textChanged,
-		OnUpdate = updateText, 
+		OnUpdate = updateText,
 		block = false,
 		sel = selector,
 	}
 	handler.form = MRF:LoadForm(FORM_TEXTBOX_TEMPLATE, parent, handler)
 	handler.text = handler.form:FindChild("Text")
-	
+
 	selector:OnUpdate(handler, "OnUpdate")
 	return handler
 end
@@ -315,7 +315,7 @@ local function chooseNew(self, wndHandler, wndControl)
 	--	return
 	--end
 	local init = self.sel:Get() or white
-	
+
 	picker:Pick(self, init)
 end
 
@@ -336,14 +336,14 @@ function MRF:applyColorbutton(parent, selector, asTbl)
 
 	local handler = {sel = selector, ChooseColor = chooseNew, OnUpdate = updateOpt}
 	handler.Set = asTbl and tblCallback or strCallback
-	
+
 	local form = MRF:LoadForm(FORM_COLORBUTTON_TEMPLATE, parent, handler)
 	handler.colorBG = form:FindChild("Button:Color")
-	
+
 	handler.Set = asTbl and tblCallback or strCallback
-	
+
 	selector:OnUpdate(handler, "OnUpdate")
-	
+
 	--selector:ForceUpdate()
 end
 
@@ -367,141 +367,141 @@ function MRF:InitColorPicker()
 		local b = ("%x"):format(color.b*255):gsub("^(%x)$", "0%1")
 		local a = ("%x"):format(self.alpha*255):gsub("^(%x)$", "0%1")
 		local pre = self.dbl and "2x:" or ""
-		
+
 		local full = pre..a..r..g..b
-		
+
 		color = ApolloColor.new(a..r..g..b)
-		
+
 		self.color = color
-		
+
 		self:SetRText(r)
 		self:SetGText(g)
 		self:SetBText(b)
 		self:SetAText(a)
 		self:SetAlphaSlider(color.a)
 		self:Set2x(self.dbl)
-		
+
 		self.newColor:SetBGColor(ApolloColor.new(full))
 		if self.callback then
 			self.callback:Set({a=color.a, r=color.r, g=color.g, b=color.b}, full)
 		end
-	end 
-	
+	end
+
 	function colorHandler:AlphaSliderChanged(_,_, val)
 		self.blockAlpha = true
 		self.alpha = val
 		self:OnColorChanged(self.picker, self.picker, self.color)
 		self.blockAlpha = false
 	end
-	
+
 	function colorHandler:SetAlphaSlider(a)
 		if self.blockAlpha then return end
 		self.slider:SetValue(a)
 	end
-	
+
 	function colorHandler:Check2x()
 		self.dbl = true
 		self:OnColorChanged(self.picker, self.picker, self.color)
 	end
-	
+
 	function colorHandler:Uncheck2x()
 		self.dbl = false
 		self:OnColorChanged(self.picker, self.picker, self.color)
 	end
-	
+
 	function colorHandler:Set2x(val)
 		self.btn2x:SetCheck(val)
 	end
-	
-	
+
+
 	local blockA = false
 	function colorHandler:ColorChangedA( wndHandler, wndControl, strText )
 		local str = strText:sub(1,2) --ignore all other
 		local num = tonumber(str, 16) --interpret as number in hex.
 		if not num then return end --if the Text does not represent a number - cancel overwriting
-		
+
 		blockA = true
 		self.alpha = num/255
 		self:OnColorChanged(self.picker, self.picker, self.color)
 		blockA = false
 	end
-	
+
 	function colorHandler:SetAText(str)
 		if blockA then return end
 		self.boxA:SetText(str)
 	end
-	
+
 	local blockR = false
 	function colorHandler:ColorChangedR( wndHandler, wndControl, strText )
 		local str = strText:sub(1,2) --ignore all other
 		local num = tonumber(str, 16) --interpret as number in hex.
 		if not num then return end --if the Text does not represent a number - cancel overwriting
-		
+
 		blockR = true
 		local newColor = ApolloColor.new(num/255, self.color.g, self.color.b, self.color.a)
 		self.picker:SetColor(newColor)
 		self:OnColorChanged(self.picker, self.picker, newColor )
 		blockR = false
 	end
-	
+
 	function colorHandler:SetRText(str)
 		if blockR then return end
 		self.boxR:SetText(str)
 	end
-	
+
 	local blockG = false
 	function colorHandler:ColorChangedG( wndHandler, wndControl, strText )
 		local str = strText:sub(1,2) --ignore all other
 		local num = tonumber(str, 16) --interpret as number in hex.
 		if not num then return end --if the Text does not represent a number - cancel overwriting
-		
+
 		blockG = true
 		local newColor = ApolloColor.new(self.color.r, num/255, self.color.b, self.color.a)
 		self.picker:SetColor(newColor)
 		self:OnColorChanged(self.picker, self.picker, newColor)
 		blockG = false
 	end
-	
+
 	function colorHandler:SetGText(str)
 		if blockG then return end
 		self.boxG:SetText(str)
 	end
-	
+
 	local blockB = false
 	function colorHandler:ColorChangedB( wndHandler, wndControl, strText )
 		local str = strText:sub(1,2) --ignore all other
 		local num = tonumber(str, 16) --interpret as number in hex.
 		if not num then return end --if the Text does not represent a number - cancel overwriting
-		
+
 		blockB = true
 		local newColor = ApolloColor.new(self.color.r, self.color.g, num/255, self.color.a)
 		self.picker:SetColor(newColor)
 		self:OnColorChanged(self.picker, self.picker, newColor)
 		blockB = false
 	end
-	
+
 	function colorHandler:SetBText(str)
 		if blockB then return end
 		self.boxB:SetText(str)
 	end
-	
+
 	function colorHandler:OnNewColorClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY )
 	end
-	
+
 	function colorHandler:OnOldColorClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY )
 		local color = wndControl:GetBGColor()
 		self:Pick(self.callback, color) --treat it as if we have opened the picker with this value.
 	end
-	
+
 	function colorHandler:ClickCopy(...)
 		self.copied = self.newColor:GetBGColor()
 	end
-	
+
 	function colorHandler:ClickPaste(...)
 		local color = self.copied
 		self:Pick(self.callback, color) --treat it as if we have opened the picker with this value.
 	end
-	
+
 	function colorHandler:Is2x(c)
 		if c.r > 1 or c.g>1 or c.b>1 then
 			return true, ApolloColor.new(c.r/2, c.g/2, c.b/2, c.a)
@@ -509,28 +509,28 @@ function MRF:InitColorPicker()
 			return false, c
 		end
 	end
-	
+
 	function colorHandler:Pick(callback, initial)
 		if not initial then return end
 		local color = ApolloColor.new(initial)
-		
+
 		self.dbl, color = self:Is2x(color)
-		
+
 		self.callback = callback
 		self.color = color
 		self.alpha = color.a
-		
+
 		self.oldColor:SetBGColor(ApolloColor.new(initial))
 		self.picker:SetColor(color)
 		self:OnColorChanged(self.picker, self.picker, color)
-		
+
 		colorPicker:Show(true)
 	end
-	
+
 	if not settingsForm then
 		MRF:InitSettings()
 	end
-	
+
 	colorPicker = MRF:LoadForm(FORM_COLORPICKER_TEMPLATE, settingsForm, colorHandler)
 	colorHandler.header = colorPicker:FindChild("Header")
 	colorHandler.picker = colorPicker:FindChild("Color")
@@ -548,9 +548,9 @@ function MRF:InitColorPicker()
 	colorPicker:FindChild("Title_OldColor"):SetText(L["Old Color:"])
 	colorPicker:FindChild("Button_Copy"):SetText(L["Copy"])
 	colorPicker:FindChild("Button_Paste"):SetText(L["Paste"])
-	
+
 	colorHandler.btn2x:SetTooltip(L["tt2x"])
-	
+
 	function MRF:InitColorPicker() --replace the function, we do not want this to be done multiple times.
 		return colorHandler
 	end
@@ -567,18 +567,18 @@ do
 	local suppPrev = {["bar"] = bars, ["icon"] = icons, ["none"] = nones}
 	local template = nil;
 	local templateOpt = MRF:GetOption(nil, "frame")
-	
+
 	local function reposition(frame)
 		local h, w = frame.frame:GetHeight(), frame.frame:GetWidth()
 		local t = -floor(h/2)
 		local b = h+t
 		local l = -floor(w/2)
 		local r = w+l
-		
+
 		frame.frame:SetAnchorPoints(0.5,0.5,0.5,0.5)
 		frame.frame:SetAnchorOffsets(l,t,r,b)
 	end
-	
+
 	local cBlue = ApolloColor.new("FF00A0FF")
 	local cRed = ApolloColor.new("A0FF0000")
 	local function recolorBar(frame, modKey)
@@ -589,14 +589,14 @@ do
 		frame:SetVar("barcolor", modKey, cRed, cRed)
 		frame:SetVar("progress", modKey, 0.5)
 	end
-	
+
 	local function recolorIcon(frame, modKey)
 		frame:SetVar("backcolor", nil, cBlue)
 		local icon = MRF:GetModIcons(modKey)[frame.frame]
 		icon:SetSprite("WhiteFill")
 		icon:SetBGColor(cRed)
 	end
-	
+
 	local function recolorNone(frame)
 		frame:SetVar("backcolor", nil, cBlue)
 		for _, modKey in ipairs(frame.oldTemp) do
@@ -604,8 +604,8 @@ do
 			frame:SetVar("barcolor", modKey, cRed, cRed)
 		end
 	end
-	
-	templateOpt:OnUpdate(function(newTemplate) 
+
+	templateOpt:OnUpdate(function(newTemplate)
 		template = newTemplate;
 		for frame, key in pairs(bars) do
 			frame:UpdateOptions(newTemplate)
@@ -623,33 +623,33 @@ do
 			recolorNone(frame)
 		end
 	end)
-	
-	local btnBarHandler = {ButtonClick = function(self, btn) 
+
+	local btnBarHandler = {ButtonClick = function(self, btn)
 		local frame = btn:GetData()
 		local modKey = bars[frame]
-		
+
 		frame:UpdateOptions(template)
 		reposition(frame)
 		recolorBar(frame, modKey)
 	end}
-	
-	local btnIconHandler = {ButtonClick = function(self, btn) 
+
+	local btnIconHandler = {ButtonClick = function(self, btn)
 		local frame = btn:GetData()
 		local modKey = icons[frame]
-		
+
 		frame:UpdateOptions(template)
 		reposition(frame)
 		recolorIcon(frame, modKey)
 	end}
-	
-	local btnNoneHandler = {ButtonClick = function(self, btn) 
+
+	local btnNoneHandler = {ButtonClick = function(self, btn)
 		local frame = btn:GetData()
-		
+
 		frame:UpdateOptions(template)
 		reposition(frame)
 		recolorNone(frame)
 	end}
-	
+
 	local L = MRF:Localize({--English
 		["ttPreview"] = [[Preview:
 			This picture is supposed to help understand how the settings change the look of a frame.
@@ -663,21 +663,21 @@ do
 			Rot markiert wird der momentan veränderbare Bereich.]]
 	}, {--French
 	})
-	
+
 	function MRF:applyPreview(parent, modKey, type)
 		local tar = suppPrev[type]
 		if not tar then return end
-		
+
 		local frame = self:newFrame(parent, template)
 		tar[frame] = modKey
-		
+
 		local handler = type == "bar" and btnBarHandler or type == "icon" and btnIconHandler or btnNoneHandler
 		local btn = MRF:LoadForm("SmallButton", parent, handler)
 		btn:SetTooltip(L["Redraw Preview"])
 		btn:SetData(frame)
-		
+
 		MRF:LoadForm("QuestionMark", parent):SetTooltip(L["ttPreview"])
-		
+
 		handler:ButtonClick(btn) --Redraw or initially draw the Preview
 	end
 end
@@ -822,14 +822,14 @@ do--[[#####  Fontbox #####]] --:applyFontbox(parent, selector)
 			self.a = defA
 			self.b = defB
 			self.c = defC
-			
+
 			self.txtName:SetText("")
 			self.txtSize:SetText("")
 			self.txtAttr:SetText("")
-			
+
 			self.btnLSize:Enable(false)
 			self.btnRSize:Enable(false)
-	
+
 			self.btnLAttr:Enable(false)
 			self.btnRAttr:Enable(false)
 			return
@@ -869,7 +869,7 @@ do--[[#####  Fontbox #####]] --:applyFontbox(parent, selector)
 		if val and type(val) == "string" then
 			a, b, c = getIndexes(val)
 		end
-		
+
 		self:SetIndex(a,b,c)
 
 		self.block = false
@@ -952,24 +952,24 @@ end
 
 do
 	local tabs = {}
-	local children = setmetatable({}, {__index = function(t, k) 
+	local children = setmetatable({}, {__index = function(t, k)
 		t[k] = {}
-		return t[k]; 
+		return t[k];
 	end})
-	
+
 	local tabHandler = {}; --filled in :InitSettings()
-	
+
 	function MRF:AddMainTab(name, handler, func) --this does not need a handler/func if it doesnt want a tab to be displayed.
 		tabs[name] = handler and {handler, func} or false
 		tabs[#tabs+1] = name
 	end
-	
+
 	function MRF:AddChildTab(name, parentName, handler, func) --child Tabs without an initFunc do not get Created
 		if not handler then return end
 		children[parentName][name] = {handler, func}
 		children[parentName][#children[parentName]+1] = name
 	end
-	
+
 	local function referencer(tar)
 		return function(self, idx)
 			local f = function(_, ...)
@@ -979,82 +979,82 @@ do
 			return f
 		end
 	end
-	
+
 	local delayedLoader = {
 		Show = function(self, ...)
-			local name, handler, func = self.name , self.handler, self.func	
-			
+			local name, handler, func = self.name , self.handler, self.func
+
 			local pnl =  MRF:LoadForm("TabForm", tabHandler.panel)
 			--we do this first, because we want this table to behave like pnl, before we call the handler.
 			for i in pairs(self) do --wipe the table.
 				self[i] = nil
 			end
 			setmetatable(self, {__index = referencer(pnl)}) --all function-calls will be referenced to pnl
-			
+
 			--actually load the frames:
 			if type(handler) == "function" then
 				handler(pnl, name)
 			else
 				handler[func](handler, pnl, name)
 			end
-			
+
 			pnl:Show(...)
-			return pnl 
+			return pnl
 		end
 	}
-	
+
 	local function initPanel(tbl, name)
 		if tbl == false then return end
 		local handler, func = unpack(tbl)
-		
+
 		local pnl = setmetatable({name = name, handler = handler, func = func }, {__index = delayedLoader})
-		
+
 		return pnl
 	end
-	
+
 	local function MRF_AddMainTab(self, name, handler, func) --this is the version, which will be used after having initialized the Settins already
 		local form = self:LoadForm("ListParent", tabHandler.tabs, tabHandler)
 		local btn = form:FindChild("Button")
 		btn:SetText(name)
 		btn:SetData(initPanel(handler and {handler, func} or false, name))
 		tabs[name] = form
-		
+
 		tabHandler.tabs:ArrangeChildrenVert()
 	end
-	
+
 	local function MRF_AddChildTab(self, name, parentName, handler, func) --this is the version, which will be used after having initialized the Settins already
 		if not tabs[parentName] or not handler then return end
 		local child = self:LoadForm("ListChild", tabs[parentName], tabHandler)
 		child:SetText(name)
 		child:SetData(initPanel({handler, func}, name))--the tabbed Panel
 		children[parentName][name] = child
-		
+
 		tabs[parentName]:ArrangeChildrenVert()
 	end
-	
+
 	function tabHandler:OnCancel()
 		settingsForm:Show(false,false)
 	end
-		
+
 	function tabHandler:TestMode(...)
 		MRF:TestMode()
 	end
-	
+
 	function tabHandler:ShowRaidAnchor()
 		MRF:ShowRaidAnchor()
 	end
-	
+
 	function MRF:InitSettings()
 		if settingsForm then --already Initialized
 			settingsForm:Show(true, false)
 			return
 		end
-	
+
 		tabHandler.frame = self:LoadForm("SettingsForm", nil, tabHandler)
 		settingsForm = tabHandler.frame
 		tabHandler.tabs = tabHandler.frame:FindChild("TabList")
 		tabHandler.panel = tabHandler.frame:FindChild("TabPanel")
-		
+
 		for _, name in ipairs(tabs) do
 			local tab = tabs[name]
 			local form = self:LoadForm("ListParent", tabHandler.tabs, tabHandler)
@@ -1072,45 +1072,45 @@ do
 			form:ArrangeChildrenVert()
 		end
 		tabHandler.tabs:ArrangeChildrenVert()
-		
+
 		self.AddMainTab = MRF_AddMainTabd
 		self.AddChildTab = MRF_AddChildTab
 	end
-	
+
 	function MRF:OnConfigure()
 		self:InitSettings()
 	end
-	
+
 	local tabAddHeight = 10; --32-22
 	local childHeight = 22;
-	
+
 	function tabHandler:TabSelected(wndHandler)
 		local cont = wndHandler:GetParent()
 		--Expand
 		local n = #(cont:GetChildren())
 		local height = (n*childHeight)+tabAddHeight
 		cont:SetAnchorOffsets(0,0,0,height)
-		
+
 		cont:GetParent():ArrangeChildrenVert()
 		if self:ShowTab(wndHandler) then
 			self:UnselectChild()
 		end
 	end
-	
+
 	function tabHandler:TabUnselected(wndHandler,...)
 		local cont = wndHandler:GetParent()
 		--Shrink
 		cont:SetAnchorOffsets(0,0,0,childHeight+tabAddHeight)
 		cont:GetParent():ArrangeChildrenVert()
 	end
-	
+
 	local selectedChild = nil;
-	
+
 	function tabHandler:ChildTabSelected(wndHandler)
 		selectedChild = wndHandler
 		self:ShowTab(wndHandler)
 	end
-	
+
 	function tabHandler:UnselectChild()
 		if selectedChild then
 			selectedChild:SetCheck()
@@ -1119,32 +1119,32 @@ do
 		end
 		return false
 	end
-	
+
 	local shownPnl = nil;
-	
+
 	local shownTab = MRF:GetOption("UI_TabShown")
-	
+
 	function tabHandler:ShowTab(button)
 		local pnl = button:GetData()
-		if pnl then		
+		if pnl then
 			if shownPnl then
 				shownPnl:Show(false, false)
 			end
-			
+
 			local rep = pnl:Show(true, false)
-			
+
 			if rep then --if pnl isnt really a window, but the replacement, its :Show will return a window, being the pnl.
 				button:SetData(rep)
 				pnl = rep
 			end
-			
+
 			shownPnl = pnl
 			shownTab:Set(pnl)
 			return true --shown something
 		end
 		return false
 	end
-	
+
 	--[[
 	MRF:AddMainTab("Main1", function(wnd) wnd:SetText("Main1") end)
 	MRF:AddMainTab("Main2")
@@ -1154,10 +1154,3 @@ do
 	MRF:AddChildTab("Child3", "Main2", function(wnd) wnd:SetText("Child3") end)
 	--]]
 end
-
-
-
-
-
-
-
